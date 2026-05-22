@@ -20,7 +20,7 @@ export default function ProductDetail() {
     const fetchProduct = async () => {
       setLoading(true);
       try {
-        const API_URL = "https://shoptech-backend.onrender.com";
+        const API_URL = "http://localhost:5000";
         const response = await fetch(`${API_URL}/api/products/${id}`);
         if (!response.ok) throw new Error("Sản phẩm không tồn tại");
         const data = await response.json();

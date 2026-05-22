@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { User, Mail, Phone, MapPin, Lock, Loader2, CheckCircle2, AlertCircle, ArrowLeft, Shield } from "lucide-react";
 
 export default function Profile() {
-  const API_URL = "https://shoptech-backend.onrender.com";
+  const API_URL = "http://localhost:5000";
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);

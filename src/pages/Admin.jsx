@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check } from "lucide-react";
 
-const API_URL = "https://shoptech-backend.onrender.com";
+const API_URL = "http://localhost:5000";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("products"); // products | users
