@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { PRODUCTS } from "../data/products";
 import { ShoppingCart, Star, Search, Cpu, Monitor, Keyboard, Headphones, Smartphone, Battery } from "lucide-react";
 
 const CATEGORIES = [
@@ -23,8 +24,8 @@ const BADGE_COLORS = {
 
 export default function Home() {
   const { addToCart } = useCart();
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState(PRODUCTS); // Dùng data cứng làm mặc định để local luôn chạy được
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [addedId, setAddedId] = useState(null);

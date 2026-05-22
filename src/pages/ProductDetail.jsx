@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { ShoppingCart, Star, ArrowLeft, Shield, Truck, RefreshCw, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { PRODUCTS } from "../data/products";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -27,7 +28,9 @@ export default function ProductDetail() {
         setProduct(data);
       } catch (error) {
         console.error("Lỗi khi tải sản phẩm:", error);
-        setProduct(null);
+        // Fallback: Tìm trong file PRODUCTS nếu API lỗi (giúp chạy local mượt hơn)
+        const localProduct = PRODUCTS.find(p => p.id === parseInt(id));
+        setProduct(localProduct || null);
       } finally {
         setLoading(false);
       }
