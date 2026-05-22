@@ -23,7 +23,7 @@ export default function Register() {
     }
 
     try {
-      const API_URL = "http://localhost:5000";
+      const API_URL = "https://shoptech-backend.onrender.com";
       
       const response = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",

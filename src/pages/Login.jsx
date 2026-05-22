@@ -16,7 +16,7 @@ export default function Login() {
 
     try {
       // Nếu bạn muốn gọi luôn đến Render để test database online, hãy dùng URL Render trực tiếp:
-      const API_URL = "http://localhost:5000";
+      const API_URL = "https://shoptech-backend.onrender.com";
 
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",

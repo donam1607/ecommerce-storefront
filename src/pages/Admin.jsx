@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check } from "lucide-react";
+import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload } from "lucide-react";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "https://shoptech-backend.onrender.com";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("products"); // products | users
@@ -30,6 +30,21 @@ export default function Admin() {
   const [formDesc, setFormDesc] = useState("");
   const [formSpecs, setFormSpecs] = useState("");
   const [submittingProduct, setSubmittingProduct] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Modal User states (NEW)
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [userModalType, setUserModalType] = useState("add"); // add | edit
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [formUserName, setFormUserName] = useState("");
+  const [formUserEmail, setFormUserEmail] = useState("");
+  const [formUserPassword, setFormUserPassword] = useState("");
+  const [formUserRole, setFormUserRole] = useState("user");
+  const [formUserPhone, setFormUserPhone] = useState("");
+  const [formUserAddress, setFormUserAddress] = useState("");
+  const [formUserCity, setFormUserCity] = useState("");
+  const [formUserZip, setFormUserZip] = useState("");
+  const [submittingUser, setSubmittingUser] = useState(false);
 
   const navigate = useNavigate();
 
@@ -260,6 +275,132 @@ export default function Admin() {
     }
   };
 
+  // Open Modal User (NEW)
+  const openUserModal = (type, userObj = null) => {
+    setUserModalType(type);
+    if (type === "edit" && userObj) {
+      setEditingUserId(userObj.id);
+      setFormUserName(userObj.name);
+      setFormUserEmail(userObj.email);
+      setFormUserPassword(""); // Để trống nếu không muốn đổi
+      setFormUserRole(userObj.role || "user");
+      setFormUserPhone(userObj.phone || "");
+      setFormUserAddress(userObj.address || "");
+      setFormUserCity(userObj.city || "");
+      setFormUserZip(userObj.zip || "");
+    } else {
+      setEditingUserId(null);
+      setFormUserName("");
+      setFormUserEmail("");
+      setFormUserPassword("");
+      setFormUserRole("user");
+      setFormUserPhone("");
+      setFormUserAddress("");
+      setFormUserCity("");
+      setFormUserZip("");
+    }
+    setIsUserModalOpen(true);
+  };
+
+  // Handle User Create/Edit Submit (NEW)
+  const handleUserSubmit = async (e) => {
+    e.preventDefault();
+    setSubmittingUser(true);
+
+    const token = localStorage.getItem("token");
+    const payload = {
+      name: formUserName,
+      email: formUserEmail,
+      role: formUserRole,
+      phone: formUserPhone || null,
+      address: formUserAddress || null,
+      city: formUserCity || null,
+      zip: formUserZip || null
+    };
+
+    if (formUserPassword) {
+      payload.password = formUserPassword;
+    } else if (userModalType === "add") {
+      alert("Vui lòng điền mật khẩu cho thành viên mới!");
+      setSubmittingUser(false);
+      return;
+    }
+
+    const url = userModalType === "add"
+      ? `${API_URL}/api/users`
+      : `${API_URL}/api/users/${editingUserId}`;
+    
+    const method = userModalType === "add" ? "POST" : "PUT";
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setIsUserModalOpen(false);
+        fetchUsers();
+      } else {
+        alert(data.message || "Đã xảy ra lỗi khi lưu thông tin thành viên.");
+      }
+    } catch (err) {
+      alert("Không thể kết nối đến server.");
+    } finally {
+      setSubmittingUser(false);
+    }
+  };
+
+  // Handle local image upload for product (NEW)
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("image", file);
+
+    setUploadingImage(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/upload`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const currentImages = formImages ? formImages.split(",").map(i => i.trim()).filter(Boolean) : [];
+        currentImages.push(data.imageUrl);
+        setFormImages(currentImages.join(", "));
+      } else {
+        alert(data.message || "Tải ảnh lên thất bại.");
+      }
+    } catch (err) {
+      alert("Lỗi kết nối khi tải ảnh lên.");
+    } finally {
+      setUploadingImage(false);
+      e.target.value = ""; // reset file input
+    }
+  };
+
+  // Remove single image from list (NEW)
+  const handleRemoveImage = (indexToRemove) => {
+    const currentImages = formImages ? formImages.split(",").map(i => i.trim()).filter(Boolean) : [];
+    const updatedImages = currentImages.filter((_, idx) => idx !== indexToRemove);
+    setFormImages(updatedImages.join(", "));
+  };
+
   if (checkingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -431,8 +572,17 @@ export default function Admin() {
         {/* Tab 2: User Management */}
         {activeTab === "users" && (
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors">
-            <div className="p-6 border-b border-slate-200 dark:border-slate-850">
-              <h2 className="text-xl font-black text-slate-800 dark:text-white">Quản lý phân quyền người dùng</h2>
+            
+            {/* Action Bar (NEW) */}
+            <div className="p-6 border-b border-slate-200 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <h2 className="text-xl font-black text-slate-800 dark:text-white">Danh sách thành viên</h2>
+              <button
+                onClick={() => openUserModal("add")}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-md transition-all active:scale-95"
+              >
+                <Plus className="h-4.5 w-4.5" />
+                Thêm thành viên mới
+              </button>
             </div>
 
             {loadingUsers ? (
@@ -475,14 +625,23 @@ export default function Admin() {
                           </select>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button
-                            disabled={currentUser?.id === u.id}
-                            onClick={() => handleDeleteUser(u.id, u.name)}
-                            className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all disabled:opacity-40"
-                            title="Xóa người dùng"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => openUserModal("edit", u)}
+                              className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-200 rounded-xl transition-all"
+                              title="Sửa thông tin"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              disabled={currentUser?.id === u.id}
+                              onClick={() => handleDeleteUser(u.id, u.name)}
+                              className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all disabled:opacity-40"
+                              title="Xóa người dùng"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -586,8 +745,28 @@ export default function Admin() {
                 </div>
 
                 {/* Images */}
-                <div className="col-span-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-550 dark:text-slate-450 mb-1.5">Mảng ảnh (Images URLs) - Phân cách bởi dấu phẩy</label>
+                <div className="col-span-2 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-550 dark:text-slate-450">Danh sách ảnh sản phẩm *</label>
+                    
+                    {/* Local File Upload Button */}
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-750 dark:text-slate-200 text-xs font-bold rounded-lg cursor-pointer transition-all active:scale-95">
+                      {uploadingImage ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
+                      ) : (
+                        <Upload className="h-3.5 w-3.5 text-blue-600" />
+                      )}
+                      <span>{uploadingImage ? "Đang tải lên..." : "Tải ảnh từ máy tính"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploadingImage}
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
                   <textarea
                     rows="2"
                     placeholder="Link_anh_1, Link_anh_2, Link_anh_3"
@@ -595,7 +774,37 @@ export default function Admin() {
                     onChange={(e) => setFormImages(e.target.value)}
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
                   />
-                  <span className="text-[10px] text-slate-400">Có thể dùng ảnh có sẵn trong thư mục `public/images/products/...` hoặc link online.</span>
+
+                  {/* Visual Image Preview Grid (NEW) */}
+                  {formImages && formImages.split(",").map(i => i.trim()).filter(Boolean).length > 0 && (
+                    <div className="space-y-1.5">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-450">Xem trước & Sắp xếp ({formImages.split(",").map(i => i.trim()).filter(Boolean).length} ảnh):</span>
+                      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                        {formImages.split(",").map(i => i.trim()).filter(Boolean).map((imgUrl, idx) => (
+                          <div key={idx} className="relative group aspect-square bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+                            <img
+                              src={imgUrl}
+                              alt={`Preview ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=100&auto=format&fit=crop" }}
+                            />
+                            {/* Hover Overlay with Delete Button */}
+                            <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveImage(idx)}
+                                className="p-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-all active:scale-90"
+                                title="Xóa ảnh này"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <span className="block text-[10px] text-slate-400">Có thể dùng ảnh có sẵn trong thư mục `public/images/products/...` hoặc link online hoặc bấm nút trên để chọn file từ máy.</span>
                 </div>
 
                 {/* Description */}
@@ -644,6 +853,158 @@ export default function Admin() {
                     <Check className="h-4.5 w-4.5" />
                   )}
                   {modalType === "add" ? "Thêm sản phẩm" : "Lưu thay đổi"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Add/Edit User (NEW) */}
+      {isUserModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/65 backdrop-blur-sm z-55 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto transition-colors">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-150 dark:border-slate-850">
+              <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                {userModalType === "add" ? "Thêm thành viên mới" : "Chỉnh sửa thành viên"}
+              </h3>
+              <button
+                onClick={() => setIsUserModalOpen(false)}
+                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleUserSubmit} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Username */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-550 dark:text-slate-450 mb-1.5">Họ và tên *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ví dụ: Nguyễn Văn A"
+                    value={formUserName}
+                    onChange={(e) => setFormUserName(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-550 dark:text-slate-450 mb-1.5">Địa chỉ Email *</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="example@gmail.com"
+                    value={formUserEmail}
+                    onChange={(e) => setFormUserEmail(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  />
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-550 dark:text-slate-450 mb-1.5">
+                    Mật khẩu {userModalType === "add" ? "*" : "(Để trống nếu không đổi)"}
+                  </label>
+                  <input
+                    type="password"
+                    required={userModalType === "add"}
+                    placeholder={userModalType === "add" ? "Nhập mật khẩu..." : "Nhập mật khẩu mới..."}
+                    value={formUserPassword}
+                    onChange={(e) => setFormUserPassword(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  />
+                </div>
+
+                {/* Role */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-550 dark:text-slate-450 mb-1.5">Vai trò (Role) *</label>
+                  <select
+                    value={formUserRole}
+                    onChange={(e) => setFormUserRole(e.target.value)}
+                    disabled={editingUserId === currentUser?.id}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  >
+                    <option value="user">User (Thường)</option>
+                    <option value="admin">Admin (Quản trị)</option>
+                  </select>
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-550 dark:text-slate-450 mb-1.5">Số điện thoại</label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: 0912345678"
+                    value={formUserPhone}
+                    onChange={(e) => setFormUserPhone(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  />
+                </div>
+
+                {/* Address */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-550 dark:text-slate-450 mb-1.5">Địa chỉ</label>
+                  <input
+                    type="text"
+                    placeholder="Số nhà, ngõ/đường..."
+                    value={formUserAddress}
+                    onChange={(e) => setFormUserAddress(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  />
+                </div>
+
+                {/* City */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-550 dark:text-slate-450 mb-1.5">Thành phố</label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: Hà Nội, TP. HCM..."
+                    value={formUserCity}
+                    onChange={(e) => setFormUserCity(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  />
+                </div>
+
+                {/* Zip */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-550 dark:text-slate-450 mb-1.5">Mã bưu điện (Zip)</label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: 100000"
+                    value={formUserZip}
+                    onChange={(e) => setFormUserZip(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-150 dark:border-slate-850">
+                <button
+                  type="button"
+                  onClick={() => setIsUserModalOpen(false)}
+                  className="px-5 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-sm rounded-xl transition-all"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingUser}
+                  className="flex items-center gap-1.5 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-blue-600/10 active:scale-95 disabled:opacity-75"
+                >
+                  {submittingUser ? (
+                    <Loader2 className="h-4.5 w-4.5 animate-spin" />
+                  ) : (
+                    <Check className="h-4.5 w-4.5" />
+                  )}
+                  {userModalType === "add" ? "Thêm thành viên" : "Lưu thay đổi"}
                 </button>
               </div>
             </form>

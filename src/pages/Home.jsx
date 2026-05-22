@@ -34,7 +34,7 @@ export default function Home() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const API_URL = "http://localhost:5000";
+        const API_URL = "https://shoptech-backend.onrender.com";
         const response = await fetch(`${API_URL}/api/products`);
         if (response.ok) {
           const data = await response.json();
