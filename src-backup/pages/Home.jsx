@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { ShoppingCart, Star, Search, Cpu, Monitor, Keyboard, Headphones, Smartphone, Battery } from "lucide-react";
 import { PRODUCTS } from "../data/products";
@@ -28,7 +28,6 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [addedId, setAddedId] = useState(null);
-  const navigate = useNavigate();
 
   const filtered = PRODUCTS.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -43,13 +42,8 @@ export default function Home() {
     setTimeout(() => setAddedId(null), 1500);
   };
 
-  const handleBuyNow = (product) => {
-    addToCart(product);
-    navigate("/checkout");
-  };
-
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white py-24 px-4">
         <div className="absolute inset-0 overflow-hidden">
@@ -69,14 +63,14 @@ export default function Home() {
             </span>
           </h1>
           <p className="max-w-2xl mx-auto text-slate-400 text-lg mb-10">
-            Mua sắm các mẫu laptop, điện thoại thông minh và phụ kiện mới nhất từ các thương hiệu hàng đầu. Miễn phí vận chuyển cho đơn hàng trên $150.
+            Shop the latest laptops, smartphones, and accessories from top brands. Free shipping on orders over $150.
           </p>
 
           {/* Search Bar */}
           <div className="max-w-xl mx-auto relative">
             <input
               type="text"
-              placeholder="Tìm kiếm laptop, điện thoại, tai nghe..."
+              placeholder="Search for laptops, phones, headphones..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:bg-white/15 focus:border-blue-400 transition-all text-sm"
@@ -89,10 +83,10 @@ export default function Home() {
               onClick={() => document.getElementById('products').scrollIntoView({ behavior: 'smooth' })}
               className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 py-3.5 rounded-full shadow-lg shadow-blue-600/30 transition-all hover:scale-105"
             >
-              Mua sắm ngay
+              Shop Now
             </button>
             <button className="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold px-8 py-3.5 rounded-full transition-all hover:scale-105">
-              Xem ưu đãi
+              View Deals
             </button>
           </div>
         </div>
@@ -109,7 +103,7 @@ export default function Home() {
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
             }`}
           >
-            Tất cả
+            All
           </button>
           {CATEGORIES.map(({ name, icon: Icon }) => (
             <button
@@ -133,25 +127,25 @@ export default function Home() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h2 className="text-2xl font-black text-slate-800 dark:text-white">
-              {activeCategory === "All" ? "Tất cả sản phẩm" : activeCategory}
+              {activeCategory === "All" ? "All Products" : activeCategory}
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{filtered.length} sản phẩm được tìm thấy</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{filtered.length} products found</p>
           </div>
           {search && (
             <button
               onClick={() => setSearch("")}
               className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium"
             >
-              Xóa bộ lọc tìm kiếm
+              Clear search
             </button>
           )}
         </div>
 
         {filtered.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-slate-400 dark:text-slate-550 text-lg">Không tìm thấy sản phẩm nào khớp với từ khóa "{search}"</p>
+            <p className="text-slate-400 dark:text-slate-550 text-lg">No products found for "{search}"</p>
             <button onClick={() => setSearch("")} className="mt-4 text-blue-600 dark:text-blue-400 hover:underline font-semibold">
-              Xem tất cả sản phẩm
+              View all products
             </button>
           </div>
         ) : (
@@ -193,27 +187,19 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2 mt-4">
+                  <div className="flex items-center justify-between mt-4">
                     <span className="text-lg font-black text-slate-800 dark:text-white">${product.price.toLocaleString()}</span>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => handleAddToCart(product)}
-                        className={`flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl font-bold text-[11px] transition-all duration-200 ${
-                          addedId === product.id
-                            ? "bg-emerald-500 text-white"
-                            : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 active:scale-95"
-                        }`}
-                      >
-                        <ShoppingCart className="h-3 w-3" />
-                        {addedId === product.id ? "Đã thêm!" : "Thêm giỏ"}
-                      </button>
-                      <button
-                        onClick={() => handleBuyNow(product)}
-                        className="bg-blue-600 hover:bg-blue-500 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold text-[11px] py-2 rounded-xl transition-all hover:shadow-md hover:shadow-blue-600/20 active:scale-95 text-center flex items-center justify-center"
-                      >
-                        Mua ngay
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleAddToCart(product)}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs transition-all ${
+                        addedId === product.id
+                          ? "bg-emerald-500 text-white scale-95"
+                          : "bg-blue-600 hover:bg-blue-500 dark:bg-blue-600 dark:hover:bg-blue-500 text-white hover:shadow-md hover:shadow-blue-600/20 active:scale-95"
+                      }`}
+                    >
+                      <ShoppingCart className="h-3.5 w-3.5" />
+                      {addedId === product.id ? "Added!" : "Add to Cart"}
+                    </button>
                   </div>
                 </div>
               </div>

@@ -11,17 +11,17 @@ export default function Cart() {
 
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-center p-8">
-        <div className="bg-white rounded-3xl p-12 shadow-sm border border-slate-200 max-w-md w-full">
-          <ShoppingBag className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-black text-slate-800 mb-2">Your cart is empty</h2>
-          <p className="text-slate-500 mb-8">Add some amazing tech products to your cart!</p>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center text-center p-8 transition-colors duration-300">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 shadow-sm border border-slate-200 dark:border-slate-800 max-w-md w-full transition-colors duration-300">
+          <ShoppingBag className="h-16 w-16 text-slate-300 dark:text-slate-650 mx-auto mb-4" />
+          <h2 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Giỏ hàng của bạn đang trống</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-8">Hãy thêm các sản phẩm công nghệ tuyệt vời vào giỏ hàng nhé!</p>
           <Link
             to="/"
             className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-3 rounded-full transition-all hover:scale-105"
           >
             <ArrowRight className="h-4 w-4" />
-            Start Shopping
+            Bắt đầu mua sắm
           </Link>
         </div>
       </div>
@@ -29,15 +29,15 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 transition-colors duration-300">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-black text-slate-800">Your Cart</h1>
+          <h1 className="text-3xl font-black text-slate-800 dark:text-white">Giỏ hàng của bạn</h1>
           <button
             onClick={clearCart}
-            className="text-sm text-red-500 hover:text-red-600 font-semibold transition-colors"
+            className="text-sm text-red-500 hover:text-red-650 font-semibold transition-colors"
           >
-            Clear All
+            Xóa tất cả
           </button>
         </div>
 
@@ -47,41 +47,45 @@ export default function Cart() {
             {cart.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-2xl border border-slate-200 p-4 flex gap-4 hover:shadow-md transition-shadow"
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 flex gap-4 hover:shadow-md dark:hover:shadow-slate-950/40 transition-all duration-300"
               >
-                <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
+                  <img 
+                    src={item.images && item.images.length > 0 ? item.images[0] : item.image} 
+                    alt={item.name} 
+                    className="w-full h-full object-cover" 
+                  />
                 </div>
                 <div className="flex-grow min-w-0">
                   <div className="flex justify-between items-start gap-2">
                     <div>
-                      <span className="text-xs text-blue-600 font-semibold">{item.category}</span>
-                      <h3 className="font-bold text-slate-800 text-sm truncate">{item.name}</h3>
+                      <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">{item.category}</span>
+                      <h3 className="font-bold text-slate-800 dark:text-white text-sm truncate">{item.name}</h3>
                     </div>
                     <button
                       onClick={() => removeFromCart(item.id)}
-                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                      className="p-1.5 text-slate-450 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors flex-shrink-0"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden">
+                    <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="p-1.5 hover:bg-slate-100 transition-colors"
+                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-850 transition-colors"
                       >
-                        <Minus className="h-3.5 w-3.5 text-slate-600" />
+                        <Minus className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
                       </button>
-                      <span className="px-3 py-1.5 font-bold text-sm text-slate-800">{item.quantity}</span>
+                      <span className="px-3 py-1.5 font-bold text-sm text-slate-800 dark:text-white">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="p-1.5 hover:bg-slate-100 transition-colors"
+                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-850 transition-colors"
                       >
-                        <Plus className="h-3.5 w-3.5 text-slate-600" />
+                        <Plus className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
                       </button>
                     </div>
-                    <span className="font-black text-slate-800">
+                    <span className="font-black text-slate-800 dark:text-white">
                       ${(item.price * item.quantity).toLocaleString()}
                     </span>
                   </div>
@@ -92,40 +96,40 @@ export default function Cart() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 sticky top-28">
-              <h2 className="text-lg font-black text-slate-800 mb-6">Order Summary</h2>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sticky top-28 transition-colors duration-300">
+              <h2 className="text-lg font-black text-slate-800 dark:text-white mb-6">Tóm tắt đơn hàng</h2>
               <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-sm text-slate-600">
-                  <span>Subtotal ({cart.reduce((s, i) => s + i.quantity, 0)} items)</span>
-                  <span className="font-semibold">${subtotal.toLocaleString()}</span>
+                <div className="flex justify-between text-sm text-slate-650 dark:text-slate-400">
+                  <span>Tạm tính ({cart.reduce((s, i) => s + i.quantity, 0)} sản phẩm)</span>
+                  <span className="font-semibold text-slate-800 dark:text-white">${subtotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-sm text-slate-600">
-                  <span>Shipping</span>
-                  <span className="font-semibold text-emerald-600">
-                    {shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}
+                <div className="flex justify-between text-sm text-slate-650 dark:text-slate-400">
+                  <span>Phí vận chuyển</span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                    {shipping === 0 ? "MIỄN PHÍ" : `$${shipping.toFixed(2)}`}
                   </span>
                 </div>
                 {shipping > 0 && (
-                  <p className="text-xs text-slate-400">
-                    Add ${(150 - subtotal).toFixed(2)} more for free shipping!
+                  <p className="text-xs text-slate-450 dark:text-slate-500">
+                    Mua thêm ${(150 - subtotal).toFixed(2)} để được miễn phí vận chuyển!
                   </p>
                 )}
-                <div className="border-t border-slate-200 pt-3 flex justify-between">
-                  <span className="font-black text-slate-800">Total</span>
-                  <span className="font-black text-xl text-slate-800">${total.toLocaleString()}</span>
+                <div className="border-t border-slate-200 dark:border-slate-700 pt-3 flex justify-between">
+                  <span className="font-black text-slate-800 dark:text-white">Tổng cộng</span>
+                  <span className="font-black text-xl text-slate-800 dark:text-white">${total.toLocaleString()}</span>
                 </div>
               </div>
               <Link
                 to="/checkout"
                 className="block w-full text-center bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all hover:scale-[1.02] shadow-lg shadow-blue-600/20"
               >
-                Proceed to Checkout →
+                Tiến hành thanh toán →
               </Link>
               <Link
                 to="/"
-                className="block w-full text-center mt-3 text-slate-500 hover:text-slate-700 text-sm font-medium transition-colors"
+                className="block w-full text-center mt-3 text-slate-550 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 text-sm font-medium transition-colors"
               >
-                ← Continue Shopping
+                ← Tiếp tục mua sắm
               </Link>
             </div>
           </div>
