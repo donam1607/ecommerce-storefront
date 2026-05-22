@@ -20,6 +20,66 @@ export default function Checkout() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    
+    // Tự động điền thông tin của user đã đăng nhập
+    const savedUser = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
+
+    if (savedUser) {
+      try {
+        const u = JSON.parse(savedUser);
+        setForm(prev => ({
+          ...prev,
+          name: u.name || prev.name,
+          email: u.email || prev.email,
+          phone: u.phone || prev.phone,
+          address: u.address || prev.address,
+          city: u.city || prev.city,
+          zip: u.zip || prev.zip,
+        }));
+      } catch (e) {
+        console.error("Lỗi parse user từ localStorage ở Checkout", e);
+      }
+    }
+
+    if (token) {
+      const fetchLatestProfile = async () => {
+        try {
+          const response = await fetch("http://localhost:5000/api/users/profile", {
+            headers: {
+              "Authorization": `Bearer ${token}`
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setForm(prev => ({
+              ...prev,
+              name: data.name || prev.name,
+              email: data.email || prev.email,
+              phone: data.phone || prev.phone,
+              address: data.address || prev.address,
+              city: data.city || prev.city,
+              zip: data.zip || prev.zip,
+            }));
+            
+            // Đồng bộ lại localStorage user
+            const updatedLocalUser = {
+              ...JSON.parse(localStorage.getItem("user")),
+              name: data.name,
+              email: data.email,
+              phone: data.phone,
+              address: data.address,
+              city: data.city,
+              zip: data.zip
+            };
+            localStorage.setItem("user", JSON.stringify(updatedLocalUser));
+          }
+        } catch (err) {
+          console.warn("Lỗi lấy thông tin cá nhân mới nhất tại Checkout, dùng dữ liệu cũ:", err);
+        }
+      };
+      fetchLatestProfile();
+    }
   }, []);
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);

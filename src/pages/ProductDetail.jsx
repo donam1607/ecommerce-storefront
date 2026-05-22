@@ -12,15 +12,37 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const navigate = useNavigate();
+  const [product, setProduct] = useState(() => PRODUCTS.find((p) => p.id === parseInt(id)));
+  const [loading, setLoading] = useState(false);
 
-  const product = PRODUCTS.find((p) => p.id === parseInt(id));
-
-  // Scroll to top on product change
+  // Scroll to top on product change & fetch product from backend
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     setActiveImage(0);
     setQty(1);
     setAdded(false);
+
+    const fetchProduct = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`http://localhost:5000/api/products/${id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setProduct(data);
+        } else {
+          const localProd = PRODUCTS.find((p) => p.id === parseInt(id));
+          setProduct(localProd);
+        }
+      } catch (err) {
+        console.warn("Backend API offline, using local PRODUCTS fallback for details.", err);
+        const localProd = PRODUCTS.find((p) => p.id === parseInt(id));
+        setProduct(localProd);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
   }, [id]);
 
   if (!product) {
@@ -175,8 +197,8 @@ export default function ProductDetail() {
                 onClick={handleAddToCart}
                 className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-base transition-all ${
                   added
-                    ? "bg-emerald-500 text-white"
-                    : "bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 active:scale-[0.98]"
+                    ? "bg-emerald-500 text-white" // Màu khi đã thêm vào giỏ
+                    : "bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-500 border border-slate-200 dark:border-slate-700 active:scale-[0.98]" // Màu mặc định
                 }`}
               >
                 <ShoppingCart className="h-5 w-5" />
