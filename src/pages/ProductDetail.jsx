@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { ShoppingCart, Star, ArrowLeft, Shield, Truck, RefreshCw, Check, ChevronLeft, ChevronRight } from "lucide-react";
-import { PRODUCTS } from "../data/products";
-
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -11,32 +9,25 @@ export default function ProductDetail() {
   const [added, setAdded] = useState(false);
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const [product, setProduct] = useState(() => PRODUCTS.find((p) => p.id === parseInt(id)));
-  const [loading, setLoading] = useState(false);
 
-  // Scroll to top on product change & fetch product from backend
+  // Scroll to top on product change
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    setActiveImage(0);
-    setQty(1);
-    setAdded(false);
-
+    
     const fetchProduct = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:5000/api/products/${id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setProduct(data);
-        } else {
-          const localProd = PRODUCTS.find((p) => p.id === parseInt(id));
-          setProduct(localProd);
-        }
-      } catch (err) {
-        console.warn("Backend API offline, using local PRODUCTS fallback for details.", err);
-        const localProd = PRODUCTS.find((p) => p.id === parseInt(id));
-        setProduct(localProd);
+        const API_URL = "https://shoptech-backend.onrender.com";
+        const response = await fetch(`${API_URL}/api/products/${id}`);
+        if (!response.ok) throw new Error("Sản phẩm không tồn tại");
+        const data = await response.json();
+        setProduct(data);
+      } catch (error) {
+        console.error("Lỗi khi tải sản phẩm:", error);
+        setProduct(null);
       } finally {
         setLoading(false);
       }
@@ -44,6 +35,8 @@ export default function ProductDetail() {
 
     fetchProduct();
   }, [id]);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Đang tải sản phẩm...</div>;
 
   if (!product) {
     return (

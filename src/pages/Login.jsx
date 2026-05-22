@@ -15,9 +15,8 @@ export default function Login() {
     setResult(null);
 
     try {
-      const API_URL = window.location.hostname === "localhost" 
-        ? "http://localhost:5000" 
-        : "https://shoptech-backend.onrender.com";
+      // Nếu bạn muốn gọi luôn đến Render để test database online, hãy dùng URL Render trực tiếp:
+      const API_URL = "https://shoptech-backend.onrender.com";
 
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
@@ -55,7 +54,7 @@ export default function Login() {
         setResult({ success: false, message: data.message });
       }
     } catch (error) {
-      setResult({ success: false, message: "Không thể kết nối tới Server. Hãy kiểm tra Backend đã chạy chưa (port 5000)." });
+      setResult({ success: false, message: "Không thể kết nối tới Server. Hãy kiểm tra Backend trên Render đã hoạt động chưa." });
     } finally {
       setLoading(false);
     }
