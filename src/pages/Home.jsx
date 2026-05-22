@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { ShoppingCart, Star, Search, Cpu, Monitor, Keyboard, Headphones, Smartphone, Battery } from "lucide-react";
-import { PRODUCTS } from "../data/products";
-
 
 const CATEGORIES = [
   { name: "Laptop", icon: Cpu },
@@ -25,30 +23,32 @@ const BADGE_COLORS = {
 
 export default function Home() {
   const { addToCart } = useCart();
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [addedId, setAddedId] = useState(null);
-  const [productsList, setProductsList] = useState(PRODUCTS);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/products");
+        const API_URL = "https://shoptech-backend.onrender.com";
+        const response = await fetch(`${API_URL}/api/products`);
         if (response.ok) {
           const data = await response.json();
-          if (data && data.length > 0) {
-            setProductsList(data);
-          }
+          setProducts(data);
         }
-      } catch (err) {
-        console.warn("Backend API offline, falling back to local PRODUCTS data.", err);
+      } catch (error) {
+        console.error("Lỗi tải sản phẩm:", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchProducts();
   }, []);
 
-  const filtered = productsList.filter((p) => {
+  const filtered = products.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.category.toLowerCase().includes(search.toLowerCase());
     const matchCat = activeCategory === "All" || p.category === activeCategory;

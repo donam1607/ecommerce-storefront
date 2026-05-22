@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { User, Mail, Phone, MapPin, Lock, Loader2, CheckCircle2, AlertCircle, ArrowLeft, Shield } from "lucide-react";
 
 export default function Profile() {
+  const API_URL = "https://shoptech-backend.onrender.com";
+
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -36,7 +38,7 @@ export default function Profile() {
     // Lấy thông tin user mới nhất từ Backend để đảm bảo chính xác
     const fetchUserProfile = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/users/profile", {
+        const response = await fetch(`${API_URL}/api/users/profile`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }
@@ -110,7 +112,7 @@ export default function Profile() {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/users/profile", {
+      const response = await fetch(`${API_URL}/api/users/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

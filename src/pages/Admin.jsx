@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check } from "lucide-react";
 
+const API_URL = "https://shoptech-backend.onrender.com";
+
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("products"); // products | users
   const [products, setProducts] = useState([]);
@@ -60,7 +62,7 @@ export default function Admin() {
     setLoadingProducts(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:5000/api/products");
+      const response = await fetch(`${API_URL}/api/products`);
       if (response.ok) {
         const data = await response.json();
         setProducts(data);
@@ -80,7 +82,7 @@ export default function Admin() {
     setLoadingUsers(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/users", {
+      const response = await fetch(`${API_URL}/api/users`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -154,8 +156,8 @@ export default function Admin() {
     };
 
     const url = modalType === "add" 
-      ? "http://localhost:5000/api/products" 
-      : `http://localhost:5000/api/products/${editingId}`;
+      ? `${API_URL}/api/products` 
+      : `${API_URL}/api/products/${editingId}`;
     
     const method = modalType === "add" ? "POST" : "PUT";
 
@@ -188,7 +190,7 @@ export default function Admin() {
 
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(`http://localhost:5000/api/products/${id}`, {
+      const response = await fetch(`${API_URL}/api/products/${id}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`
@@ -210,7 +212,7 @@ export default function Admin() {
   const handleRoleChange = async (userId, newRole) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${userId}/role`, {
+      const response = await fetch(`${API_URL}/api/users/${userId}/role`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -240,7 +242,7 @@ export default function Admin() {
 
     const token = localStorage.getItem("token");
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      const response = await fetch(`${API_URL}/api/users/${userId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`
