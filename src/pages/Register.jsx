@@ -62,8 +62,8 @@ export default function Register() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 transition-colors duration-300">
       <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800">
         <div className="text-center">
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white">Tạo tài khoản mới</h2>
-          <p className="mt-2 text-slate-500 dark:text-slate-400">Tham gia mua sắm công nghệ đỉnh cao ngay</p>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white">Đăng ký tài khoản ShopSphere</h2>
+          <p className="mt-2 text-slate-500 dark:text-slate-400">Khám phá và sở hữu các sản phẩm công nghệ hàng đầu ngay hôm nay</p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
