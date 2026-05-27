@@ -15,6 +15,20 @@ function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  
+  const syncUserFromStorage = () => {
+    const savedUser = localStorage.getItem('user');
+    if (!savedUser) {
+      setUser(null);
+      return;
+    }
+    try {
+      setUser(JSON.parse(savedUser));
+    } catch (e) {
+      localStorage.removeItem('user');
+      setUser(null);
+    }
+  };
 
   useEffect(() => {
     if (dark) {
@@ -27,14 +41,15 @@ function Navbar() {
   }, [dark]);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        localStorage.removeItem('user');
-      }
-    }
+    syncUserFromStorage();
+    const onStorage = () => syncUserFromStorage();
+    const onAuthChanged = () => syncUserFromStorage();
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('auth-changed', onAuthChanged);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('auth-changed', onAuthChanged);
+    };
   }, []);
 
   // Close dropdown on click outside
@@ -58,9 +73,9 @@ function Navbar() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    window.dispatchEvent(new Event('auth-changed'));
     setDropdownOpen(false);
     navigate('/');
-    window.location.reload();
   };
 
   return (

@@ -43,12 +43,12 @@ export default function Login() {
 
         // Chờ 1s rồi chuyển hướng dựa vào vai trò
         setTimeout(() => {
+          window.dispatchEvent(new Event("auth-changed"));
           if (data.role === "admin") {
             navigate("/admin");
           } else {
             navigate("/");
           }
-          window.location.reload(); // Reload để Navbar cập nhật trạng thái
         }, 1000);
       } else {
         setResult({ success: false, message: data.message });
