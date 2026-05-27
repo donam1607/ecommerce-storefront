@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { PRODUCTS } from "../data/products";
 import { ShoppingCart, Star, Search, Cpu, Monitor, Keyboard, Headphones, Smartphone, Battery } from "lucide-react";
+import { formatVND, toVndInt } from "../utils/money";
 
 const CATEGORIES = [
   { name: "Laptop", icon: Cpu },
@@ -38,7 +39,11 @@ export default function Home() {
         const response = await fetch(`${API_URL}/api/products`);
         if (response.ok) {
           const data = await response.json();
-          setProducts(data);
+          setProducts(
+            Array.isArray(data)
+              ? data.map((p) => ({ ...p, price: toVndInt(p.price) }))
+              : PRODUCTS
+          );
         }
       } catch (error) {
         console.error("Lỗi tải sản phẩm:", error);
@@ -213,7 +218,7 @@ export default function Home() {
                   </div>
 
                   <div className="flex flex-col gap-2 mt-4">
-                    <span className="text-lg font-black text-slate-800 dark:text-white">${product.price.toLocaleString()}</span>
+                    <span className="text-lg font-black text-slate-800 dark:text-white">{formatVND(product.price)}</span>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => handleAddToCart(product)}

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload } from "lucide-react";
+import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet } from "lucide-react";
+import { formatVND, toVndInt } from "../utils/money";
 
 const API_URL = "https://shoptech-backend.onrender.com";
 
 export default function Admin() {
-  const [activeTab, setActiveTab] = useState("products"); // products | users
+  const [activeTab, setActiveTab] = useState("stats"); // stats | products | users
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -80,7 +81,7 @@ export default function Admin() {
       const response = await fetch(`${API_URL}/api/products`);
       if (response.ok) {
         const data = await response.json();
-        setProducts(data);
+        setProducts(Array.isArray(data) ? data.map((p) => ({ ...p, price: toVndInt(p.price) })) : []);
       } else {
         const data = await response.json();
         setError(data.message || "Không thể lấy danh sách sản phẩm.");
@@ -118,13 +119,33 @@ export default function Admin() {
 
   useEffect(() => {
     if (isAdmin) {
-      if (activeTab === "products") {
-        fetchProducts();
-      } else if (activeTab === "users") {
-        fetchUsers();
-      }
+      // Luôn tải data cho thống kê + các tab
+      fetchProducts();
+      fetchUsers();
     }
-  }, [isAdmin, activeTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
+
+  const totalProducts = products.length;
+  const totalUsers = users.length;
+  const totalAdmins = users.filter((u) => u.role === "admin").length;
+  const totalStock = products.reduce((sum, p) => sum + (Number(p.countInStock) || 0), 0);
+  const inventoryValue = products.reduce(
+    (sum, p) => sum + toVndInt(p.price) * (Number(p.countInStock) || 0),
+    0
+  );
+  const categoryStats = products.reduce((acc, p) => {
+    const key = p.category || "Khác";
+    const prev = acc[key] || { count: 0, stock: 0, value: 0 };
+    const stock = Number(p.countInStock) || 0;
+    const price = toVndInt(p.price);
+    acc[key] = {
+      count: prev.count + 1,
+      stock: prev.stock + stock,
+      value: prev.value + price * stock,
+    };
+    return acc;
+  }, {});
 
   // Open Modal Product
   const openModal = (type, prod = null) => {
@@ -452,6 +473,17 @@ export default function Admin() {
           
           <div className="flex gap-3">
             <button
+              onClick={() => setActiveTab("stats")}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                activeTab === "stats"
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                  : "bg-white dark:bg-slate-900 text-slate-650 dark:text-slate-350 border border-slate-200 dark:border-slate-800"
+              }`}
+            >
+              <BarChart3 className="h-4 w-4" />
+              Thống kê
+            </button>
+            <button
               onClick={() => setActiveTab("products")}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
                 activeTab === "products"
@@ -475,6 +507,97 @@ export default function Admin() {
             </button>
           </div>
         </div>
+
+        {/* Tab 0: Stats */}
+        {activeTab === "stats" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex items-start gap-3">
+                <div className="h-11 w-11 rounded-2xl bg-blue-50 dark:bg-blue-900/20 text-blue-650 dark:text-blue-400 flex items-center justify-center">
+                  <Boxes className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-450 dark:text-slate-500">Sản phẩm</p>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">{totalProducts}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Tổng số mặt hàng</p>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex items-start gap-3">
+                <div className="h-11 w-11 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-650 dark:text-emerald-400 flex items-center justify-center">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-450 dark:text-slate-500">Thành viên</p>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">{totalUsers}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Trong đó admin: {totalAdmins}</p>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex items-start gap-3">
+                <div className="h-11 w-11 rounded-2xl bg-amber-50 dark:bg-amber-900/20 text-amber-650 dark:text-amber-400 flex items-center justify-center">
+                  <Wallet className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-450 dark:text-slate-500">Giá trị kho</p>
+                  <p className="text-xl font-black text-slate-900 dark:text-white">{formatVND(inventoryValue)}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Tổng giá trị tồn kho</p>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex items-start gap-3">
+                <div className="h-11 w-11 rounded-2xl bg-purple-50 dark:bg-purple-900/20 text-purple-650 dark:text-purple-400 flex items-center justify-center">
+                  <UserCog className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-450 dark:text-slate-500">Tồn kho</p>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">{totalStock}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Tổng số lượng sản phẩm</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors">
+              <div className="p-6 border-b border-slate-200 dark:border-slate-850 flex items-center justify-between gap-4">
+                <h2 className="text-xl font-black text-slate-800 dark:text-white">Thống kê theo danh mục</h2>
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  {loadingProducts || loadingUsers ? "Đang cập nhật..." : "Cập nhật theo dữ liệu hiện tại"}
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase border-b border-slate-200 dark:border-slate-800 transition-colors">
+                      <th className="px-6 py-4">Danh mục</th>
+                      <th className="px-6 py-4">Số sản phẩm</th>
+                      <th className="px-6 py-4">Tồn kho</th>
+                      <th className="px-6 py-4">Giá trị kho</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
+                    {Object.entries(categoryStats)
+                      .sort((a, b) => b[1].value - a[1].value)
+                      .map(([cat, s]) => (
+                        <tr key={cat} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors text-sm text-slate-700 dark:text-slate-350">
+                          <td className="px-6 py-4 font-bold text-slate-850 dark:text-white">{cat}</td>
+                          <td className="px-6 py-4">{s.count}</td>
+                          <td className="px-6 py-4">{s.stock}</td>
+                          <td className="px-6 py-4 font-black">{formatVND(s.value)}</td>
+                        </tr>
+                      ))}
+                    {Object.keys(categoryStats).length === 0 && (
+                      <tr>
+                        <td className="px-6 py-10 text-center text-slate-450 dark:text-slate-500" colSpan={4}>
+                          Chưa có dữ liệu sản phẩm để thống kê.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tab 1: Product Management */}
         {activeTab === "products" && (
@@ -531,7 +654,7 @@ export default function Admin() {
                         </td>
                         <td className="px-6 py-4 font-bold text-slate-850 dark:text-white max-w-[200px] truncate">{prod.name}</td>
                         <td className="px-6 py-4">{prod.category}</td>
-                        <td className="px-6 py-4 font-black">${prod.price.toLocaleString()}</td>
+                        <td className="px-6 py-4 font-black">{formatVND(prod.price)}</td>
                         <td className="px-6 py-4 font-semibold">{prod.countInStock} cái</td>
                         <td className="px-6 py-4">
                           {prod.badge ? (
@@ -707,7 +830,7 @@ export default function Admin() {
 
                 {/* Price */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-550 dark:text-slate-450 mb-1.5">Giá bán ($) *</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-550 dark:text-slate-450 mb-1.5">Giá bán (VND) *</label>
                   <input
                     type="number"
                     step="0.01"

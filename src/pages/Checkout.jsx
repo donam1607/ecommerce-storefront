@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { CheckCircle2, CreditCard, Truck, MapPin, Phone, Store, QrCode, Loader2, Mail } from "lucide-react";
 import { sendBankTransferNotification, sendStorePickupNotification } from "../services/emailService";
+import { formatVND, toVndInt } from "../utils/money";
 
 export default function Checkout() {
   const { cart, clearCart } = useCart();
@@ -82,8 +83,8 @@ export default function Checkout() {
     }
   }, []);
 
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = form.paymentMethod === 'store' ? 0 : (subtotal > 150 ? 0 : 9.99);
+  const subtotal = cart.reduce((sum, item) => sum + toVndInt(item.price) * item.quantity, 0);
+  const shipping = 0;
   const total = subtotal + shipping;
 
   const handleChange = (e) => {
@@ -416,7 +417,7 @@ export default function Checkout() {
                       <p className="text-xs text-slate-400 dark:text-slate-500">Qty: {item.quantity}</p>
                     </div>
                     <span className="text-xs font-bold text-slate-800 dark:text-white flex-shrink-0">
-                      ${(item.price * item.quantity).toLocaleString()}
+                      {formatVND(toVndInt(item.price) * item.quantity)}
                     </span>
                   </div>
                 ))}
@@ -424,17 +425,17 @@ export default function Checkout() {
               <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-2 text-sm text-slate-600 dark:text-slate-400">
                 <div className="flex justify-between">
                   <span>Tạm tính</span>
-                  <span className="font-semibold text-slate-800 dark:text-white">${subtotal.toLocaleString()}</span>
+                  <span className="font-semibold text-slate-800 dark:text-white">{formatVND(subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Phí vận chuyển</span>
                   <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                    {form.paymentMethod === 'store' ? 'Không áp dụng' : (shipping === 0 ? "MIỄN PHÍ" : `$${shipping.toFixed(2)}`)}
+                    {form.paymentMethod === 'store' ? 'Không áp dụng' : (shipping === 0 ? "MIỄN PHÍ" : formatVND(shipping))}
                   </span>
                 </div>
                 <div className="flex justify-between font-black text-slate-800 dark:text-white text-base pt-2 border-t border-slate-200 dark:border-slate-700">
                   <span>Tổng cộng</span>
-                  <span>${total.toLocaleString()}</span>
+                  <span>{formatVND(total)}</span>
                 </div>
               </div>
               <button

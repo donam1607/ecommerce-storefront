@@ -25,6 +25,7 @@
  */
 
 import emailjs from '@emailjs/browser';
+import { formatVND, toVndInt } from '../utils/money';
 
 // ============ THAY ĐỔI CÁC GIÁ TRỊ NÀY ============
 const EMAILJS_SERVICE_ID = 'service_bkn9y1d';     // Ví dụ: 'service_abc123'
@@ -40,7 +41,7 @@ export async function sendBankTransferNotification(orderData) {
   const { name, email, phone, address, city, zip, cart, total } = orderData;
 
   const orderItems = cart.map(item => 
-    `• ${item.name} x${item.quantity} — $${(item.price * item.quantity).toLocaleString()}`
+    `• ${item.name} x${item.quantity} — ${formatVND(toVndInt(item.price) * item.quantity)}`
   ).join('\n');
 
   const templateParams = {
@@ -51,11 +52,11 @@ export async function sendBankTransferNotification(orderData) {
     customer_phone: phone,
     customer_address: `${address}, ${city}, ${zip}`,
     payment_method: 'Chuyển khoản ngân hàng',
-    total: `$${total.toLocaleString()}`,
+    total: formatVND(total),
     order_items: orderItems,
     message: `Có đơn hàng mới từ ${name}!\n\n` +
       `📦 Chi tiết đơn hàng:\n${orderItems}\n\n` +
-      `💰 Tổng tiền: $${total.toLocaleString()}\n\n` +
+      `💰 Tổng tiền: ${formatVND(total)}\n\n` +
       `👤 Thông tin khách hàng:\n` +
       `   Tên: ${name}\n` +
       `   Email: ${email}\n` +
@@ -87,7 +88,7 @@ export async function sendStorePickupNotification(orderData) {
   const { cart, total } = orderData;
 
   const orderItems = cart.map(item => 
-    `• ${item.name} x${item.quantity} — $${(item.price * item.quantity).toLocaleString()}`
+    `• ${item.name} x${item.quantity} — ${formatVND(toVndInt(item.price) * item.quantity)}`
   ).join('\n');
 
   const templateParams = {
@@ -98,11 +99,11 @@ export async function sendStorePickupNotification(orderData) {
     customer_phone: '',
     customer_address: 'Mua tại cửa hàng',
     payment_method: 'Thanh toán tại cửa hàng',
-    total: `$${total.toLocaleString()}`,
+    total: formatVND(total),
     order_items: orderItems,
     message: `Có khách hàng vừa chọn mua tại cửa hàng!\n\n` +
       `📦 Sản phẩm khách quan tâm:\n${orderItems}\n\n` +
-      `💰 Tổng giá trị: $${total.toLocaleString()}\n\n` +
+      `💰 Tổng giá trị: ${formatVND(total)}\n\n` +
       `🏪 Phương thức: Thanh toán tiền mặt tại cửa hàng\n` +
       `📋 Vui lòng chuẩn bị sản phẩm.`
   };

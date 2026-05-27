@@ -2,11 +2,12 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
+import { formatVND, toVndInt } from "../utils/money";
 
 export default function Cart() {
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = subtotal > 150 ? 0 : 9.99;
+  const subtotal = cart.reduce((sum, item) => sum + toVndInt(item.price) * item.quantity, 0);
+  const shipping = 0;
   const total = subtotal + shipping;
 
   if (cart.length === 0) {
@@ -86,7 +87,7 @@ export default function Cart() {
                       </button>
                     </div>
                     <span className="font-black text-slate-800 dark:text-white">
-                      ${(item.price * item.quantity).toLocaleString()}
+                      {formatVND(toVndInt(item.price) * item.quantity)}
                     </span>
                   </div>
                 </div>
@@ -101,22 +102,17 @@ export default function Cart() {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-sm text-slate-650 dark:text-slate-400">
                   <span>Tạm tính ({cart.reduce((s, i) => s + i.quantity, 0)} sản phẩm)</span>
-                  <span className="font-semibold text-slate-800 dark:text-white">${subtotal.toLocaleString()}</span>
+                  <span className="font-semibold text-slate-800 dark:text-white">{formatVND(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-slate-650 dark:text-slate-400">
                   <span>Phí vận chuyển</span>
                   <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                    {shipping === 0 ? "MIỄN PHÍ" : `$${shipping.toFixed(2)}`}
+                    {shipping === 0 ? "MIỄN PHÍ" : formatVND(shipping)}
                   </span>
                 </div>
-                {shipping > 0 && (
-                  <p className="text-xs text-slate-450 dark:text-slate-500">
-                    Mua thêm ${(150 - subtotal).toFixed(2)} để được miễn phí vận chuyển!
-                  </p>
-                )}
                 <div className="border-t border-slate-200 dark:border-slate-700 pt-3 flex justify-between">
                   <span className="font-black text-slate-800 dark:text-white">Tổng cộng</span>
-                  <span className="font-black text-xl text-slate-800 dark:text-white">${total.toLocaleString()}</span>
+                  <span className="font-black text-xl text-slate-800 dark:text-white">{formatVND(total)}</span>
                 </div>
               </div>
               <Link

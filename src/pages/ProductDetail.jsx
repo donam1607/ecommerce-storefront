@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { ShoppingCart, Star, ArrowLeft, Shield, Truck, RefreshCw, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { PRODUCTS } from "../data/products";
+import { formatVND, toVndInt } from "../utils/money";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -25,12 +26,12 @@ export default function ProductDetail() {
         const response = await fetch(`${API_URL}/api/products/${id}`);
         if (!response.ok) throw new Error("Sản phẩm không tồn tại");
         const data = await response.json();
-        setProduct(data);
+        setProduct({ ...data, price: toVndInt(data.price) });
       } catch (error) {
         console.error("Lỗi khi tải sản phẩm:", error);
         // Fallback: Tìm trong file PRODUCTS nếu API lỗi (giúp chạy local mượt hơn)
         const localProduct = PRODUCTS.find(p => p.id === parseInt(id));
-        setProduct(localProduct || null);
+        setProduct(localProduct ? { ...localProduct, price: toVndInt(localProduct.price) } : null);
       } finally {
         setLoading(false);
       }
@@ -169,7 +170,7 @@ export default function ProductDetail() {
 
             {/* Price & Actions */}
             <div className="flex items-center gap-4 mb-6">
-              <span className="text-3xl font-black text-slate-900 dark:text-white">${product.price.toLocaleString()}</span>
+              <span className="text-3xl font-black text-slate-900 dark:text-white">{formatVND(product.price)}</span>
             </div>
 
             {/* Quantity */}
