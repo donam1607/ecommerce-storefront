@@ -63,7 +63,8 @@ export async function sendBankTransferNotification(orderData) {
       `   SĐT: ${phone}\n` +
       `   Địa chỉ giao hàng: ${address}, ${city}, ${zip}\n\n` +
       `💳 Phương thức: Chuyển khoản ngân hàng\n` +
-      `⏳ Vui lòng kiểm tra tài khoản và xác nhận đơn hàng.`
+      `⏳ Khi nhận được chuyển khoản thành công, hãy truy cập trang Quản lý đơn hàng (Admin) để ấn nút xác nhận:\n` +
+      `🔗 https://ecommerce-storefront-gamma.vercel.app/admin (chọn tab Quản Lý Hóa Đơn)`
   };
 
   try {

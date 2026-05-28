@@ -96,6 +96,32 @@ export default function Checkout() {
     setSending(true);
 
     try {
+      // Gửi đơn hàng lên Backend lưu vào Database
+      const orderPayload = {
+        customerName: form.name,
+        customerEmail: form.email,
+        customerPhone: form.phone,
+        customerAddress: `${form.address}, ${form.city}, ${form.zip}`,
+        paymentMethod: form.paymentMethod,
+        totalAmount: total,
+        orderItems: cart.map(item => ({
+          productId: item.id,
+          name: item.name,
+          price: toVndInt(item.price),
+          quantity: item.quantity,
+          image: item.images?.[0] || item.image
+        }))
+      };
+
+      await fetch("https://shoptech-backend.onrender.com/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(orderPayload)
+      });
+
+      // Gửi Email thông báo qua EmailJS
       if (form.paymentMethod === 'bank') {
         await sendBankTransferNotification({
           name: form.name,
@@ -111,7 +137,7 @@ export default function Checkout() {
         await sendStorePickupNotification({ cart, total });
       }
     } catch (err) {
-      console.error('Email notification error:', err);
+      console.error('Lỗi khi tạo đơn hàng hoặc gửi email:', err);
     }
 
     setSending(false);
@@ -251,34 +277,37 @@ export default function Checkout() {
                     Thông tin chuyển khoản
                   </h2>
                   <div className="flex flex-col sm:flex-row items-center gap-6">
-                    <div className="w-48 h-48 bg-slate-100 dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center overflow-hidden">
-                      {/* QR Placeholder - Replace with your actual QR image */}
+                    <div className="w-48 h-48 bg-slate-100 dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {/* Tự động tạo mã VietQR theo chuẩn Napas */}
                       <img 
-                        src="/qr-payment.png" 
-                        alt="QR Code thanh toán" 
+                        src={`https://img.vietqr.io/image/tcb-19037793290014-compact.png?amount=${total}&addInfo=SHOPTECH%20${encodeURIComponent(form.name || 'KHACH')}%20${form.phone || ''}&accountName=DO%2520DINH%2520NAM`} 
+                        alt="QR Code thanh toán tự động qua VietQR" 
                         className="w-full h-full object-contain p-2"
                         onError={(e) => {
                           e.target.style.display = 'none';
-                          e.target.parentElement.innerHTML = '<div class="text-center p-4"><p class="text-4xl mb-2">📱</p><p class="text-xs text-slate-500 dark:text-slate-400 font-medium">QR Code<br/>Thanh toán</p></div>';
+                          e.target.parentElement.innerHTML = '<div class="text-center p-4"><p class="text-4xl mb-2">📱</p><p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Lỗi tải VietQR<br/>Vui lòng thử lại</p></div>';
                         }}
                       />
                     </div>
                     <div className="text-center sm:text-left space-y-2">
-                      <p className="text-sm font-bold text-slate-800 dark:text-white">Quét mã QR để chuyển khoản</p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-white text-blue-600 dark:text-blue-400">Quét mã QR VietQR để chuyển khoản tự động</p>
                       <div className="space-y-1">
                         <p className="text-xs text-slate-600 dark:text-slate-400">
-                          <span className="font-semibold">Ngân hàng:</span> [Tên ngân hàng]
+                          <span className="font-semibold">Ngân hàng:</span> Techcombank (Kỹ thương Việt Nam)
                         </p>
                         <p className="text-xs text-slate-600 dark:text-slate-400">
-                          <span className="font-semibold">Số tài khoản:</span> [Số tài khoản]
+                          <span className="font-semibold">Số tài khoản:</span> 19037793290014
                         </p>
                         <p className="text-xs text-slate-600 dark:text-slate-400">
-                          <span className="font-semibold">Chủ tài khoản:</span> [Tên chủ TK]
+                          <span className="font-semibold">Chủ tài khoản:</span> ĐỖ ĐÌNH NAM
+                        </p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                          <span className="font-semibold">Số tiền cần chuyển:</span> <strong className="text-red-500">{formatVND(total)}</strong>
                         </p>
                       </div>
                       <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl">
                         <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                          💡 Nội dung chuyển khoản: <strong>SHOPTECH [Tên bạn] [SĐT]</strong>
+                          💡 Nội dung chuyển khoản tự động quét: <strong>SHOPTECH {form.name || 'KHACH'} {form.phone || ''}</strong>
                         </p>
                       </div>
                     </div>
@@ -349,7 +378,7 @@ export default function Checkout() {
                     <div>
                       <p className="font-bold text-sm text-slate-800 dark:text-white">Địa chỉ cửa hàng</p>
                       <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                        123 Đường ABC, Phường XYZ, Quận 1, TP. Hồ Chí Minh
+                        NGUYỄN ĐẠT STORE, Bình Chánh, Thành phố Hồ Chí Minh
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
                         Giờ mở cửa: 8:00 - 21:00 (Thứ 2 - Chủ nhật)
@@ -376,25 +405,36 @@ export default function Checkout() {
                     </div>
                   </div>
 
-                  {/* Map placeholder */}
-                  <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 h-48 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                    <div className="text-center">
-                      <MapPin className="h-8 w-8 text-slate-400 dark:text-slate-500 mx-auto mb-2" />
-                      <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Google Maps</p>
+                  {/* Map interactive embed */}
+                  <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex flex-col">
+                    <div className="w-full h-40 bg-slate-200 dark:bg-slate-800">
+                      <iframe
+                        src="https://maps.google.com/maps?q=NGUY%E1%BB%84N%20%C4%90%E1%BA%A0T%20STORE%20Binh%20Chanh&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        allowFullScreen=""
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title="NGUYỄN ĐẠT STORE Google Map"
+                      ></iframe>
+                    </div>
+                    <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-750 text-center">
                       <a
-                        href="https://maps.google.com/?q=123+Đường+ABC,+Quận+1,+HCMC"
+                        href="https://www.google.com/maps/place/NGUY%E1%BB%84N+%C4%90%E1%BA%A0T+STORE/@10.7906661,106.5683981,17z/data=!3m1!4b1!4m6!3m5!1s0x31752d000dbecc8f:0x9155dc8dbd07b70b!8m2!3d10.7906661!4d106.5683981!16s%2Fg%2F11x32t0t_y!18m1!1e1?entry=ttu&g_ep=EgoyMDI2MDUyNS4wIKXMDSoASAFQAw%3D%3D"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold mt-1 inline-block"
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center justify-center gap-1"
                       >
-                        Mở trong Google Maps →
+                        <MapPin className="h-3 w-3" />
+                        Mở bản đồ lớn trên Google Maps →
                       </a>
                     </div>
                   </div>
 
                   <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl">
-                    <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">
-                      🏪 Bạn có thể đến cửa hàng để xem trực tiếp sản phẩm và thanh toán tiền mặt. Liên hệ trước qua Hotline để kiểm tra hàng còn!
+                    <p className="text-xs text-emerald-700 dark:text-amber-400 font-medium">
+                      🏪 Bạn có thể đến cửa hàng NGUYỄN ĐẠT STORE để xem trực tiếp sản phẩm và thanh toán tiền mặt. Liên hệ trước để shop chuẩn bị máy nhé!
                     </p>
                   </div>
                 </div>

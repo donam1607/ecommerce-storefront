@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search, FileText } from "lucide-react";
 import { formatVND, toVndInt } from "../utils/money";
 
 const API_URL = "https://shoptech-backend.onrender.com";
@@ -33,12 +33,14 @@ const getBadgeClass = (badge) => {
 };
 
 export default function Admin() {
-  const [activeTab, setActiveTab] = useState("stats"); // stats | products | categories | users
+  const [activeTab, setActiveTab] = useState("stats"); // stats | products | categories | users | orders
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
   const [categoriesList, setCategoriesList] = useState(["Laptop", "Monitor", "Keyboard", "Headphones", "Smartphone", "Accessories"]);
+  const [orders, setOrders] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingOrders, setLoadingOrders] = useState(false);
   const [error, setError] = useState(null);
 
   // Filters for product list
@@ -163,10 +165,81 @@ export default function Admin() {
     }
   };
 
+  // Fetch orders
+  const fetchOrders = async () => {
+    setLoadingOrders(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_URL}/api/orders`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data);
+      } else {
+        const data = await response.json();
+        setError(data.message || "Không thể lấy danh sách đơn hàng.");
+      }
+    } catch (err) {
+      setError("Lỗi kết nối server khi tải danh sách đơn hàng.");
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  // Xác nhận thanh toán thành công
+  const confirmPayment = async (orderId) => {
+    if (!window.confirm("Bạn có chắc chắn xác nhận đơn hàng này đã thanh toán thành công?")) return;
+    
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${API_URL}/api/orders/${orderId}/paid`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        fetchOrders();
+      } else {
+        const data = await response.json();
+        alert(data.message || "Lỗi xác nhận thanh toán.");
+      }
+    } catch (err) {
+      alert("Lỗi kết nối đến server.");
+    }
+  };
+
+  // Xóa đơn hàng
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa hóa đơn này khỏi hệ thống?")) return;
+    
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${API_URL}/api/orders/${orderId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        fetchOrders();
+      } else {
+        const data = await response.json();
+        alert(data.message || "Lỗi xóa hóa đơn.");
+      }
+    } catch (err) {
+      alert("Lỗi kết nối đến server.");
+    }
+  };
+
   useEffect(() => {
     if (isAdmin) {
       fetchProducts();
       fetchUsers();
+      fetchOrders();
     }
   }, [isAdmin]);
 
@@ -637,6 +710,7 @@ export default function Admin() {
                   { id: "stats", label: "Báo Cáo Thống Kê", icon: BarChart3 },
                   { id: "products", label: "Quản Lý Sản Phẩm", icon: ShoppingBag },
                   { id: "categories", label: "Quản Lý Danh Mục", icon: Boxes },
+                  { id: "orders", label: "Quản Lý Hóa Đơn", icon: FileText },
                   { id: "users", label: "Quản Lý Thành Viên", icon: Users }
                 ].map((tab) => {
                   const Icon = tab.icon;
@@ -1022,6 +1096,116 @@ export default function Admin() {
                                   onClick={() => handleDeleteUser(u.id, u.name)}
                                   className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all disabled:opacity-40"
                                   title="Xóa người dùng"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab 5: orders (Invoices / Orders Management) */}
+            {activeTab === "orders" && (
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors animate-fade-in">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <h2 className="text-base font-black text-slate-900 dark:text-white">Quản Lý Hóa Đơn & Doanh Thu</h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Danh sách đơn đặt hàng từ hệ thống. Admin có thể xem chi tiết sản phẩm đã bán, phương thức và xác nhận trạng thái thanh toán.
+                    </p>
+                  </div>
+                  <button
+                    onClick={fetchOrders}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-black rounded-xl transition-all"
+                  >
+                    Làm mới danh sách
+                  </button>
+                </div>
+
+                {loadingOrders ? (
+                  <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-650" /></div>
+                ) : orders.length === 0 ? (
+                  <div className="p-20 text-center text-slate-400 font-bold text-xs">Hiện tại chưa có hóa đơn nào được tạo!</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-550 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                          <th className="px-6 py-4">Mã đơn</th>
+                          <th className="px-6 py-4">Khách hàng</th>
+                          <th className="px-6 py-4">Sản phẩm đã bán</th>
+                          <th className="px-6 py-4">Tổng tiền</th>
+                          <th className="px-6 py-4">Phương thức</th>
+                          <th className="px-6 py-4">Trạng thái</th>
+                          <th className="px-6 py-4 text-right">Hành động</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
+                        {orders.map((o) => (
+                          <tr key={o.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors text-xs text-slate-700 dark:text-slate-350">
+                            <td className="px-6 py-4 font-bold text-slate-500">#{o.id}</td>
+                            <td className="px-6 py-4">
+                              <p className="font-bold text-slate-850 dark:text-white">{o.customerName}</p>
+                              <p className="text-[10px] text-slate-400">{o.customerPhone}</p>
+                              <p className="text-[10px] text-slate-400 truncate max-w-[150px]" title={o.customerAddress}>{o.customerAddress}</p>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="space-y-1 max-w-[200px]">
+                                {o.orderItems && o.orderItems.map((item, index) => (
+                                  <div key={index} className="flex items-center gap-1.5 text-[11px]">
+                                    <img src={item.image} alt={item.name} className="w-6 h-6 object-cover rounded border border-slate-200" />
+                                    <span className="truncate flex-1 font-semibold text-slate-650 dark:text-slate-300">{item.name}</span>
+                                    <span className="text-slate-400 font-bold">x{item.quantity}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 font-black text-slate-900 dark:text-white">{formatVND(toVndInt(o.totalAmount))}</td>
+                            <td className="px-6 py-4 font-semibold uppercase text-[10px] tracking-wide">
+                              {o.paymentMethod === 'bank' ? (
+                                <span className="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/55">Chuyển khoản QR</span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-650 dark:text-emerald-400 border border-emerald-200/55">Tiền mặt (Store)</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4">
+                              {o.paymentStatus === 'paid' && (
+                                <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-600 text-white shadow-sm border border-emerald-400">
+                                  Đã thanh toán
+                                </span>
+                              )}
+                              {o.paymentStatus === 'pending' && (
+                                <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500 text-white shadow-sm border border-amber-400">
+                                  Chờ xác nhận
+                                </span>
+                              )}
+                              {o.paymentStatus === 'unpaid' && (
+                                <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-500 text-white shadow-sm border border-slate-400">
+                                  Chưa thanh toán
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-1.5">
+                                {o.paymentStatus !== 'paid' && (
+                                  <button
+                                    onClick={() => confirmPayment(o.id)}
+                                    className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[10px] uppercase rounded-xl transition-all"
+                                    title="Xác nhận khách đã thanh toán thành công"
+                                  >
+                                    Xác nhận
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleDeleteOrder(o.id)}
+                                  className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all"
+                                  title="Xóa đơn hàng"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </button>

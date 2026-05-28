@@ -338,7 +338,7 @@ export default function Home() {
                         }`}
                       >
                         <ShoppingCart className="h-3.5 w-3.5" />
-                        {addedId === product.id ? "Đã thêm!" : "Thêm giỏ"}
+                        {addedId === product.id ? "Đã thêm!" : "Thêm giỏ hàng"}
                       </button>
                       <button
                         onClick={() => handleBuyNow(product)}
