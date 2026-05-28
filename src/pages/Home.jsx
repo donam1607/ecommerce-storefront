@@ -43,8 +43,8 @@ const getBadgeClass = (badge) => {
 
 export default function Home() {
   const { addToCart } = useCart();
-  const [products, setProducts] = useState(PRODUCTS);
-  const [loading, setLoading] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState(["Laptop", "Monitor", "Keyboard", "Headphones", "Smartphone", "Accessories"]);
   const [activeCategory, setActiveCategory] = useState("All");
   const [activeCondition, setActiveCondition] = useState("All");
@@ -62,6 +62,7 @@ export default function Home() {
 
   useEffect(() => {
     const fetchProducts = async () => {
+      setLoading(true);
       try {
         const API_URL = "https://shoptech-backend.onrender.com";
         const response = await fetch(`${API_URL}/api/products`);
@@ -267,7 +268,25 @@ export default function Home() {
           )}
         </div>
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, idx) => (
+              <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-4 animate-pulse">
+                <div className="bg-slate-200 dark:bg-slate-800 aspect-[4/3] rounded-xl w-full"></div>
+                <div className="space-y-2">
+                  <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/3"></div>
+                  <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4"></div>
+                  <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/2"></div>
+                </div>
+                <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-2/3"></div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                  <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-slate-400 dark:text-slate-500 text-lg font-semibold">Không tìm thấy sản phẩm nào khớp với từ khóa "{search}"</p>
             <button onClick={handleClearSearch} className="mt-4 text-blue-600 dark:text-blue-400 hover:underline font-bold">

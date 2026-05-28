@@ -252,6 +252,60 @@ export default function Admin() {
     0
   );
   
+  // Thống kê doanh thu và số lượng đã bán thực tế từ các đơn hàng "paid"
+  const paidOrders = orders.filter(o => o.paymentStatus === 'paid');
+  const totalRevenue = paidOrders.reduce((sum, o) => sum + toVndInt(o.totalAmount), 0);
+  
+  let totalSoldItems = 0;
+  const productSalesMap = {}; // productId -> { name, quantity, value, image }
+  const buyerSalesMap = {};   // email -> { name, phone, totalSpent, ordersCount }
+
+  orders.forEach(o => {
+    // Chỉ tính doanh thu/sản phẩm đã bán cho các hóa đơn đã thanh toán
+    const isPaid = o.paymentStatus === 'paid';
+    
+    // Top khách mua (tính trên mọi hóa đơn đã thanh toán để biết khách VIP)
+    if (isPaid) {
+      const emailKey = o.customerEmail || 'Guest';
+      const prevBuyer = buyerSalesMap[emailKey] || { name: o.customerName, phone: o.customerPhone, totalSpent: 0, ordersCount: 0 };
+      buyerSalesMap[emailKey] = {
+        name: o.customerName,
+        phone: o.customerPhone,
+        totalSpent: prevBuyer.totalSpent + toVndInt(o.totalAmount),
+        ordersCount: prevBuyer.ordersCount + 1
+      };
+    }
+
+    if (o.orderItems && Array.isArray(o.orderItems)) {
+      o.orderItems.forEach(item => {
+        const qty = Number(item.quantity) || 0;
+        if (isPaid) {
+          totalSoldItems += qty;
+          
+          // Top sản phẩm bán chạy
+          const pId = item.productId || item.id;
+          const prevProd = productSalesMap[pId] || { name: item.name, quantity: 0, value: 0, image: item.image };
+          productSalesMap[pId] = {
+            name: item.name,
+            image: item.image,
+            quantity: prevProd.quantity + qty,
+            value: prevProd.value + (toVndInt(item.price) * qty)
+          };
+        }
+      });
+    }
+  });
+
+  const topBuyers = Object.entries(buyerSalesMap)
+    .map(([email, info]) => ({ email, ...info }))
+    .sort((a, b) => b.totalSpent - a.totalSpent)
+    .slice(0, 5);
+
+  const topSoldProducts = Object.entries(productSalesMap)
+    .map(([id, info]) => ({ id, ...info }))
+    .sort((a, b) => b.quantity - a.quantity)
+    .slice(0, 5);
+
   const categoryStats = products.reduce((acc, p) => {
     const key = p.category || "Khác";
     const prev = acc[key] || { count: 0, stock: 0, value: 0 };
@@ -742,36 +796,36 @@ export default function Admin() {
               <div className="space-y-6 animate-fade-in">
                 {/* KPIs Dashboard Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm transition-colors">
-                    <div className="h-11 w-11 rounded-2xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
-                      <Boxes className="h-5 w-5" />
+                  <div className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-3xl p-5 flex items-start gap-3.5 shadow-lg shadow-blue-500/10">
+                    <div className="h-11 w-11 rounded-2xl bg-white/10 text-white flex items-center justify-center flex-shrink-0">
+                      <Wallet className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Mặt Hàng</p>
-                      <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{totalProducts}</p>
-                      <p className="text-[10px] text-slate-550 dark:text-slate-400 mt-1.5">Tổng phân loại sản phẩm</p>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-blue-200">Tổng doanh thu</p>
+                      <p className="text-xl font-black mt-0.5">{formatVND(totalRevenue)}</p>
+                      <p className="text-[10px] text-blue-100 mt-1.5">Doanh thu từ đơn đã thanh toán</p>
                     </div>
                   </div>
 
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm transition-colors">
                     <div className="h-11 w-11 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-650 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
-                      <Users className="h-5 w-5" />
+                      <ShoppingBag className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Người Dùng</p>
-                      <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{totalUsers}</p>
-                      <p className="text-[10px] text-slate-550 dark:text-slate-400 mt-1.5">Trong đó Admin: {totalAdmins}</p>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Đã bán thành công</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{totalSoldItems} sản phẩm</p>
+                      <p className="text-[10px] text-slate-550 dark:text-slate-400 mt-1.5">Số lượng máy & phụ kiện bán ra</p>
                     </div>
                   </div>
 
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm transition-colors">
                     <div className="h-11 w-11 rounded-2xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
-                      <Wallet className="h-5 w-5" />
+                      <Boxes className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Giá Trị Kho</p>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Giá trị tồn kho</p>
                       <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{formatVND(inventoryValue)}</p>
-                      <p className="text-[10px] text-slate-550 dark:text-slate-400 mt-1.5">Tổng vốn hóa kho hàng</p>
+                      <p className="text-[10px] text-slate-550 dark:text-slate-400 mt-1.5">Tổng giá trị vốn sản phẩm hiện tại</p>
                     </div>
                   </div>
 
@@ -780,9 +834,67 @@ export default function Admin() {
                       <UserCog className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Tồn Kho</p>
-                      <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{totalStock}</p>
-                      <p className="text-[10px] text-slate-550 dark:text-slate-400 mt-1.5">Tổng số sản phẩm lưu trữ</p>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Tổng sản phẩm tồn</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{totalStock} máy</p>
+                      <p className="text-[10px] text-slate-550 dark:text-slate-400 mt-1.5">Tổng số máy còn lại trong kho</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Top Sellers & Top Customers Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Top Sellers */}
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+                    <h3 className="text-sm font-black text-slate-850 dark:text-white flex items-center gap-2">
+                      <span className="flex h-2 w-2 rounded-full bg-blue-500" />
+                      Sản phẩm bán chạy nhất
+                    </h3>
+                    <div className="divide-y divide-slate-100 dark:divide-slate-850">
+                      {topSoldProducts.map((p, idx) => (
+                        <div key={p.id} className="flex items-center gap-3 py-3 text-xs">
+                          <span className="font-extrabold text-slate-400 text-sm w-4">#{idx+1}</span>
+                          <img src={p.image} alt={p.name} className="w-10 h-10 object-cover rounded-xl border border-slate-200 dark:border-slate-800" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-slate-800 dark:text-white truncate">{p.name}</p>
+                            <p className="text-[10px] text-slate-400">Doanh thu: {formatVND(p.value)}</p>
+                          </div>
+                          <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/40 text-blue-650 dark:text-blue-400 font-extrabold rounded-lg text-[10px]">
+                            Đã bán: {p.quantity}
+                          </span>
+                        </div>
+                      ))}
+                      {topSoldProducts.length === 0 && (
+                        <div className="py-6 text-center text-slate-400 font-semibold">Chưa có dữ liệu bán hàng.</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Top Customers (VIP) */}
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+                    <h3 className="text-sm font-black text-slate-850 dark:text-white flex items-center gap-2">
+                      <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
+                      Khách hàng VIP mua nhiều nhất
+                    </h3>
+                    <div className="divide-y divide-slate-100 dark:divide-slate-850">
+                      {topBuyers.map((b, idx) => (
+                        <div key={b.email} className="flex items-center gap-3 py-3 text-xs">
+                          <span className="font-extrabold text-slate-400 text-sm w-4">#{idx+1}</span>
+                          <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold text-xs uppercase">
+                            {b.name.charAt(0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-slate-800 dark:text-white truncate">{b.name}</p>
+                            <p className="text-[10px] text-slate-400">{b.email} • {b.phone}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-black text-slate-900 dark:text-white">{formatVND(b.totalSpent)}</p>
+                            <p className="text-[9px] text-slate-400 font-semibold">{b.ordersCount} hóa đơn đã mua</p>
+                          </div>
+                        </div>
+                      ))}
+                      {topBuyers.length === 0 && (
+                        <div className="py-6 text-center text-slate-400 font-semibold">Chưa có dữ liệu khách mua hàng.</div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1149,67 +1261,77 @@ export default function Admin() {
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
                         {orders.map((o) => (
                           <tr key={o.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors text-xs text-slate-700 dark:text-slate-350">
-                            <td className="px-6 py-4 font-bold text-slate-500">#{o.id}</td>
-                            <td className="px-6 py-4">
+                            <td className="px-6 py-4 font-bold text-slate-500 whitespace-nowrap">#{o.id}</td>
+                            <td className="px-6 py-4 min-w-[160px]">
                               <p className="font-bold text-slate-850 dark:text-white">{o.customerName}</p>
                               <p className="text-[10px] text-slate-400">{o.customerPhone}</p>
-                              <p className="text-[10px] text-slate-400 truncate max-w-[150px]" title={o.customerAddress}>{o.customerAddress}</p>
+                              <p className="text-[10px] text-slate-400 truncate max-w-[180px]" title={o.customerAddress}>{o.customerAddress}</p>
                             </td>
-                            <td className="px-6 py-4">
-                              <div className="space-y-1 max-w-[200px]">
+                            <td className="px-6 py-4 min-w-[200px]">
+                              <div className="space-y-1">
                                 {o.orderItems && o.orderItems.map((item, index) => (
                                   <div key={index} className="flex items-center gap-1.5 text-[11px]">
                                     <img src={item.image} alt={item.name} className="w-6 h-6 object-cover rounded border border-slate-200" />
-                                    <span className="truncate flex-1 font-semibold text-slate-650 dark:text-slate-300">{item.name}</span>
-                                    <span className="text-slate-400 font-bold">x{item.quantity}</span>
+                                    <span className="truncate flex-1 font-semibold text-slate-650 dark:text-slate-300 max-w-[150px]">{item.name}</span>
+                                    <span className="text-slate-400 font-bold whitespace-nowrap">x{item.quantity}</span>
                                   </div>
                                 ))}
                               </div>
                             </td>
-                            <td className="px-6 py-4 font-black text-slate-900 dark:text-white">{formatVND(toVndInt(o.totalAmount))}</td>
-                            <td className="px-6 py-4 font-semibold uppercase text-[10px] tracking-wide">
+                            <td className="px-6 py-4 font-black text-slate-900 dark:text-white whitespace-nowrap">{formatVND(toVndInt(o.totalAmount))}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">
                               {o.paymentMethod === 'bank' ? (
-                                <span className="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/55">Chuyển khoản QR</span>
+                                <span className="px-2 py-1 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/40 font-bold text-[10px]">Chuyển khoản QR</span>
                               ) : (
-                                <span className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-650 dark:text-emerald-400 border border-emerald-200/55">Tiền mặt (Store)</span>
+                                <span className="px-2 py-1 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-650 dark:text-emerald-400 border border-emerald-200/40 font-bold text-[10px]">Tiền mặt (Store)</span>
                               )}
                             </td>
-                            <td className="px-6 py-4">
-                              {o.paymentStatus === 'paid' && (
-                                <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-600 text-white shadow-sm border border-emerald-400">
-                                  Đã thanh toán
-                                </span>
-                              )}
-                              {o.paymentStatus === 'pending' && (
-                                <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500 text-white shadow-sm border border-amber-400">
-                                  Chờ xác nhận
-                                </span>
-                              )}
-                              {o.paymentStatus === 'unpaid' && (
-                                <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-500 text-white shadow-sm border border-slate-400">
-                                  Chưa thanh toán
-                                </span>
-                              )}
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <select
+                                value={o.paymentStatus}
+                                onChange={async (e) => {
+                                  const newStatus = e.target.value;
+                                  const token = localStorage.getItem("token");
+                                  try {
+                                    const response = await fetch(`${API_URL}/api/orders/${o.id}/status`, {
+                                      method: "PUT",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                        "Authorization": `Bearer ${token}`
+                                      },
+                                      body: JSON.stringify({ paymentStatus: newStatus })
+                                    });
+                                    if (response.ok) {
+                                      fetchOrders();
+                                    } else {
+                                      const data = await response.json();
+                                      alert(data.message || "Lỗi cập nhật trạng thái.");
+                                    }
+                                  } catch (err) {
+                                    alert("Lỗi kết nối server.");
+                                  }
+                                }}
+                                className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider outline-none border transition-all ${
+                                  o.paymentStatus === 'paid'
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 border-emerald-200'
+                                    : o.paymentStatus === 'pending'
+                                      ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 border-amber-200'
+                                      : 'bg-slate-50 dark:bg-slate-800 text-slate-600 border-slate-200'
+                                }`}
+                              >
+                                <option value="pending">Chờ xác nhận</option>
+                                <option value="unpaid">Chưa thanh toán</option>
+                                <option value="paid">Đã thanh toán</option>
+                              </select>
                             </td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex justify-end gap-1.5">
-                                {o.paymentStatus !== 'paid' && (
-                                  <button
-                                    onClick={() => confirmPayment(o.id)}
-                                    className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[10px] uppercase rounded-xl transition-all"
-                                    title="Xác nhận khách đã thanh toán thành công"
-                                  >
-                                    Xác nhận
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => handleDeleteOrder(o.id)}
-                                  className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all"
-                                  title="Xóa đơn hàng"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </div>
+                            <td className="px-6 py-4 text-right whitespace-nowrap">
+                              <button
+                                onClick={() => handleDeleteOrder(o.id)}
+                                className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all"
+                                title="Xóa hóa đơn"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
                             </td>
                           </tr>
                         ))}
