@@ -90,6 +90,26 @@ export default function Admin() {
   const [formUserZip, setFormUserZip] = useState("");
   const [submittingUser, setSubmittingUser] = useState(false);
 
+  // Coupon management states
+  const [coupons, setCoupons] = useState([]);
+  const [loadingCoupons, setLoadingCoupons] = useState(false);
+  const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
+  const [couponModalType, setCouponModalType] = useState("add"); // add | edit
+  const [editingCouponId, setEditingCouponId] = useState(null);
+  const [submittingCoupon, setSubmittingCoupon] = useState(false);
+
+  const [formCouponCode, setFormCouponCode] = useState("");
+  const [formCouponDesc, setFormCouponDesc] = useState("");
+  const [formCouponType, setFormCouponType] = useState("percentage"); // percentage | fixed
+  const [formCouponValue, setFormCouponValue] = useState("");
+  const [formCouponMinOrder, setFormCouponMinOrder] = useState("0");
+  const [formCouponCats, setFormCouponCats] = useState([]);
+  const [formCouponConds, setFormCouponConds] = useState([]);
+  const [formCouponStartDate, setFormCouponStartDate] = useState("");
+  const [formCouponEndDate, setFormCouponEndDate] = useState("");
+  const [formCouponActive, setFormCouponActive] = useState(true);
+  const [formCouponMaxUses, setFormCouponMaxUses] = useState("");
+
   const navigate = useNavigate();
 
   // Check auth
@@ -116,7 +136,29 @@ export default function Admin() {
     setCheckingAuth(false);
   }, []);
 
+  // Fetch coupons
+  const fetchCoupons = async () => {
+    setLoadingCoupons(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_URL}/api/coupons`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCoupons(data);
+      }
+    } catch (err) {
+      console.error("Lỗi tải mã giảm giá:", err);
+    } finally {
+      setLoadingCoupons(false);
+    }
+  };
+
   // Fetch products
+
   const fetchProducts = async () => {
     setLoadingProducts(true);
     setError(null);
@@ -240,8 +282,10 @@ export default function Admin() {
       fetchProducts();
       fetchUsers();
       fetchOrders();
+      fetchCoupons();
     }
   }, [isAdmin]);
+
 
   const totalProducts = products.length;
   const totalUsers = users.length;
@@ -672,6 +716,110 @@ export default function Admin() {
     }
   };
 
+  // Coupon CRUD helpers
+  const openCouponModal = (type, coupon = null) => {
+    setCouponModalType(type);
+    if (type === "edit" && coupon) {
+      setEditingCouponId(coupon.id);
+      setFormCouponCode(coupon.code);
+      setFormCouponDesc(coupon.description || "");
+      setFormCouponType(coupon.discountType);
+      setFormCouponValue(coupon.discountValue);
+      setFormCouponMinOrder(coupon.minOrderValue || "0");
+      setFormCouponCats(coupon.applicableCategories || []);
+      setFormCouponConds(coupon.applicableConditions || []);
+      setFormCouponStartDate(coupon.startDate ? coupon.startDate.substring(0, 10) : "");
+      setFormCouponEndDate(coupon.endDate ? coupon.endDate.substring(0, 10) : "");
+      setFormCouponActive(coupon.isActive);
+      setFormCouponMaxUses(coupon.maxUses !== null ? coupon.maxUses : "");
+    } else {
+      setEditingCouponId(null);
+      setFormCouponCode("");
+      setFormCouponDesc("");
+      setFormCouponType("percentage");
+      setFormCouponValue("");
+      setFormCouponMinOrder("0");
+      setFormCouponCats([]);
+      setFormCouponConds([]);
+      setFormCouponStartDate("");
+      setFormCouponEndDate("");
+      setFormCouponActive(true);
+      setFormCouponMaxUses("");
+    }
+    setIsCouponModalOpen(true);
+  };
+
+  const handleCouponSubmit = async (e) => {
+    e.preventDefault();
+    setSubmittingCoupon(true);
+
+    const token = localStorage.getItem("token");
+    const payload = {
+      code: formCouponCode.toUpperCase().trim(),
+      description: formCouponDesc,
+      discountType: formCouponType,
+      discountValue: Number(formCouponValue),
+      minOrderValue: Number(formCouponMinOrder),
+      applicableCategories: formCouponCats,
+      applicableConditions: formCouponConds,
+      startDate: formCouponStartDate || null,
+      endDate: formCouponEndDate || null,
+      isActive: formCouponActive,
+      maxUses: formCouponMaxUses ? Number(formCouponMaxUses) : null
+    };
+
+    const url = couponModalType === "add"
+      ? `${API_URL}/api/coupons`
+      : `${API_URL}/api/coupons/${editingCouponId}`;
+    
+    const method = couponModalType === "add" ? "POST" : "PUT";
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setIsCouponModalOpen(false);
+        fetchCoupons();
+      } else {
+        alert(data.message || "Đã xảy ra lỗi khi lưu mã giảm giá.");
+      }
+    } catch (err) {
+      alert("Không thể kết nối đến server.");
+    } finally {
+      setSubmittingCoupon(false);
+    }
+  };
+
+  const handleDeleteCoupon = async (couponId) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa mã giảm giá này?")) return;
+    
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${API_URL}/api/coupons/${couponId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        fetchCoupons();
+      } else {
+        const data = await response.json();
+        alert(data.message || "Lỗi xóa mã giảm giá.");
+      }
+    } catch (err) {
+      alert("Lỗi kết nối đến server.");
+    }
+  };
+
   // Filter products for display in Table
   const filteredProducts = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(prodSearch.toLowerCase()) || 
@@ -765,7 +913,9 @@ export default function Admin() {
                   { id: "products", label: "Quản Lý Sản Phẩm", icon: ShoppingBag },
                   { id: "categories", label: "Quản Lý Danh Mục", icon: Boxes },
                   { id: "orders", label: "Quản Lý Hóa Đơn", icon: FileText },
+                  { id: "coupons", label: "Quản Lý Khuyến Mãi", icon: Wallet },
                   { id: "users", label: "Quản Lý Thành Viên", icon: Users }
+
                 ].map((tab) => {
                   const Icon = tab.icon;
                   const active = activeTab === tab.id;
@@ -1341,6 +1491,122 @@ export default function Admin() {
                 )}
               </div>
             )}
+
+            {/* Tab 6: coupons (Marketing & Coupons Management) */}
+            {activeTab === "coupons" && (
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors animate-fade-in">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <h2 className="text-base font-black text-slate-900 dark:text-white">Chiến dịch Khuyến mãi & Mã giảm giá</h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Tạo các chương trình ưu đãi, xả kho chỉ áp dụng riêng cho hàng cũ (Old), hàng mới (New) hoặc phân loại theo Danh mục sản phẩm.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => openCouponModal("add")}
+                    className="flex items-center justify-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-md transition-all active:scale-95"
+                  >
+                    <Plus className="h-4.5 w-4.5" />
+                    <span>Tạo mã giảm giá mới</span>
+                  </button>
+                </div>
+
+                {loadingCoupons ? (
+                  <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-650" /></div>
+                ) : coupons.length === 0 ? (
+                  <div className="p-20 text-center text-slate-400 font-bold text-xs">Hiện tại chưa có chiến dịch khuyến mãi nào được tạo!</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-550 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                          <th className="px-6 py-4">Mã Coupon</th>
+                          <th className="px-6 py-4">Mô tả chương trình</th>
+                          <th className="px-6 py-4">Mức giảm</th>
+                          <th className="px-6 py-4">Áp dụng riêng</th>
+                          <th className="px-6 py-4">Lượt sử dụng</th>
+                          <th className="px-6 py-4">Thời hạn</th>
+                          <th className="px-6 py-4">Trạng thái</th>
+                          <th className="px-6 py-4 text-right">Hành động</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
+                        {coupons.map((c) => (
+                          <tr key={c.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors text-xs text-slate-700 dark:text-slate-350">
+                            <td className="px-6 py-4 font-black whitespace-nowrap">
+                              <span className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950 text-blue-650 dark:text-blue-400 border border-blue-200/50 rounded-xl font-mono text-xs font-black uppercase">
+                                {c.code}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 min-w-[180px]">
+                              <p className="font-semibold text-slate-800 dark:text-slate-200">{c.description || "Không có mô tả"}</p>
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                Đơn tối thiểu: <span className="font-bold text-slate-500">{formatVND(Number(c.minOrderValue))}</span>
+                              </p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap font-black text-slate-905 dark:text-white">
+                              {c.discountType === "percentage" ? `${Number(c.discountValue)}%` : `-${formatVND(Number(c.discountValue))}`}
+                            </td>
+                            <td className="px-6 py-4 min-w-[150px]">
+                              <div className="flex flex-wrap gap-1">
+                                {(!c.applicableConditions || c.applicableConditions.length === 0) && (!c.applicableCategories || c.applicableCategories.length === 0) && (
+                                  <span className="text-[10px] bg-slate-105 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-lg font-bold">Mọi sản phẩm</span>
+                                )}
+                                {c.applicableConditions && c.applicableConditions.map(cond => (
+                                  <span key={cond} className="text-[10px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 border border-indigo-200/40 px-2 py-0.5 rounded-lg font-bold">
+                                    Hàng {cond}
+                                  </span>
+                                ))}
+                                {c.applicableCategories && c.applicableCategories.map(cat => (
+                                  <span key={cat} className="text-[10px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-650 dark:text-emerald-400 border border-emerald-200/40 px-2 py-0.5 rounded-lg font-bold">
+                                    {cat}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap font-bold text-slate-500">
+                              {c.usedCount} {c.maxUses ? `/ ${c.maxUses}` : "lượt"}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-slate-400">
+                              <p className="text-[10px]">T1: {c.startDate ? new Date(c.startDate).toLocaleDateString("vi-VN") : "Bất kỳ"}</p>
+                              <p className="text-[10px]">T2: {c.endDate ? new Date(c.endDate).toLocaleDateString("vi-VN") : "Vô hạn"}</p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wide border ${
+                                c.isActive 
+                                  ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-650 border-emerald-200" 
+                                  : "bg-rose-50 dark:bg-rose-950/30 text-rose-600 border-rose-200"
+                              }`}>
+                                {c.isActive ? "Đang chạy" : "Tạm dừng"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right whitespace-nowrap">
+                              <div className="flex justify-end gap-1.5">
+                                <button
+                                  onClick={() => openCouponModal("edit", c)}
+                                  className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-650 dark:text-slate-200 rounded-xl transition-all"
+                                  title="Chỉnh sửa mã"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteCoupon(c.id)}
+                                  className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all"
+                                  title="Xóa mã"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
           </main>
         </div>
       </div>
@@ -1791,6 +2057,238 @@ export default function Admin() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+
+      {/* Modal Add/Edit Coupon (Premium glassmorphic modal with category & condition multi-select) */}
+      {isCouponModalOpen && (
+        <div 
+          onClick={() => setIsCouponModalOpen(false)} 
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()} 
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto transition-all animate-scale-in"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-850">
+              <h3 className="text-base font-black text-slate-900 dark:text-white">
+                {couponModalType === "add" ? "Tạo mã giảm giá mới" : "Chỉnh sửa mã giảm giá"}
+              </h3>
+              <button
+                onClick={() => setIsCouponModalOpen(false)}
+                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-505"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleCouponSubmit} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                {/* Coupon Code */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Mã Coupon *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ví dụ: XAKHO50"
+                    value={formCouponCode}
+                    onChange={(e) => setFormCouponCode(e.target.value.toUpperCase())}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-805 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold uppercase font-mono"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Mô tả chương trình *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ví dụ: Giảm giá xả kho hàng cũ Laptop"
+                    value={formCouponDesc}
+                    onChange={(e) => setFormCouponDesc(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                  />
+                </div>
+
+                {/* Discount Type */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Loại giảm giá</label>
+                  <select
+                    value={formCouponType}
+                    onChange={(e) => setFormCouponType(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                  >
+                    <option value="percentage">Phần trăm (%)</option>
+                    <option value="fixed">Số tiền cố định (đ)</option>
+                  </select>
+                </div>
+
+                {/* Discount Value */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">
+                    Giá trị giảm * ({formCouponType === "percentage" ? "%" : "đ"})
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    placeholder={formCouponType === "percentage" ? "Ví dụ: 10" : "Ví dụ: 50000"}
+                    value={formCouponValue}
+                    onChange={(e) => setFormCouponValue(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                  />
+                </div>
+
+                {/* Min Order Value */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Giá trị đơn hàng tối thiểu (đ)</label>
+                  <input
+                    type="number"
+                    placeholder="Ví dụ: 200000"
+                    value={formCouponMinOrder}
+                    onChange={(e) => setFormCouponMinOrder(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-905 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                  />
+                </div>
+
+                {/* Max Uses */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Giới hạn số lần sử dụng tối đa (Bỏ trống = Vô hạn)</label>
+                  <input
+                    type="number"
+                    placeholder="Ví dụ: 100"
+                    value={formCouponMaxUses}
+                    onChange={(e) => setFormCouponMaxUses(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                  />
+                </div>
+
+                {/* Start Date */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Ngày bắt đầu hiệu lực</label>
+                  <input
+                    type="date"
+                    value={formCouponStartDate}
+                    onChange={(e) => setFormCouponStartDate(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                  />
+                </div>
+
+                {/* End Date */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Ngày kết thúc hiệu lực</label>
+                  <input
+                    type="date"
+                    value={formCouponEndDate}
+                    onChange={(e) => setFormCouponEndDate(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                  />
+                </div>
+
+                {/* Applicable Product Conditions (Badge check) */}
+                <div className="col-span-1">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Áp dụng cho Tình trạng hàng (Để trống = Tất cả)</label>
+                  <div className="flex gap-2.5 flex-wrap mt-1">
+                    {["New", "Like New", "Old"].map(cond => {
+                      const selected = formCouponConds.includes(cond);
+                      return (
+                        <button
+                          key={cond}
+                          type="button"
+                          onClick={() => {
+                            if (selected) {
+                              setFormCouponConds(formCouponConds.filter(c => c !== cond));
+                            } else {
+                              setFormCouponConds([...formCouponConds, cond]);
+                            }
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all border ${
+                            selected 
+                              ? "bg-indigo-600 text-white border-indigo-500 scale-[1.02]" 
+                              : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-750"
+                          }`}
+                        >
+                          {cond}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Applicable Categories */}
+                <div className="col-span-1">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Áp dụng cho Danh mục (Để trống = Tất cả)</label>
+                  <div className="flex gap-2 flex-wrap mt-1 max-h-[100px] overflow-y-auto p-1 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20">
+                    {categoriesList.map(cat => {
+                      const selected = formCouponCats.includes(cat);
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => {
+                            if (selected) {
+                              setFormCouponCats(formCouponCats.filter(c => c !== cat));
+                            } else {
+                              setFormCouponCats([...formCouponCats, cat]);
+                            }
+                          }}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all border ${
+                            selected 
+                              ? "bg-emerald-600 text-white border-emerald-500" 
+                              : "bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-400 border-slate-200 dark:border-slate-750"
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Active Status */}
+                <div className="col-span-2 flex items-center gap-2 mt-2">
+                  <input
+                    type="checkbox"
+                    id="isActive"
+                    checked={formCouponActive}
+                    onChange={(e) => setFormCouponActive(e.target.checked)}
+                    className="h-4 w-4 rounded text-blue-600 border-slate-350 focus:ring-blue-500"
+                  />
+                  <label htmlFor="isActive" className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Kích hoạt mã giảm giá
+                  </label>
+                </div>
+
+              </div>
+
+              {/* Modal footer submit buttons */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-850">
+                <button
+                  type="button"
+                  onClick={() => setIsCouponModalOpen(false)}
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-305 font-bold text-xs rounded-xl"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingCoupon}
+                  className="flex items-center gap-1.5 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-75"
+                >
+                  {submittingCoupon ? (
+                    <Loader2 className="h-4.5 w-4.5 animate-spin" />
+                  ) : (
+                    <Check className="h-4.5 w-4.5" />
+                  )}
+                  <span>{couponModalType === "add" ? "Tạo mã" : "Lưu thay đổi"}</span>
+                </button>
+              </div>
+            </form>
+
           </div>
         </div>
       )}

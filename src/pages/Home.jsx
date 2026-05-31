@@ -104,7 +104,9 @@ export default function Home() {
       } else {
         const b = p.badge.toLowerCase();
         if (activeCondition === "New") {
-          matchCondition = b.includes("new") || b.includes("mới") || b.includes("moi");
+          // Phải loại trừ "like new" vì cũng chứa từ "new"
+          const isLikeNew = b.includes("like new") || b.includes("likenew") || b.includes("99%") || b.includes("98%") || b.includes("95%");
+          matchCondition = !isLikeNew && (b === "new" || b.includes("hàng mới") || b.includes("hang moi") || b.includes("mới 100") || /^new$/i.test(b) || (b.includes("new") && !b.includes("like")) || (b.includes("mới") && !b.includes("like")) || (b.includes("moi") && !b.includes("like")));
         } else if (activeCondition === "Like New") {
           matchCondition = b.includes("like new") || b.includes("likenew") || b.includes("99%") || b.includes("98%") || b.includes("95%");
         } else if (activeCondition === "Old") {
