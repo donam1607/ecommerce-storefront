@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Admin from './pages/Admin';
 import Profile from './pages/Profile';
+import ChatWidget from './components/ChatWidget';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             </Routes>
           </main>
           <Footer />
+          <ChatWidget />
         </div>
       </Router>
     </CartProvider>
