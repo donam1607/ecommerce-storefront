@@ -391,7 +391,7 @@ export default function Admin() {
       setFormCategory(categoriesList[0] || "Laptop");
       setFormPrice("");
       setFormStock("10");
-      setFormBadgePreset("");
+      setFormBadgePreset("New");
       setFormBadgeCustom("");
       setFormImages("");
       setFormDesc("");
@@ -1169,6 +1169,7 @@ export default function Admin() {
                             <th className="px-6 py-4">Giá tiền</th>
                             <th className="px-6 py-4">Kho hàng</th>
                             <th className="px-6 py-4">Nhãn (Badge)</th>
+                            <th className="px-6 py-4">Ngày tạo</th>
                             <th className="px-6 py-4 text-right">Hành động</th>
                           </tr>
                         </thead>
@@ -1198,6 +1199,10 @@ export default function Admin() {
                                   <span className="text-slate-400">—</span>
                                 )}
                               </td>
+                              <td className="px-6 py-4 opacity-80 whitespace-nowrap">
+                                {prod.createdAt ? new Date(prod.createdAt).toLocaleDateString("vi-VN") : "—"}
+                              </td>
+
                               <td className="px-6 py-4 text-right">
                                 <div className="flex justify-end gap-1.5">
                                   <button
@@ -1699,31 +1704,12 @@ export default function Admin() {
                     onChange={(e) => setFormBadgePreset(e.target.value)}
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
                   >
-                    <option value="">Không có nhãn</option>
                     <option value="New">Hàng mới (New)</option>
                     <option value="Like New">Like New (99%)</option>
                     <option value="Old">Đã qua sử dụng (Old)</option>
-                    <option value="Best Seller">Bán chạy (Best Seller)</option>
-                    <option value="Top Rated">Đánh giá cao (Top Rated)</option>
-                    <option value="Sale">Giảm giá (Sale)</option>
-                    <option value="Custom">Tùy chọn khác (Gõ riêng)...</option>
                   </select>
                 </div>
 
-                {/* Custom Badge Text Input (if "Custom" is selected) */}
-                {formBadgePreset === "Custom" && (
-                  <div className="col-span-2 animate-fade-in">
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Nhập nhãn tùy chỉnh riêng *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ví dụ: Còn bảo hành, Like New 98%, OLD, v.v."
-                      value={formBadgeCustom}
-                      onChange={(e) => setFormBadgeCustom(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
-                    />
-                  </div>
-                )}
 
                 {/* Multiple Images Upload Handler */}
                 <div className="col-span-2 space-y-3">
