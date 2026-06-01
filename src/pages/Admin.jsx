@@ -33,6 +33,17 @@ const getBadgeClass = (badge) => {
 };
 
 export default function Admin() {
+  const getItemsArray = (orderItems) => {
+    if (!orderItems) return [];
+    if (Array.isArray(orderItems)) return orderItems;
+    try {
+      const parsed = JSON.parse(orderItems);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  };
+
   const [activeTab, setActiveTab] = useState("stats"); // stats | products | categories | users | orders
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
@@ -131,6 +142,7 @@ export default function Admin() {
   const [orderDetailCustomerName, setOrderDetailCustomerName] = useState("");
   const [orderDetailCustomerPhone, setOrderDetailCustomerPhone] = useState("");
   const [orderDetailCustomerAddress, setOrderDetailCustomerAddress] = useState("");
+  const [orderDetailCancelReason, setOrderDetailCancelReason] = useState("");
   const [savingOrderDetail, setSavingOrderDetail] = useState(false);
 
   const navigate = useNavigate();
@@ -266,6 +278,7 @@ export default function Admin() {
     setOrderDetailCustomerName(order.customerName || "");
     setOrderDetailCustomerPhone(order.customerPhone || "");
     setOrderDetailCustomerAddress(order.customerAddress || "");
+    setOrderDetailCancelReason(order.cancelReason || "");
     setIsOrderDetailModalOpen(true);
   };
 
@@ -289,7 +302,8 @@ export default function Admin() {
           shippingUnit: orderDetailShippingUnit,
           trackingNumber: orderDetailTrackingNumber,
           shippingFee: Number(orderDetailShippingFee),
-          serialNumbers: orderDetailSerialNumbers
+          serialNumbers: orderDetailSerialNumbers,
+          cancelReason: orderDetailCancelReason
         })
       });
       if (response.ok) {
@@ -309,7 +323,7 @@ export default function Admin() {
 
   const handlePrintPackingSlip = (order) => {
     const printWindow = window.open("", "_blank", "width=800,height=600");
-    const itemsHtml = order.orderItems.map((item, idx) => {
+    const itemsHtml = getItemsArray(order.orderItems).map((item, idx) => {
       const sn = order.serialNumbers?.[item.productId] || order.serialNumbers?.[idx] || "Chưa gán S/N";
       return `
         <tr>
@@ -1094,7 +1108,7 @@ export default function Admin() {
                 <span className="text-[10px] text-blue-500 uppercase tracking-widest font-black">Hệ thống</span>
                 <h2 className="text-lg font-black text-slate-900 dark:text-white mt-0.5">ShopTech Admin</h2>
                 <div className="flex items-center gap-2 mt-3 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-850">
-                  <div className="h-8 w-8 rounded-xl bg-blue-650 text-white flex items-center justify-center font-bold text-sm uppercase">
+                  <div className="h-8 w-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm uppercase">
                     {currentUser?.name.charAt(0)}
                   </div>
                   <div className="min-w-0">
@@ -1156,13 +1170,13 @@ export default function Admin() {
                   </div>
 
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm transition-colors">
-                    <div className="h-11 w-11 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-650 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
+                    <div className="h-11 w-11 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
                       <ShoppingBag className="h-5 w-5" />
                     </div>
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Đã bán thành công</p>
                       <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{totalSoldItems} sản phẩm</p>
-                      <p className="text-[10px] text-slate-550 dark:text-slate-400 mt-1.5">Số lượng máy & phụ kiện bán ra</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5">Số lượng máy & phụ kiện bán ra</p>
                     </div>
                   </div>
 
@@ -1173,18 +1187,18 @@ export default function Admin() {
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Giá trị tồn kho</p>
                       <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{formatVND(inventoryValue)}</p>
-                      <p className="text-[10px] text-slate-550 dark:text-slate-400 mt-1.5">Tổng giá trị vốn sản phẩm hiện tại</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5">Tổng giá trị vốn sản phẩm hiện tại</p>
                     </div>
                   </div>
 
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm transition-colors">
-                    <div className="h-11 w-11 rounded-2xl bg-purple-50 dark:bg-purple-900/20 text-purple-650 dark:text-purple-400 flex items-center justify-center flex-shrink-0">
+                    <div className="h-11 w-11 rounded-2xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-shrink-0">
                       <UserCog className="h-5 w-5" />
                     </div>
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Tổng sản phẩm tồn</p>
                       <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{totalStock} máy</p>
-                      <p className="text-[10px] text-slate-550 dark:text-slate-400 mt-1.5">Tổng số máy còn lại trong kho</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5">Tổng số máy còn lại trong kho</p>
                     </div>
                   </div>
                 </div>
@@ -1206,7 +1220,7 @@ export default function Admin() {
                             <p className="font-bold text-slate-800 dark:text-white truncate">{p.name}</p>
                             <p className="text-[10px] text-slate-400">Doanh thu: {formatVND(p.value)}</p>
                           </div>
-                          <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/40 text-blue-650 dark:text-blue-400 font-extrabold rounded-lg text-[10px]">
+                          <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-extrabold rounded-lg text-[10px]">
                             Đã bán: {p.quantity}
                           </span>
                         </div>
@@ -1256,7 +1270,7 @@ export default function Admin() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-550 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
                           <th className="px-6 py-4">Danh mục</th>
                           <th className="px-6 py-4">Số sản phẩm</th>
                           <th className="px-6 py-4">Tồn kho</th>
@@ -1360,7 +1374,7 @@ export default function Admin() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-550 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                          <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
                             <th className="px-6 py-4">Ảnh</th>
                             <th className="px-6 py-4">Tên sản phẩm</th>
                             <th className="px-6 py-4">Danh mục</th>
@@ -1387,7 +1401,7 @@ export default function Admin() {
                               <td className="px-6 py-4 font-bold text-slate-850 dark:text-white max-w-[200px] truncate">{prod.name}</td>
                               <td className="px-6 py-4 font-semibold">{prod.category}</td>
                               <td className="px-6 py-4 font-black text-slate-900 dark:text-white">{formatVND(prod.price)}</td>
-                              <td className="px-6 py-4 font-bold text-emerald-650 dark:text-emerald-400">{prod.countInStock} cái</td>
+                              <td className="px-6 py-4 font-bold text-emerald-600 dark:text-emerald-400">{prod.countInStock} cái</td>
                               <td className="px-6 py-4">
                                 {prod.badge ? (
                                   <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-sm ${getBadgeClass(prod.badge)}`}>
@@ -1405,7 +1419,7 @@ export default function Admin() {
                                 <div className="flex justify-end gap-1.5">
                                   <button
                                     onClick={() => openModal("edit", prod)}
-                                    className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-650 dark:text-slate-200 rounded-xl transition-all"
+                                    className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all"
                                     title="Sửa"
                                   >
                                     <Edit className="h-4 w-4" />
@@ -1450,7 +1464,7 @@ export default function Admin() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-550 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
                           <th className="px-6 py-4">Tên danh mục</th>
                           <th className="px-6 py-4">Số lượng sản phẩm liên đới</th>
                           <th className="px-6 py-4 text-right">Hành động</th>
@@ -1467,7 +1481,7 @@ export default function Admin() {
                                 <div className="flex justify-end gap-1.5">
                                   <button
                                     onClick={() => openCatModal("edit", catName)}
-                                    className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-650 dark:text-slate-200 rounded-xl transition-all"
+                                    className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all"
                                     title="Sửa tên danh mục"
                                   >
                                     <Edit className="h-4 w-4" />
@@ -1509,12 +1523,12 @@ export default function Admin() {
                 </div>
 
                 {loadingUsers ? (
-                  <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-650" /></div>
+                  <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-550 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
                           <th className="px-6 py-4">Tên người dùng</th>
                           <th className="px-6 py-4">Email</th>
                           <th className="px-6 py-4">Ngày đăng ký</th>
@@ -1541,7 +1555,7 @@ export default function Admin() {
                                 disabled={currentUser?.id === u.id}
                                 value={u.role}
                                 onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                                className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-750 text-slate-800 dark:text-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 transition-colors"
+                                className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 transition-colors"
                               >
                                 <option value="user">User (Thường)</option>
                                 <option value="admin">Admin (Quản trị)</option>
@@ -1551,7 +1565,7 @@ export default function Admin() {
                               <div className="flex justify-end gap-1.5">
                                 <button
                                   onClick={() => openUserModal("edit", u)}
-                                  className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-650 dark:text-slate-200 rounded-xl transition-all"
+                                  className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all"
                                   title="Sửa & Cập nhật mật khẩu"
                                 >
                                   <Edit className="h-4 w-4" />
@@ -1590,7 +1604,7 @@ export default function Admin() {
                 
                 let matchesUsedOnly = true;
                 if (filterUsedOnly) {
-                  matchesUsedOnly = o.orderItems && o.orderItems.some((item) => {
+                  matchesUsedOnly = getItemsArray(o.orderItems).some((item) => {
                     if (!item.badge) return false;
                     const b = item.badge.toLowerCase();
                     return b.includes("old") || b.includes("cũ") || b.includes("like new") || b.includes("likenew") || b.includes("99") || b.includes("98") || b.includes("95");
@@ -1627,7 +1641,7 @@ export default function Admin() {
                       </div>
                       <button
                         onClick={fetchOrders}
-                        className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-xs font-black rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                        className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-black rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
                       >
                         Làm mới danh sách
                       </button>
@@ -1729,8 +1743,8 @@ export default function Admin() {
                           onClick={() => setFilterUsedOnly(!filterUsedOnly)}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all cursor-pointer ${
                             filterUsedOnly
-                              ? "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-650 dark:text-indigo-400"
-                              : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-750"
+                              ? "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400"
+                              : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
                           }`}
                         >
                           <Tag size={12} />
@@ -1743,14 +1757,14 @@ export default function Admin() {
                   {/* BẢNG DANH SÁCH ĐƠN HÀNG */}
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
                     {loadingOrders ? (
-                      <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-650" /></div>
+                      <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
                     ) : filteredOrders.length === 0 ? (
                       <div className="p-20 text-center text-slate-400 font-bold text-xs">Không tìm thấy đơn hàng nào khớp với bộ lọc!</div>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                           <thead>
-                            <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-550 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                            <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
                               <th className="px-6 py-4">Mã đơn</th>
                               <th className="px-6 py-4">Khách hàng / Liên hệ</th>
                               <th className="px-6 py-4">Sản phẩm & Tình trạng</th>
@@ -1816,7 +1830,7 @@ export default function Admin() {
                                   {/* Sản phẩm đã bán */}
                                   <td className="px-6 py-4 min-w-[220px]">
                                     <div className="space-y-1.5">
-                                      {o.orderItems && o.orderItems.map((item, index) => (
+                                      {getItemsArray(o.orderItems).map((item, index) => (
                                         <div key={index} className="flex items-center gap-2 text-[11px]">
                                           <img src={item.image} alt={item.name} className="w-7 h-7 object-cover rounded-lg border border-slate-100 dark:border-slate-800" />
                                           <div className="flex flex-col min-w-0 flex-1">
@@ -1854,7 +1868,7 @@ export default function Admin() {
                                       ) : o.paymentMethod === 'store' ? (
                                         <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold text-[9px] uppercase tracking-wide">Tại Cửa Hàng</span>
                                       ) : (
-                                        <span className="px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-650 dark:text-indigo-400 border border-indigo-500/20 font-bold text-[9px] uppercase tracking-wide">COD Bưu Tá</span>
+                                        <span className="px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-bold text-[9px] uppercase tracking-wide">COD Bưu Tá</span>
                                       )}
                                     </div>
                                     <div>
@@ -1866,9 +1880,16 @@ export default function Admin() {
                                   
                                   {/* Trạng thái đơn */}
                                   <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${getOrderStatusBadge(o.orderStatus)}`}>
-                                      {getOrderStatusText(o.orderStatus)}
-                                    </span>
+                                    <div className="flex flex-col gap-1">
+                                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${getOrderStatusBadge(o.orderStatus)}`}>
+                                        {getOrderStatusText(o.orderStatus)}
+                                      </span>
+                                      {o.orderStatus === 'cancelled' && o.cancelReason && (
+                                        <span className="text-[9px] text-red-500 font-medium max-w-[120px] truncate" title={o.cancelReason}>
+                                          Lý do: {o.cancelReason}
+                                        </span>
+                                      )}
+                                    </div>
                                   </td>
                                   
                                   {/* Ngày đặt & Người duyệt */}
@@ -1916,7 +1937,8 @@ export default function Admin() {
                     
                     // Tính toán tự động tổng tiền sản phẩm trong đơn hàng
                     const calculateSubtotal = () => {
-                      return selectedOrder.orderItems.reduce((acc, item) => acc + (toVndInt(item.price) * item.quantity), 0);
+                      const items = getItemsArray(selectedOrder.orderItems);
+                      return items.reduce((acc, item) => acc + (toVndInt(item.price) * item.quantity), 0);
                     };
                     const subtotal = calculateSubtotal();
                     const discount = toVndInt(selectedOrder.discountAmount || 0);
@@ -1970,7 +1992,7 @@ export default function Admin() {
                                 </h4>
 
                                 <div>
-                                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-550 mb-1">Họ tên khách hàng</label>
+                                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Họ tên khách hàng</label>
                                   <input
                                     type="text"
                                     value={orderDetailCustomerName}
@@ -1982,7 +2004,7 @@ export default function Admin() {
                                 </div>
 
                                 <div>
-                                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-550 mb-1">Số điện thoại</label>
+                                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Số điện thoại</label>
                                   <input
                                     type="text"
                                     value={orderDetailCustomerPhone}
@@ -1994,7 +2016,7 @@ export default function Admin() {
                                 </div>
 
                                 <div>
-                                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-550 mb-1">Địa chỉ nhận hàng</label>
+                                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Địa chỉ nhận hàng</label>
                                   <textarea
                                     value={orderDetailCustomerAddress}
                                     onChange={(e) => setOrderDetailCustomerAddress(e.target.value)}
@@ -2007,7 +2029,7 @@ export default function Admin() {
 
                                 <div className="grid grid-cols-2 gap-3">
                                   <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-550 mb-1">Đơn vị vận chuyển</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Đơn vị vận chuyển</label>
                                     <select
                                       value={orderDetailShippingUnit}
                                       onChange={(e) => setOrderDetailShippingUnit(e.target.value)}
@@ -2022,7 +2044,7 @@ export default function Admin() {
                                     </select>
                                   </div>
                                   <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-550 mb-1">Mã vận đơn</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Mã vận đơn</label>
                                     <input
                                       type="text"
                                       value={orderDetailTrackingNumber}
@@ -2043,7 +2065,7 @@ export default function Admin() {
 
                                 <div className="grid grid-cols-2 gap-3">
                                   <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-550 mb-1">Trạng thái giao hàng</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Trạng thái giao hàng</label>
                                     <select
                                       value={orderDetailOrderStatus}
                                       onChange={(e) => setOrderDetailOrderStatus(e.target.value)}
@@ -2059,7 +2081,7 @@ export default function Admin() {
                                   </div>
 
                                   <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-550 mb-1">Trạng thái thanh toán</label>
+                                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Trạng thái thanh toán</label>
                                     <select
                                       value={orderDetailPaymentStatus}
                                       onChange={(e) => setOrderDetailPaymentStatus(e.target.value)}
@@ -2072,13 +2094,26 @@ export default function Admin() {
                                   </div>
                                 </div>
 
+                                {orderDetailOrderStatus === 'cancelled' && (
+                                  <div className="pt-2">
+                                    <label className="block text-[10px] font-black uppercase tracking-wider text-red-500 mb-1">Lý do hủy đơn hàng</label>
+                                    <textarea
+                                      value={orderDetailCancelReason}
+                                      onChange={(e) => setOrderDetailCancelReason(e.target.value)}
+                                      placeholder="Nhập lý do hủy đơn hàng..."
+                                      rows="2"
+                                      className="w-full px-3.5 py-2 border border-red-200 dark:border-red-900 rounded-xl text-xs bg-red-500/30 dark:bg-red-950/10 text-red-700 dark:text-red-400 outline-none focus:border-red-500 font-semibold"
+                                    />
+                                  </div>
+                                )}
+
                                 <div className="pt-2.5 space-y-2 text-xs border-t border-slate-100 dark:border-slate-850">
-                                  <div className="flex justify-between text-slate-550">
+                                  <div className="flex justify-between text-slate-500">
                                     <span>Tổng tiền hàng (tạm tính):</span>
                                     <span className="font-bold">{formatVND(subtotal)}</span>
                                   </div>
 
-                                  <div className="flex justify-between items-center text-slate-550">
+                                  <div className="flex justify-between items-center text-slate-500">
                                     <span>Phí giao hàng:</span>
                                     <div className="flex items-center gap-1">
                                       <input
@@ -2100,7 +2135,7 @@ export default function Admin() {
 
                                   <div className="flex justify-between text-sm pt-2 border-t border-slate-250 dark:border-slate-700 font-black text-slate-900 dark:text-white">
                                     <span>Tổng thực khách phải trả:</span>
-                                    <span className="text-base text-blue-650 dark:text-blue-400">{formatVND(finalTotal)}</span>
+                                    <span className="text-base text-blue-600 dark:text-blue-400">{formatVND(finalTotal)}</span>
                                   </div>
                                 </div>
 
@@ -2134,7 +2169,7 @@ export default function Admin() {
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                    {selectedOrder.orderItems.map((item, index) => {
+                                    {getItemsArray(selectedOrder.orderItems).map((item, index) => {
                                       return (
                                         <tr key={index} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/50">
                                           <td className="px-5 py-3">
@@ -2177,7 +2212,7 @@ export default function Admin() {
                                 <button
                                   type="button"
                                   onClick={() => handlePrintPackingSlip(selectedOrder)}
-                                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4.5 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-750 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+                                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4.5 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
                                 >
                                   <Printer size={14} />
                                   <span>In phiếu xuất kho dán thùng</span>
@@ -2187,14 +2222,14 @@ export default function Admin() {
                                 <button
                                   type="button"
                                   onClick={() => setIsOrderDetailModalOpen(false)}
-                                  className="px-4.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-extrabold text-xs rounded-xl transition-all cursor-pointer"
+                                  className="px-4.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-extrabold text-xs rounded-xl transition-all cursor-pointer"
                                 >
                                   Hủy bỏ
                                 </button>
                                 <button
                                   type="submit"
                                   disabled={savingOrderDetail}
-                                  className="px-6 py-2.5 bg-blue-650 hover:bg-blue-600 disabled:bg-blue-400 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer shadow-sm shadow-blue-500/20"
+                                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-600 disabled:bg-blue-400 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer shadow-sm shadow-blue-500/20"
                                 >
                                   {savingOrderDetail ? "Đang cập nhật..." : "Cập nhật đơn hàng"}
                                 </button>
@@ -2230,14 +2265,14 @@ export default function Admin() {
                 </div>
 
                 {loadingCoupons ? (
-                  <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-650" /></div>
+                  <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
                 ) : coupons.length === 0 ? (
                   <div className="p-20 text-center text-slate-400 font-bold text-xs">Hiện tại chưa có chiến dịch khuyến mãi nào được tạo!</div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-550 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
                           <th className="px-6 py-4">Mã Coupon</th>
                           <th className="px-6 py-4">Mô tả chương trình</th>
                           <th className="px-6 py-4">Mức giảm</th>
@@ -2252,7 +2287,7 @@ export default function Admin() {
                         {coupons.map((c) => (
                           <tr key={c.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors text-xs text-slate-700 dark:text-slate-350">
                             <td className="px-6 py-4 font-black whitespace-nowrap">
-                              <span className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950 text-blue-650 dark:text-blue-400 border border-blue-200/50 rounded-xl font-mono text-xs font-black uppercase">
+                              <span className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200/50 rounded-xl font-mono text-xs font-black uppercase">
                                 {c.code}
                               </span>
                             </td>
@@ -2262,7 +2297,7 @@ export default function Admin() {
                                 Đơn tối thiểu: <span className="font-bold text-slate-500">{formatVND(Number(c.minOrderValue))}</span>
                               </p>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap font-black text-slate-905 dark:text-white">
+                            <td className="px-6 py-4 whitespace-nowrap font-black text-slate-900 dark:text-white">
                               {c.discountType === "percentage" ? `${Number(c.discountValue)}%` : `-${formatVND(Number(c.discountValue))}`}
                             </td>
                             <td className="px-6 py-4 min-w-[150px]">
@@ -2271,12 +2306,12 @@ export default function Admin() {
                                   <span className="text-[10px] bg-slate-105 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-lg font-bold">Mọi sản phẩm</span>
                                 )}
                                 {c.applicableConditions && c.applicableConditions.map(cond => (
-                                  <span key={cond} className="text-[10px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 border border-indigo-200/40 px-2 py-0.5 rounded-lg font-bold">
+                                  <span key={cond} className="text-[10px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/40 px-2 py-0.5 rounded-lg font-bold">
                                     Hàng {cond}
                                   </span>
                                 ))}
                                 {c.applicableCategories && c.applicableCategories.map(cat => (
-                                  <span key={cat} className="text-[10px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-650 dark:text-emerald-400 border border-emerald-200/40 px-2 py-0.5 rounded-lg font-bold">
+                                  <span key={cat} className="text-[10px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/40 px-2 py-0.5 rounded-lg font-bold">
                                     {cat}
                                   </span>
                                 ))}
@@ -2292,7 +2327,7 @@ export default function Admin() {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wide border ${
                                 c.isActive 
-                                  ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-650 border-emerald-200" 
+                                  ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 border-emerald-200" 
                                   : "bg-rose-50 dark:bg-rose-950/30 text-rose-600 border-rose-200"
                               }`}>
                                 {c.isActive ? "Đang chạy" : "Tạm dừng"}
@@ -2302,7 +2337,7 @@ export default function Admin() {
                               <div className="flex justify-end gap-1.5">
                                 <button
                                   onClick={() => openCouponModal("edit", c)}
-                                  className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-650 dark:text-slate-200 rounded-xl transition-all"
+                                  className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all"
                                   title="Chỉnh sửa mã"
                                 >
                                   <Edit className="h-4 w-4" />
@@ -2432,11 +2467,11 @@ export default function Admin() {
                       <p className="text-[9px] text-slate-400 mt-0.5">Chọn nhiều ảnh cùng lúc ở nút bên để tải lên hàng loạt tự động.</p>
                     </div>
                     
-                    <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-750 dark:text-slate-250 text-[10px] font-black rounded-xl cursor-pointer transition-all active:scale-95 border border-slate-200 dark:border-slate-700">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-250 text-[10px] font-black rounded-xl cursor-pointer transition-all active:scale-95 border border-slate-200 dark:border-slate-700">
                       {uploadingImage ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-650" />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
                       ) : (
-                        <Upload className="h-3.5 w-3.5 text-blue-650" />
+                        <Upload className="h-3.5 w-3.5 text-blue-600" />
                       )}
                       <span>{uploadingImage ? "Đang tải lên..." : "Tải lên nhiều ảnh (Local)"}</span>
                       <input
@@ -2464,7 +2499,7 @@ export default function Admin() {
                       <span className="block text-[9px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500">Xem trước & Biên tập ({formImages.split(",").map(i => i.trim()).filter(Boolean).length} ảnh):</span>
                       <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                         {formImages.split(",").map(i => i.trim()).filter(Boolean).map((imgUrl, idx) => (
-                          <div key={idx} className="relative group aspect-square bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-750 flex-shrink-0">
+                          <div key={idx} className="relative group aspect-square bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 flex-shrink-0">
                             <img
                               src={imgUrl}
                               alt={`Thumbnail Preview ${idx + 1}`}
@@ -2475,7 +2510,7 @@ export default function Admin() {
                               <button
                                 type="button"
                                 onClick={() => handleRemoveImage(idx)}
-                                className="p-1 bg-red-650 hover:bg-red-500 text-white rounded-lg transition-transform active:scale-90"
+                                className="p-1 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-transform active:scale-90"
                                 title="Xóa ảnh này"
                               >
                                 <Trash2 className="h-3 w-3" />
@@ -2519,7 +2554,7 @@ export default function Admin() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-350 font-bold text-xs rounded-xl transition-all"
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-350 font-bold text-xs rounded-xl transition-all"
                 >
                   Hủy bỏ
                 </button>
@@ -2577,7 +2612,7 @@ export default function Admin() {
                 <button
                   type="button"
                   onClick={() => setIsCatModalOpen(false)}
-                  className="px-4 py-2.5 bg-slate-105 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl"
+                  className="px-4 py-2.5 bg-slate-105 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl"
                 >
                   Hủy bỏ
                 </button>
@@ -2738,7 +2773,7 @@ export default function Admin() {
                 <button
                   type="button"
                   onClick={() => setIsUserModalOpen(false)}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl"
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl"
                 >
                   Hủy bỏ
                 </button>
@@ -2850,7 +2885,7 @@ export default function Admin() {
                     placeholder="Ví dụ: 200000"
                     value={formCouponMinOrder}
                     onChange={(e) => setFormCouponMinOrder(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-905 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
                   />
                 </div>
 
@@ -2908,7 +2943,7 @@ export default function Admin() {
                           className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all border ${
                             selected 
                               ? "bg-indigo-600 text-white border-indigo-500 scale-[1.02]" 
-                              : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-750"
+                              : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
                           }`}
                         >
                           {cond}
@@ -2938,7 +2973,7 @@ export default function Admin() {
                           className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all border ${
                             selected 
                               ? "bg-emerald-600 text-white border-emerald-500" 
-                              : "bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-650 dark:text-slate-400 border-slate-200 dark:border-slate-750"
+                              : "bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
                           }`}
                         >
                           {cat}
@@ -2969,7 +3004,7 @@ export default function Admin() {
                 <button
                   type="button"
                   onClick={() => setIsCouponModalOpen(false)}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-305 font-bold text-xs rounded-xl"
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-305 font-bold text-xs rounded-xl"
                 >
                   Hủy bỏ
                 </button>

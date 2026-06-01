@@ -483,7 +483,7 @@ export default function Checkout() {
                         title="NGUYỄN ĐẠT STORE Google Map"
                       ></iframe>
                     </div>
-                    <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-750 text-center">
+                    <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 text-center">
                       <a
                         href="https://www.google.com/maps/place/NGUY%E1%BB%84N+%C4%90%E1%BA%A0T+STORE/@10.7906661,106.5683981,17z/data=!3m1!4b1!4m6!3m5!1s0x31752d000dbecc8f:0x9155dc8dbd07b70b!8m2!3d10.7906661!4d106.5683981!16s%2Fg%2F11x32t0t_y!18m1!1e1?entry=ttu&g_ep=EgoyMDI2MDUyNS4wIKXMDSoASAFQAw%3D%3D"
                         target="_blank"

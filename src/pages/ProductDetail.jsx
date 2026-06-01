@@ -149,7 +149,7 @@ export default function ProductDetail() {
             <div className="flex items-center gap-2 mb-4">
               <div className="flex">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className={`h-4 w-4 ${i < Math.floor(product.rating) ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-650"}`} />
+                  <Star key={i} className={`h-4 w-4 ${i < Math.floor(product.rating) ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600"}`} />
                 ))}
               </div>
               <span className="font-bold text-slate-700 dark:text-slate-300 text-sm">{product.rating}</span>

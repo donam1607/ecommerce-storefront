@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Admin from './pages/Admin';
 import Profile from './pages/Profile';
+import Orders from './pages/Orders';
 import ChatWidget from './components/ChatWidget';
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/orders" element={<Orders />} />
             </Routes>
           </main>
           <Footer />

@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Search, ShoppingCart, User, Moon, Sun, LogOut, LayoutDashboard, ChevronDown } from 'lucide-react';
+import { ShoppingBag, Search, ShoppingCart, User, Moon, Sun, LogOut, LayoutDashboard, ChevronDown, ClipboardList } from 'lucide-react';
 import { CartContext } from '../context/CartContext';
 import { PRODUCTS } from '../data/products';
 
@@ -279,11 +279,11 @@ function Navbar() {
 
         {/* Right Nav */}
         <div className="flex items-center gap-3">
-          <button onClick={toggleDark} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-650 dark:text-slate-350 transition-colors">
+          <button onClick={toggleDark} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-350 transition-colors">
             {dark ? <Sun className="h-5 w-5 text-yellow-450" /> : <Moon className="h-5 w-5" />}
           </button>
           
-          <button onClick={() => navigate('/cart')} className="relative p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-650 dark:text-slate-350 transition-colors">
+          <button onClick={() => navigate('/cart')} className="relative p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-350 transition-colors">
             <ShoppingCart className="h-6 w-6" />
             {totalItems > 0 && (
               <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
@@ -331,6 +331,15 @@ function Navbar() {
                     )}
 
                     <Link
+                      to="/orders"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors font-semibold"
+                    >
+                      <ClipboardList className="h-4.5 w-4.5 text-blue-500 flex-shrink-0" />
+                      Lịch sử đơn hàng
+                    </Link>
+
+                    <Link
                       to="/profile"
                       onClick={() => setDropdownOpen(false)}
                       className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors font-semibold"
@@ -341,7 +350,7 @@ function Navbar() {
 
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-650 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors font-semibold text-left border-t border-slate-100 dark:border-slate-850 mt-1"
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors font-semibold text-left border-t border-slate-100 dark:border-slate-850 mt-1"
                     >
                       <LogOut className="h-4.5 w-4.5 flex-shrink-0" />
                       Đăng xuất

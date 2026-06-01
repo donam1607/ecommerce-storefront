@@ -217,7 +217,7 @@ export default function Home() {
               placeholder="Tìm kiếm sản phẩm, thương hiệu, cấu hình..."
               value={search}
               onChange={handleSearchChange}
-              className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:bg-white/15 focus:border-blue-455 transition-all text-sm shadow-inner"
+              className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:bg-white/15 focus:border-blue-400 transition-all text-sm shadow-inner"
             />
             <Search className="absolute left-4 top-4 h-5 w-5 text-slate-400" />
           </div>
@@ -289,7 +289,7 @@ export default function Home() {
                 className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border rounded-full transition-all ${
                   activeCondition !== "All"
                     ? "bg-blue-55 dark:bg-blue-950/40 text-blue-600 dark:text-blue-450 border-blue-200"
-                    : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                    : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                 }`}
               >
                 <span>Tình trạng: {activeCondition === "All" ? "Tất cả" : activeCondition === "New" ? "Mới" : activeCondition === "Like New" ? "Like New" : "Cũ"}</span>
@@ -324,7 +324,7 @@ export default function Home() {
                 className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border rounded-full transition-all ${
                   priceRange !== "all"
                     ? "bg-blue-55 dark:bg-blue-950/40 text-blue-600 dark:text-blue-450 border-blue-200"
-                    : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                    : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                 }`}
               >
                 <span>
@@ -395,7 +395,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setOpenDropdown(openDropdown === "sort" ? null : "sort")}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-305 border-slate-200 dark:border-slate-700 rounded-full transition-all"
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-305 border-slate-200 dark:border-slate-700 rounded-full transition-all"
               >
                 <span>
                   Sắp xếp: {
@@ -460,7 +460,7 @@ export default function Home() {
         </div>
 
         {search && (
-          <div className="text-xs text-slate-400 dark:text-slate-550 mb-6 flex items-center gap-1.5 bg-slate-100/50 dark:bg-slate-900/40 p-2 py-3 rounded-xl border border-slate-200/50 dark:border-slate-850/60 w-fit">
+          <div className="text-xs text-slate-400 dark:text-slate-500 mb-6 flex items-center gap-1.5 bg-slate-100/50 dark:bg-slate-900/40 p-2 py-3 rounded-xl border border-slate-200/50 dark:border-slate-850/60 w-fit">
             <span>Từ khóa tìm kiếm:</span>
             <span className="font-extrabold text-blue-600 dark:text-blue-400">"{search}"</span>
             <button
@@ -547,7 +547,7 @@ export default function Home() {
                         className={`flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl font-bold text-[11px] transition-all duration-200 ${
                           addedId === product.id
                             ? "bg-emerald-500 text-white"
-                            : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-750 dark:text-slate-200 active:scale-95"
+                            : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 active:scale-95"
                         }`}
                       >
                         <ShoppingCart className="h-3.5 w-3.5" />

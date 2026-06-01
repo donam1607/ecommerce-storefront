@@ -14,7 +14,7 @@ export default function Cart() {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center text-center p-8 transition-colors duration-300">
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 shadow-sm border border-slate-200 dark:border-slate-800 max-w-md w-full transition-colors duration-300">
-          <ShoppingBag className="h-16 w-16 text-slate-300 dark:text-slate-650 mx-auto mb-4" />
+          <ShoppingBag className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
           <h2 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Giỏ hàng của bạn đang trống</h2>
           <p className="text-slate-500 dark:text-slate-400 mb-8">Hãy thêm các sản phẩm công nghệ tuyệt vời vào giỏ hàng nhé!</p>
           <Link
@@ -36,7 +36,7 @@ export default function Cart() {
           <h1 className="text-3xl font-black text-slate-800 dark:text-white">Giỏ hàng của bạn</h1>
           <button
             onClick={clearCart}
-            className="text-sm text-red-500 hover:text-red-650 font-semibold transition-colors"
+            className="text-sm text-red-500 hover:text-red-600 font-semibold transition-colors"
           >
             Xóa tất cả
           </button>
@@ -100,11 +100,11 @@ export default function Cart() {
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sticky top-28 transition-colors duration-300">
               <h2 className="text-lg font-black text-slate-800 dark:text-white mb-6">Tóm tắt đơn hàng</h2>
               <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-sm text-slate-650 dark:text-slate-400">
+                <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
                   <span>Tạm tính ({cart.reduce((s, i) => s + i.quantity, 0)} sản phẩm)</span>
                   <span className="font-semibold text-slate-800 dark:text-white">{formatVND(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-sm text-slate-650 dark:text-slate-400">
+                <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
                   <span>Phí vận chuyển</span>
                   <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                     {shipping === 0 ? "MIỄN PHÍ" : formatVND(shipping)}
@@ -123,7 +123,7 @@ export default function Cart() {
               </Link>
               <Link
                 to="/"
-                className="block w-full text-center mt-3 text-slate-550 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 text-sm font-medium transition-colors"
+                className="block w-full text-center mt-3 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 text-sm font-medium transition-colors"
               >
                 ← Tiếp tục mua sắm
               </Link>
