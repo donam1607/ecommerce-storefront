@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { useToast } from "../context/ToastContext";
+import RippleButton from "../components/RippleButton";
 import { PRODUCTS } from "../data/products";
 import { ShoppingCart, Star, Search, Cpu, Monitor, Keyboard, Headphones, Smartphone, Battery, ChevronDown, SlidersHorizontal, Check, X } from "lucide-react";
 
@@ -44,6 +46,7 @@ const getBadgeClass = (badge) => {
 
 export default function Home() {
   const { addToCart } = useCart();
+  const { showToast } = useToast();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState(["Laptop", "Monitor", "Keyboard", "Headphones", "Smartphone", "Accessories"]);
@@ -164,11 +167,13 @@ export default function Home() {
   const handleAddToCart = (product) => {
     addToCart(product);
     setAddedId(product.id);
+    showToast(`Đã thêm thành công "${product.name}" vào giỏ hàng!`, "success");
     setTimeout(() => setAddedId(null), 1500);
   };
 
   const handleBuyNow = (product) => {
     addToCart(product);
+    showToast(`Đã thêm "${product.name}" vào giỏ hàng! Đang chuyển hướng thanh toán...`, "info");
     navigate("/checkout");
   };
 
@@ -223,18 +228,18 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
-            <button
+            <RippleButton
               onClick={() => document.getElementById('products').scrollIntoView({ behavior: 'smooth' })}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 py-3.5 rounded-full shadow-lg shadow-blue-600/30 transition-all hover:scale-105"
+              className="bg-gradient-to-r from-blue-600 via-indigo-650 to-blue-700 hover:opacity-95 text-white font-bold px-8 py-3.5 rounded-full shadow-lg shadow-blue-600/30 transition-all hover:scale-105 animate-gradient-shift cursor-pointer"
             >
               Mua sắm ngay
-            </button>
-            <button
+            </RippleButton>
+            <RippleButton
               onClick={() => document.getElementById('products').scrollIntoView({ behavior: 'smooth' })}
-              className="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold px-8 py-3.5 rounded-full transition-all hover:scale-105"
+              className="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold px-8 py-3.5 rounded-full transition-all hover:scale-105 cursor-pointer"
             >
               Tìm hiểu thêm
-            </button>
+            </RippleButton>
           </div>
         </div>
       </section>
@@ -476,17 +481,17 @@ export default function Home() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(8)].map((_, idx) => (
-              <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-4 animate-pulse">
-                <div className="bg-slate-200 dark:bg-slate-800 aspect-[4/3] rounded-xl w-full"></div>
+              <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-4 shadow-sm">
+                <div className="animate-shimmer aspect-[4/3] rounded-xl w-full"></div>
                 <div className="space-y-2">
-                  <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/3"></div>
-                  <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4"></div>
-                  <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/2"></div>
+                  <div className="h-3 animate-shimmer rounded w-1/3"></div>
+                  <div className="h-4 animate-shimmer rounded w-3/4"></div>
+                  <div className="h-3 animate-shimmer rounded w-1/2"></div>
                 </div>
-                <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-2/3"></div>
+                <div className="h-6 animate-shimmer rounded w-2/3"></div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
-                  <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                  <div className="h-8 animate-shimmer rounded-xl"></div>
+                  <div className="h-8 animate-shimmer rounded-xl"></div>
                 </div>
               </div>
             ))}
@@ -500,12 +505,18 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {sorted.map((product) => (
+            {sorted.map((product, idx) => (
 
               <div
                 key={product.id}
-                className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/60 hover:-translate-y-1 hover:border-blue-200 dark:hover:border-blue-900/60 transition-all duration-300 flex flex-col"
+                style={{ animationDelay: `${idx * 60}ms` }}
+                className="group/card animate-fade-in-up bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-blue-500/5 hover:-translate-y-2 hover:border-blue-300 dark:hover:border-blue-900/60 transition-all duration-300 flex flex-col relative"
               >
+                {/* Glint/Shine hover effect overlay */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-20">
+                  <div className="absolute top-0 -left-[150%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/20 dark:via-white/10 to-transparent skew-x-[-25deg] transition-all duration-1000 ease-out group-hover/card:left-[150%]" />
+                </div>
+
                 {/* Image */}
                 <Link to={`/product/${product.id}`} className="block relative overflow-hidden bg-slate-100 dark:bg-slate-800 aspect-[4/3]">
                   <img
@@ -526,7 +537,7 @@ export default function Home() {
                   <div>
                     <span className="text-[10px] text-blue-600 dark:text-blue-400 font-extrabold uppercase tracking-widest">{product.category}</span>
                     <Link to={`/product/${product.id}`}>
-                      <h3 className="font-extrabold text-slate-850 dark:text-slate-100 mt-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1 text-sm">
+                      <h3 className="font-extrabold text-slate-850 dark:text-slate-100 mt-1 group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400 transition-colors line-clamp-1 text-sm">
                         {product.name}
                       </h3>
                     </Link>
@@ -540,25 +551,25 @@ export default function Home() {
                   </div>
 
                   <div className="flex flex-col gap-2 mt-4">
-                    <span className="text-lg font-black text-slate-900 dark:text-white">{formatVND(product.price)}</span>
+                    <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white">{formatVND(product.price)}</span>
                     <div className="grid grid-cols-2 gap-2">
-                      <button
+                      <RippleButton
                         onClick={() => handleAddToCart(product)}
-                        className={`flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl font-bold text-[11px] transition-all duration-200 ${
+                        className={`flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl font-bold text-[10px] sm:text-[11px] transition-all duration-200 cursor-pointer ${
                           addedId === product.id
                             ? "bg-emerald-500 text-white"
                             : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 active:scale-95"
                         }`}
                       >
                         <ShoppingCart className="h-3.5 w-3.5" />
-                        {addedId === product.id ? "Đã thêm!" : "Thêm giỏ hàng"}
-                      </button>
-                      <button
+                        {addedId === product.id ? "Đã thêm!" : "Thêm giỏ"}
+                      </RippleButton>
+                      <RippleButton
                         onClick={() => handleBuyNow(product)}
-                        className="bg-blue-600 hover:bg-blue-500 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold text-[11px] py-2 rounded-xl transition-all hover:shadow-md hover:shadow-blue-600/20 active:scale-95 text-center flex items-center justify-center"
+                        className="bg-blue-600 hover:bg-blue-500 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold text-[10px] sm:text-[11px] py-2 rounded-xl transition-all hover:shadow-md hover:shadow-blue-600/20 active:scale-95 text-center flex items-center justify-center cursor-pointer"
                       >
                         Mua ngay
-                      </button>
+                      </RippleButton>
                     </div>
                   </div>
                 </div>

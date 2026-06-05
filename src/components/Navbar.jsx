@@ -176,7 +176,7 @@ function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
+    <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300 animate-slide-down">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
           <div className="bg-blue-600 p-2 rounded-xl text-white shadow-md shadow-blue-600/30">
@@ -204,7 +204,7 @@ function Navbar() {
 
           {/* Instant Search Results Dropdown */}
           {searchFocused && searchQuery.trim() && (
-            <div className="absolute left-0 right-0 top-full mt-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-[99999] transition-all">
+            <div className="absolute left-0 right-0 top-full mt-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-[99999] transition-all animate-fade-in-up">
               <div className="p-3 border-b border-slate-100 dark:border-slate-850 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
                 <span>Kết quả tìm kiếm ({searchResults.length})</span>
                 {searchResults.length > 0 && <span className="text-[9px] text-blue-500 font-normal normal-case">Nhấp để xem nhanh</span>}
@@ -309,7 +309,7 @@ function Navbar() {
 
                 {/* Dropdown Menu (Guaranteed Not Cut Off) */}
                 {dropdownOpen && (
-                  <div className="absolute right-0 top-full mt-2.5 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-3 z-[99999] transition-colors duration-300">
+                  <div className="absolute right-0 top-full mt-2.5 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-3 z-[99999] transition-colors duration-300 animate-fade-in-up">
                     <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-850">
                       <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-extrabold">Tài khoản</p>
                       <p className="text-sm font-bold text-slate-850 dark:text-white truncate">{user.name}</p>

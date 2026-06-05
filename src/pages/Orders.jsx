@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { useToast } from "../context/ToastContext";
 import { 
   User, Mail, Phone, MapPin, Lock, Loader2, CheckCircle2, 
   AlertCircle, ArrowLeft, Shield, Eye, EyeOff, ClipboardList, 
@@ -8,8 +9,16 @@ import {
   Clock, Truck, RotateCcw, AlertTriangle, ShieldCheck, CreditCard, Tag
 } from "lucide-react";
 import { formatVND, toVndInt } from "../utils/money";
+import RippleButton from "../components/RippleButton";
+
 
 export default function Orders() {
+  const { showToast } = useToast();
+  const alert = (msg) => {
+    const isSuccess = msg.toLowerCase().includes("thành công") || msg.toLowerCase().includes("ok");
+    showToast(msg, isSuccess ? "success" : "error");
+  };
+
   const API_URL = "https://shoptech-backend.onrender.com";
   const { addToCart } = useCart();
   const navigate = useNavigate();
@@ -233,8 +242,8 @@ export default function Orders() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300 orders-panel">
+      <div className="max-w-4xl mx-auto animate-fade-in-up">
         
         {/* Quay lại trang chủ */}
         <Link to="/" className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors mb-6 text-xs font-bold uppercase tracking-wider">
@@ -289,7 +298,7 @@ export default function Orders() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredOrders.map((o) => {
+            {filteredOrders.map((o, index) => {
               const items = getItemsArray(o.orderItems);
               const firstItem = items[0];
               const otherCount = items.length > 0 ? items.length - 1 : 0;
@@ -297,8 +306,10 @@ export default function Orders() {
               return (
                 <div 
                   key={o.id}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs space-y-4 hover:border-slate-350 dark:hover:border-slate-700 transition-all duration-200"
+                  style={{ animationDelay: `${Math.min(index, 7) * 60}ms` }}
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs space-y-4 hover:border-blue-300 dark:hover:border-blue-700/60 hover:shadow-md hover:shadow-blue-500/5 transition-all duration-300 animate-fade-in-up opacity-0 hover:-translate-y-0.5"
                 >
+
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-850 pb-3 gap-2">
                     <div className="flex items-center gap-3">
                       <span className="font-mono text-xs font-black text-slate-850 dark:text-white">Mã đơn: #${o.id}</span>
@@ -351,21 +362,21 @@ export default function Orders() {
                       </button>
                       
                       {o.orderStatus === 'pending' && (
-                        <button
+                        <RippleButton
                           onClick={() => { setCancelingOrder(o); setIsCancelModalOpen(true); }}
-                          className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-rose-500 font-bold text-[10px] border border-rose-200/20 rounded-xl transition-all cursor-pointer shadow-xs"
+                          className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-rose-500 font-bold text-[10px] border border-rose-200/20 rounded-xl transition-all cursor-pointer shadow-xs hover:-translate-y-0.5"
                         >
                           Hủy đơn hàng
-                        </button>
+                        </RippleButton>
                       )}
                       
                       {['cancelled', 'delivered', 'returned'].includes(o.orderStatus) && (
-                        <button
+                        <RippleButton
                           onClick={() => handleReorder(o)}
-                          className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] rounded-xl transition-all cursor-pointer shadow-sm shadow-blue-500/10"
+                          className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[10px] rounded-xl transition-all cursor-pointer shadow-sm shadow-blue-500/20 hover:-translate-y-0.5"
                         >
                           Mua lại đơn cũ
-                        </button>
+                        </RippleButton>
                       )}
                     </div>
                   </div>
@@ -393,8 +404,9 @@ export default function Orders() {
           return (
             <div 
               onClick={() => setIsDetailModalOpen(false)}
-              className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4"
+              className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 animate-fade-in-overlay"
             >
+
               <div 
                 onClick={(e) => e.stopPropagation()}
                 className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-3xl rounded-3xl shadow-2xl max-h-[92vh] overflow-y-auto transition-all animate-scale-in"
@@ -581,13 +593,13 @@ export default function Orders() {
                   {/* KHỐI NÚT HÀNH ĐỘNG DƯỚI ĐƠN HÀNG */}
                   <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800 pt-5">
                     {selectedOrder.orderStatus === 'pending' && (
-                      <button
+                      <RippleButton
                         type="button"
                         onClick={() => { setCancelingOrder(selectedOrder); setIsCancelModalOpen(true); }}
-                        className="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/25 dark:hover:bg-rose-950/40 text-rose-500 font-extrabold text-[11px] border border-rose-200/20 rounded-xl transition-all cursor-pointer"
+                        className="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/25 dark:hover:bg-rose-950/40 text-rose-500 font-extrabold text-[11px] border border-rose-200/20 rounded-xl transition-all cursor-pointer hover:-translate-y-0.5"
                       >
                         Yêu cầu hủy đơn hàng ❌
-                      </button>
+                      </RippleButton>
                     )}
 
                     {selectedOrder.orderStatus === 'delivered' && (
@@ -601,13 +613,13 @@ export default function Orders() {
                     )}
 
                     {['cancelled', 'delivered', 'returned'].includes(selectedOrder.orderStatus) && (
-                      <button
+                      <RippleButton
                         type="button"
                         onClick={() => handleReorder(selectedOrder)}
-                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[11px] rounded-xl transition-all cursor-pointer shadow-sm shadow-blue-500/10"
+                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-[11px] rounded-xl transition-all cursor-pointer shadow-md shadow-blue-500/20 hover:-translate-y-0.5"
                       >
                         Mua lại đơn hàng này
-                      </button>
+                      </RippleButton>
                     )}
                     
                     <button
@@ -631,8 +643,9 @@ export default function Orders() {
         {isCancelModalOpen && (
           <div 
             onClick={() => setIsCancelModalOpen(false)}
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[999999] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 animate-fade-in-overlay"
           >
+
             <div 
               onClick={(e) => e.stopPropagation()}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-scale-in"
@@ -680,13 +693,13 @@ export default function Orders() {
                   >
                     Quay lại
                   </button>
-                  <button
+                  <RippleButton
                     type="submit"
                     disabled={submittingCancel}
-                    className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-extrabold rounded-xl transition-colors disabled:bg-red-400"
+                    className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-extrabold rounded-xl transition-all disabled:bg-red-400 shadow-md shadow-red-600/20 hover:-translate-y-0.5"
                   >
                     {submittingCancel ? "Đang hủy..." : "Xác nhận Hủy Đơn"}
-                  </button>
+                  </RippleButton>
                 </div>
               </form>
             </div>
@@ -699,8 +712,9 @@ export default function Orders() {
         {isReturnModalOpen && (
           <div 
             onClick={() => setIsReturnModalOpen(false)}
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[999999] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 animate-fade-in-overlay"
           >
+
             <div 
               onClick={(e) => e.stopPropagation()}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-scale-in"
@@ -745,13 +759,13 @@ export default function Orders() {
                   >
                     Quay lại
                   </button>
-                  <button
+                  <RippleButton
                     type="submit"
                     disabled={submittingReturn}
-                    className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-extrabold rounded-xl transition-colors disabled:bg-purple-400"
+                    className="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-extrabold rounded-xl transition-all disabled:bg-purple-400 shadow-md shadow-purple-600/20 hover:-translate-y-0.5"
                   >
                     {submittingReturn ? "Đang gửi..." : "Gửi yêu cầu bảo hành"}
-                  </button>
+                  </RippleButton>
                 </div>
               </form>
             </div>

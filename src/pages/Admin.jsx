@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search, FileText, Printer, Truck, Calendar, Clock, CreditCard, Tag } from "lucide-react";
+import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search, FileText, Printer, Truck, Calendar, Clock, CreditCard, Tag, ChevronLeft, ChevronRight, Menu } from "lucide-react";
+import { useToast } from "../context/ToastContext";
 import { formatVND, toVndInt } from "../utils/money";
+import RippleButton from "../components/RippleButton";
+
 
 const API_URL = "https://shoptech-backend.onrender.com";
 
@@ -33,6 +36,16 @@ const getBadgeClass = (badge) => {
 };
 
 export default function Admin() {
+  const { showToast } = useToast();
+  const alert = (msg) => {
+    const isSuccess = msg.toLowerCase().includes("thành công") || msg.toLowerCase().includes("ok");
+    showToast(msg, isSuccess ? "success" : "error");
+  };
+
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return localStorage.getItem("admin_sidebar_collapsed") === "true";
+  });
+
   const getItemsArray = (orderItems) => {
     if (!orderItems) return [];
     if (Array.isArray(orderItems)) return orderItems;
@@ -1095,31 +1108,62 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-850 dark:text-slate-100 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-850 dark:text-slate-100 transition-colors duration-300 admin-panel">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         
         {/* Main Administrative Layout Grid */}
         <div className="flex flex-col lg:flex-row gap-8">
           
           {/* LEFT SIDEBAR PANEL (Desktop) / TOP PANEL (Mobile) */}
-          <aside className="w-full lg:w-64 flex-shrink-0">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-6 sticky top-24 transition-colors">
+          <aside className={`w-full flex-shrink-0 transition-all duration-300 ${isCollapsed ? "lg:w-20" : "lg:w-64"}`}>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sticky top-8 flex flex-col gap-6 shadow-sm transition-colors duration-300">
               <div className="px-2">
-                <span className="text-[10px] text-blue-500 uppercase tracking-widest font-black">Hệ thống</span>
-                <h2 className="text-lg font-black text-slate-900 dark:text-white mt-0.5">ShopTech Admin</h2>
-                <div className="flex items-center gap-2 mt-3 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-850">
-                  <div className="h-8 w-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm uppercase">
+
+                {!isCollapsed && <span className="text-[10px] text-blue-500 uppercase tracking-widest font-black animate-fade-in hidden lg:block">Hệ thống</span>}
+                <span className="text-[10px] text-blue-500 uppercase tracking-widest font-black lg:hidden">Hệ thống</span>
+
+                {!isCollapsed && <h2 className="text-lg font-black text-slate-900 dark:text-white mt-0.5 animate-fade-in hidden lg:block">ShopTech Admin</h2>}
+                <h2 className="text-lg font-black text-slate-900 dark:text-white mt-0.5 lg:hidden">ShopTech Admin</h2>
+
+                <div className={`flex items-center gap-2 mt-3 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-850 transition-all ${isCollapsed ? "lg:justify-center lg:p-2" : ""}`}>
+                  <div className="h-8 w-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm uppercase flex-shrink-0">
                     {currentUser?.name.charAt(0)}
                   </div>
-                  <div className="min-w-0">
+                  {!isCollapsed && (
+                    <div className="min-w-0 animate-fade-in hidden lg:block">
+                      <p className="text-xs font-black truncate text-slate-800 dark:text-slate-205">{currentUser?.name}</p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5">Administrator</p>
+                    </div>
+                  )}
+                  <div className="min-w-0 lg:hidden">
                     <p className="text-xs font-black truncate text-slate-800 dark:text-slate-205">{currentUser?.name}</p>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5">Administrator</p>
                   </div>
                 </div>
               </div>
 
-              {/* TAB BUTTONS */}
+              {/* TAB BUTTONS — collapse toggle is first item in the nav list */}
               <nav className="flex flex-row lg:flex-col gap-1.5 overflow-x-auto scrollbar-hide lg:overflow-x-visible pb-2 lg:pb-0">
+
+                {/* Collapse / Expand toggle button — lives inside nav, same row as icons */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCollapsed((prev) => {
+                      const next = !prev;
+                      localStorage.setItem("admin_sidebar_collapsed", String(next));
+                      return next;
+                    });
+                  }}
+                  className={`hidden lg:flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black transition-all flex-shrink-0 cursor-pointer text-slate-500 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-600 dark:hover:text-blue-400 border border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 ${
+                    isCollapsed ? "lg:justify-center lg:px-3" : ""
+                  }`}
+                  title={isCollapsed ? "Mở rộng thanh quản lý" : "Thu gọn thanh quản lý"}
+                >
+                  <Menu className="h-4.5 w-4.5 flex-shrink-0" />
+                  {!isCollapsed && <span className="animate-fade-in hidden lg:block">{isCollapsed ? "Mở rộng" : "Thu gọn menu"}</span>}
+                </button>
+
                 {[
                   { id: "stats", label: "Báo Cáo Thống Kê", icon: BarChart3 },
                   { id: "products", label: "Quản Lý Sản Phẩm", icon: ShoppingBag },
@@ -1135,14 +1179,16 @@ export default function Admin() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black transition-all flex-shrink-0 ${
+                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black transition-all flex-shrink-0 cursor-pointer ${
                         active
                           ? "bg-blue-600 text-white shadow-lg shadow-blue-600/15 scale-[1.02]"
-                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-850 hover:text-slate-900 dark:hover:text-white"
-                      }`}
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-855 hover:text-slate-900 dark:hover:text-white"
+                      } ${isCollapsed ? "lg:justify-center lg:px-3" : ""}`}
+                      title={tab.label}
                     >
-                      <Icon className="h-4.5 w-4.5" />
-                      <span>{tab.label}</span>
+                      <Icon className="h-4.5 w-4.5 flex-shrink-0" />
+                      {!isCollapsed && <span className="animate-fade-in hidden lg:block">{tab.label}</span>}
+                      <span className="lg:hidden">{tab.label}</span>
                     </button>
                   );
                 })}
@@ -1155,10 +1201,10 @@ export default function Admin() {
             
             {/* Tab 1: stats (Statistics Panel) */}
             {activeTab === "stats" && (
-              <div className="space-y-6 animate-fade-in">
+              <div className="space-y-6 animate-fade-in-up">
                 {/* KPIs Dashboard Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                  <div className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-3xl p-5 flex items-start gap-3.5 shadow-lg shadow-blue-500/10">
+                  <div className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-3xl p-5 flex items-start gap-3.5 shadow-lg shadow-blue-500/10 animate-fade-in-up" style={{ animationDelay: "0ms" }}>
                     <div className="h-11 w-11 rounded-2xl bg-white/10 text-white flex items-center justify-center flex-shrink-0">
                       <Wallet className="h-5 w-5" />
                     </div>
@@ -1169,7 +1215,7 @@ export default function Admin() {
                     </div>
                   </div>
 
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm transition-colors">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm transition-colors animate-fade-in-up" style={{ animationDelay: "60ms" }}>
                     <div className="h-11 w-11 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
                       <ShoppingBag className="h-5 w-5" />
                     </div>
@@ -1180,7 +1226,7 @@ export default function Admin() {
                     </div>
                   </div>
 
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm transition-colors">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm transition-colors animate-fade-in-up" style={{ animationDelay: "120ms" }}>
                     <div className="h-11 w-11 rounded-2xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
                       <Boxes className="h-5 w-5" />
                     </div>
@@ -1191,7 +1237,7 @@ export default function Admin() {
                     </div>
                   </div>
 
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm transition-colors">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm transition-colors animate-fade-in-up" style={{ animationDelay: "180ms" }}>
                     <div className="h-11 w-11 rounded-2xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-shrink-0">
                       <UserCog className="h-5 w-5" />
                     </div>
@@ -1304,19 +1350,19 @@ export default function Admin() {
 
             {/* Tab 2: products (Product CRUD with Search & Multiple Filters) */}
             {activeTab === "products" && (
-              <div className="space-y-4 animate-fade-in">
+              <div className="space-y-4 animate-fade-in-up">
                 
                 {/* Advanced Search & Filtering Block */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-4 transition-colors">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <h2 className="text-base font-black text-slate-900 dark:text-white">Kho Hàng Sản Phẩm ({filteredProducts.length})</h2>
-                    <button
+                    <RippleButton
                       onClick={() => openModal("add")}
-                      className="flex items-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-md transition-all active:scale-95 flex-shrink-0"
+                      className="flex items-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-blue-600/20 transition-all active:scale-95 flex-shrink-0 hover:shadow-lg hover:shadow-blue-600/30 hover:-translate-y-0.5"
                     >
                       <Plus className="h-4.5 w-4.5" />
                       <span>Thêm sản phẩm mới</span>
-                    </button>
+                    </RippleButton>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1386,8 +1432,13 @@ export default function Admin() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
-                          {filteredProducts.map((prod) => (
-                            <tr key={prod.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors text-xs text-slate-700 dark:text-slate-350">
+                          {filteredProducts.map((prod, index) => (
+                            <tr
+                              key={prod.id}
+                              style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+                              onClick={() => openModal("edit", prod)}
+                              className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer"
+                            >
                               <td className="px-6 py-4">
                                 <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-200/60 dark:border-slate-700/60 flex-shrink-0">
                                   <img
@@ -1415,7 +1466,7 @@ export default function Admin() {
                                 {prod.createdAt ? new Date(prod.createdAt).toLocaleDateString("vi-VN") : "—"}
                               </td>
 
-                              <td className="px-6 py-4 text-right">
+                              <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex justify-end gap-1.5">
                                   <button
                                     onClick={() => openModal("edit", prod)}
@@ -1445,19 +1496,19 @@ export default function Admin() {
 
             {/* Tab 3: categories (Dynamic Category Management Panel) */}
             {activeTab === "categories" && (
-              <div className="space-y-4 animate-fade-in">
+              <div className="space-y-4 animate-fade-in-up">
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-colors">
                   <div>
                     <h2 className="text-base font-black text-slate-900 dark:text-white">Quản Lý Danh Mục Công Nghệ</h2>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Đổi tên hoặc thêm danh mục mới sẽ tự động cập nhật và phân loại bộ lọc động ngoài trang chủ.</p>
                   </div>
-                  <button
+                  <RippleButton
                     onClick={() => openCatModal("add")}
-                    className="flex items-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-md transition-all active:scale-95 flex-shrink-0"
+                    className="flex items-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-blue-600/20 transition-all active:scale-95 flex-shrink-0 hover:shadow-lg hover:shadow-blue-600/30 hover:-translate-y-0.5"
                   >
                     <Plus className="h-4.5 w-4.5" />
                     <span>Thêm danh mục mới</span>
-                  </button>
+                  </RippleButton>
                 </div>
 
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors">
@@ -1471,13 +1522,18 @@ export default function Admin() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
-                        {categoriesList.map((catName) => {
+                        {categoriesList.map((catName, index) => {
                           const associatedCount = products.filter(p => p.category === catName).length;
                           return (
-                            <tr key={catName} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors text-xs text-slate-700 dark:text-slate-350">
+                            <tr
+                              key={catName}
+                              style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+                              onClick={() => openCatModal("edit", catName)}
+                              className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer"
+                            >
                               <td className="px-6 py-4 font-black text-slate-850 dark:text-white">{catName}</td>
                               <td className="px-6 py-4 font-bold text-slate-500">{associatedCount} sản phẩm đang bán</td>
-                              <td className="px-6 py-4 text-right">
+                              <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex justify-end gap-1.5">
                                   <button
                                     onClick={() => openCatModal("edit", catName)}
@@ -1507,19 +1563,19 @@ export default function Admin() {
 
             {/* Tab 4: users (User Panel with password creation and toggles) */}
             {activeTab === "users" && (
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors animate-fade-in-up">
                 <div className="p-6 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
                     <h2 className="text-base font-black text-slate-900 dark:text-white">Danh sách quản lý thành viên</h2>
                     <p className="text-xs text-slate-500 mt-1">Admin có thể thêm thành viên mới, cấp vai trò, đổi mật khẩu và xem trực tiếp chuỗi mật khẩu gõ vào.</p>
                   </div>
-                  <button
+                  <RippleButton
                     onClick={() => openUserModal("add")}
-                    className="flex items-center justify-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-md transition-all active:scale-95"
+                    className="flex items-center justify-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-blue-600/20 transition-all active:scale-95 hover:shadow-lg hover:shadow-blue-600/30 hover:-translate-y-0.5"
                   >
                     <Plus className="h-4.5 w-4.5" />
                     <span>Thêm thành viên mới</span>
-                  </button>
+                  </RippleButton>
                 </div>
 
                 {loadingUsers ? (
@@ -1537,8 +1593,13 @@ export default function Admin() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
-                        {users.map((u) => (
-                          <tr key={u.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors text-xs text-slate-700 dark:text-slate-350">
+                        {users.map((u, index) => (
+                          <tr
+                            key={u.id}
+                            style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+                            onClick={() => openUserModal("edit", u)}
+                            className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer"
+                          >
                             <td className="px-6 py-4 font-bold text-slate-850 dark:text-white flex items-center gap-2">
                               <div className="h-8 w-8 rounded-xl bg-slate-105 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-xs uppercase flex-shrink-0">
                                 {u.name.charAt(0)}
@@ -1550,7 +1611,7 @@ export default function Admin() {
                             </td>
                             <td className="px-6 py-4 font-semibold">{u.email}</td>
                             <td className="px-6 py-4 opacity-80">{new Date(u.createdAt).toLocaleDateString("vi-VN")}</td>
-                            <td className="px-6 py-4">
+                            <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                               <select
                                 disabled={currentUser?.id === u.id}
                                 value={u.role}
@@ -1561,7 +1622,7 @@ export default function Admin() {
                                 <option value="admin">Admin (Quản trị)</option>
                               </select>
                             </td>
-                            <td className="px-6 py-4 text-right">
+                            <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                               <div className="flex justify-end gap-1.5">
                                 <button
                                   onClick={() => openUserModal("edit", u)}
@@ -1628,7 +1689,7 @@ export default function Admin() {
               });
 
               return (
-                <div className="space-y-6 animate-fade-in">
+                <div className="space-y-6 animate-fade-in-up">
                   
                   {/* THANH BỘ LỌC THÔNG MINH (SMART FILTERS BAR) */}
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-3xl shadow-xs space-y-4">
@@ -1776,7 +1837,7 @@ export default function Admin() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
-                            {filteredOrders.map((o) => {
+                            {filteredOrders.map((o, index) => {
                               // Định nghĩa màu sắc cho Trạng thái Đơn hàng
                               const getOrderStatusBadge = (status) => {
                                 const st = status || 'pending';
@@ -1807,13 +1868,28 @@ export default function Admin() {
                               };
 
                               return (
-                                <tr key={o.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors text-xs text-slate-700 dark:text-slate-350">
+                                <tr
+                                  key={o.id}
+                                  style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+                                  onClick={() => openOrderDetailModal(o)}
+                                  className="hover:bg-blue-50/40 dark:hover:bg-blue-950/10 transition-all duration-200 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer group"
+                                >
                                   {/* Mã đơn */}
                                   <td className="px-6 py-4 font-bold text-slate-800 dark:text-white whitespace-nowrap">
-                                    <div className="flex flex-col">
-                                      <span>#{o.id}</span>
+                                    <div className="flex flex-col gap-1.5">
+                                      <span className="font-extrabold text-slate-900 dark:text-white">#{o.id}</span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openOrderDetailModal(o);
+                                        }}
+                                        className="px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition-all shadow-xs shadow-blue-500/10 hover:shadow-sm hover:shadow-blue-500/20 active:scale-95 cursor-pointer w-max"
+                                      >
+                                        Chi tiết
+                                      </button>
                                       {o.serialNumbers && Object.keys(o.serialNumbers).length > 0 && (
-                                        <span className="text-[9px] text-blue-500 font-bold uppercase tracking-wide mt-1">🎯 Đã gán S/N</span>
+                                        <span className="text-[9px] text-blue-500 font-bold uppercase tracking-wide">🎯 Đã gán S/N</span>
                                       )}
                                     </div>
                                   </td>
@@ -1900,25 +1976,15 @@ export default function Admin() {
                                     )}
                                   </td>
                                   
-                                  {/* Hành động */}
-                                  <td className="px-6 py-4 text-right whitespace-nowrap">
-                                    <div className="flex justify-end gap-2">
-                                      <button
-                                        onClick={() => openOrderDetailModal(o)}
-                                        className="flex items-center gap-1 py-1.5 px-3 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/30 dark:hover:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold text-[10px] rounded-xl border border-blue-200/30 transition-all cursor-pointer shadow-xs"
-                                        title="Xem chi tiết đơn hàng"
-                                      >
-                                        <FileText size={12} />
-                                        <span>Xem chi tiết</span>
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteOrder(o.id)}
-                                        className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl border border-red-200/20 transition-all cursor-pointer shadow-xs"
-                                        title="Xóa hóa đơn"
-                                      >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                      </button>
-                                    </div>
+                                  {/* Hành động — chỉ giữ nút Xóa nhỏ gọn, click row đã mở detail */}
+                                  <td className="px-3 py-4" onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                      onClick={() => handleDeleteOrder(o.id)}
+                                      className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-400 hover:text-red-600 rounded-xl border border-red-200/20 transition-all cursor-pointer active:scale-90"
+                                      title="Xóa hóa đơn"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
                                   </td>
                                 </tr>
                               );
@@ -1928,326 +1994,14 @@ export default function Admin() {
                       </div>
                     )}
                   </div>
-
-                  {/* ---------------------------------------------------------
-                      MODAL: TRANG CHI TIẾT ĐƠN HÀNG & GÁN SERIAL (ORDER DETAILS)
-                      --------------------------------------------------------- */}
-                  {isOrderDetailModalOpen && selectedOrder && (() => {
-                    const isLocked = ['shipping', 'delivered', 'cancelled', 'returned'].includes(orderDetailOrderStatus);
-                    
-                    // Tính toán tự động tổng tiền sản phẩm trong đơn hàng
-                    const calculateSubtotal = () => {
-                      const items = getItemsArray(selectedOrder.orderItems);
-                      return items.reduce((acc, item) => acc + (toVndInt(item.price) * item.quantity), 0);
-                    };
-                    const subtotal = calculateSubtotal();
-                    const discount = toVndInt(selectedOrder.discountAmount || 0);
-                    const finalTotal = subtotal + toVndInt(orderDetailShippingFee) - discount;
-
-                    return (
-                      <div 
-                        onClick={() => setIsOrderDetailModalOpen(false)}
-                        className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4"
-                      >
-                        <div 
-                          onClick={(e) => e.stopPropagation()}
-                          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-4xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto transition-all animate-scale-in"
-                        >
-                          {/* Modal Header */}
-                          <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-850 bg-slate-50 dark:bg-slate-950 rounded-t-3xl">
-                            <div>
-                              <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                                <span>CHI TIẾT ĐƠN HÀNG #{selectedOrder.id}</span>
-                                <span className="text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded border border-blue-500/20 font-bold uppercase tracking-wider font-mono">
-                                  {selectedOrder.paymentMethod === 'bank' ? 'Chuyển khoản' : selectedOrder.paymentMethod === 'store' ? 'Tại Store' : 'COD Bưu Tá'}
-                                </span>
-                              </h3>
-                              <p className="text-[10px] text-slate-400 mt-1 font-bold">Ngày đặt đơn: {new Date(selectedOrder.createdAt).toLocaleString("vi-VN")}</p>
-                            </div>
-                            <button
-                              onClick={() => setIsOrderDetailModalOpen(false)}
-                              className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-slate-500 transition-all cursor-pointer"
-                            >
-                              <X className="h-5 w-5" />
-                            </button>
-                          </div>
-
-                          {/* Modal Body */}
-                          <form onSubmit={handleSaveOrderDetail} className="p-6 space-y-6">
-                            
-                            {/* Cảnh báo Lock Rule nếu đơn đã giao/đang giao */}
-                            {isLocked && (
-                              <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-400 rounded-xl text-[11px] font-bold">
-                                <AlertCircle size={16} />
-                                <span>Lưu ý: Dữ liệu khách hàng đã được KHÓA cứng do đơn hàng đang giao, đã giao, đã hủy hoặc đổi trả để tránh thất thoát và đảm bảo minh bạch vận hành!</span>
-                              </div>
-                            )}
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {/* CỘT 1: THÔNG TIN KHÁCH HÀNG & VẬN CHUYỂN */}
-                              <div className="bg-slate-50 dark:bg-slate-950/30 border border-slate-200/50 dark:border-slate-850 p-5 rounded-2xl space-y-4">
-                                <h4 className="text-xs font-black uppercase text-blue-600 dark:text-blue-400 border-b border-slate-100 dark:border-slate-850 pb-2 flex items-center gap-1.5">
-                                  <Truck size={14} />
-                                  <span>Khách hàng & Vận chuyển</span>
-                                </h4>
-
-                                <div>
-                                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Họ tên khách hàng</label>
-                                  <input
-                                    type="text"
-                                    value={orderDetailCustomerName}
-                                    onChange={(e) => setOrderDetailCustomerName(e.target.value)}
-                                    disabled={isLocked}
-                                    className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 disabled:bg-slate-100 dark:disabled:bg-slate-900 dark:disabled:text-slate-500"
-                                    required
-                                  />
-                                </div>
-
-                                <div>
-                                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Số điện thoại</label>
-                                  <input
-                                    type="text"
-                                    value={orderDetailCustomerPhone}
-                                    onChange={(e) => setOrderDetailCustomerPhone(e.target.value)}
-                                    disabled={isLocked}
-                                    className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 disabled:bg-slate-100 dark:disabled:bg-slate-900 dark:disabled:text-slate-500"
-                                    required
-                                  />
-                                </div>
-
-                                <div>
-                                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Địa chỉ nhận hàng</label>
-                                  <textarea
-                                    value={orderDetailCustomerAddress}
-                                    onChange={(e) => setOrderDetailCustomerAddress(e.target.value)}
-                                    disabled={isLocked}
-                                    rows="2"
-                                    className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 disabled:bg-slate-100 dark:disabled:bg-slate-900 dark:disabled:text-slate-500"
-                                    required
-                                  />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Đơn vị vận chuyển</label>
-                                    <select
-                                      value={orderDetailShippingUnit}
-                                      onChange={(e) => setOrderDetailShippingUnit(e.target.value)}
-                                      className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500"
-                                    >
-                                      <option value="">-- Chọn ĐV VC --</option>
-                                      <option value="GHTK">Giao Hàng Tiết Kiệm (GHTK)</option>
-                                      <option value="GHN">Giao Hàng Nhanh (GHN)</option>
-                                      <option value="Viettel Post">Viettel Post</option>
-                                      <option value="DHL">DHL Express</option>
-                                      <option value="GrabExpress">GrabExpress</option>
-                                    </select>
-                                  </div>
-                                  <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Mã vận đơn</label>
-                                    <input
-                                      type="text"
-                                      value={orderDetailTrackingNumber}
-                                      onChange={(e) => setOrderDetailTrackingNumber(e.target.value)}
-                                      placeholder="Mã vận đơn bưu cục..."
-                                      className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* CỘT 2: THÔNG TIN TRẠNG THÁI & THANH TOÁN */}
-                              <div className="bg-slate-50 dark:bg-slate-950/30 border border-slate-200/50 dark:border-slate-850 p-5 rounded-2xl space-y-4">
-                                <h4 className="text-xs font-black uppercase text-blue-600 dark:text-blue-400 border-b border-slate-100 dark:border-slate-850 pb-2 flex items-center gap-1.5">
-                                  <CreditCard size={14} />
-                                  <span>Trạng thái & Thanh toán</span>
-                                </h4>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Trạng thái giao hàng</label>
-                                    <select
-                                      value={orderDetailOrderStatus}
-                                      onChange={(e) => setOrderDetailOrderStatus(e.target.value)}
-                                      className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 font-bold"
-                                    >
-                                      <option value="pending">⏳ Chờ duyệt (Pending)</option>
-                                      <option value="processing">📦 Đang đóng gói (Processing)</option>
-                                      <option value="shipping">🚚 Đang giao hàng (Shipping)</option>
-                                      <option value="delivered">✅ Đã giao thành công (Delivered)</option>
-                                      <option value="cancelled">❌ Đã hủy đơn (Cancelled)</option>
-                                      <option value="returned">💜 Đổi trả & Hoàn tiền (Returned)</option>
-                                    </select>
-                                  </div>
-
-                                  <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Trạng thái thanh toán</label>
-                                    <select
-                                      value={orderDetailPaymentStatus}
-                                      onChange={(e) => setOrderDetailPaymentStatus(e.target.value)}
-                                      className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 font-bold"
-                                    >
-                                      <option value="pending">⏳ Chờ xác nhận</option>
-                                      <option value="unpaid">❌ Chưa thanh toán</option>
-                                      <option value="paid">✅ Đã thanh toán</option>
-                                    </select>
-                                  </div>
-                                </div>
-
-                                {orderDetailOrderStatus === 'cancelled' && (
-                                  <div className="pt-2">
-                                    <label className="block text-[10px] font-black uppercase tracking-wider text-red-500 mb-1">Lý do hủy đơn hàng</label>
-                                    <textarea
-                                      value={orderDetailCancelReason}
-                                      onChange={(e) => setOrderDetailCancelReason(e.target.value)}
-                                      placeholder="Nhập lý do hủy đơn hàng..."
-                                      rows="2"
-                                      className="w-full px-3.5 py-2 border border-red-200 dark:border-red-900 rounded-xl text-xs bg-red-500/30 dark:bg-red-950/10 text-red-700 dark:text-red-400 outline-none focus:border-red-500 font-semibold"
-                                    />
-                                  </div>
-                                )}
-
-                                <div className="pt-2.5 space-y-2 text-xs border-t border-slate-100 dark:border-slate-850">
-                                  <div className="flex justify-between text-slate-500">
-                                    <span>Tổng tiền hàng (tạm tính):</span>
-                                    <span className="font-bold">{formatVND(subtotal)}</span>
-                                  </div>
-
-                                  <div className="flex justify-between items-center text-slate-500">
-                                    <span>Phí giao hàng:</span>
-                                    <div className="flex items-center gap-1">
-                                      <input
-                                        type="number"
-                                        value={orderDetailShippingFee}
-                                        onChange={(e) => setOrderDetailShippingFee(e.target.value)}
-                                        className="w-20 px-2 py-0.5 border border-slate-200 dark:border-slate-700 rounded text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-right font-bold"
-                                      />
-                                      <span className="font-bold">đ</span>
-                                    </div>
-                                  </div>
-
-                                  {discount > 0 && (
-                                    <div className="flex justify-between text-red-500 font-semibold">
-                                      <span>Khấu trừ Khuyến mãi ({selectedOrder.couponCode}):</span>
-                                      <span>-{formatVND(discount)}</span>
-                                    </div>
-                                  )}
-
-                                  <div className="flex justify-between text-sm pt-2 border-t border-slate-250 dark:border-slate-700 font-black text-slate-900 dark:text-white">
-                                    <span>Tổng thực khách phải trả:</span>
-                                    <span className="text-base text-blue-600 dark:text-blue-400">{formatVND(finalTotal)}</span>
-                                  </div>
-                                </div>
-
-                                {selectedOrder.approvedBy && (
-                                  <div className="text-[10px] text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900 p-2.5 rounded-xl font-bold uppercase tracking-wide mt-2">
-                                    👤 Người phê duyệt đơn hàng: {selectedOrder.approvedBy}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* KHỐI 3: DANH SÁCH SẢN PHẨM & GÁN SỐ SERIAL NUMBER */}
-                            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-                              <div className="px-5 py-3.5 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                                <h4 className="text-xs font-black uppercase text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
-                                  <Boxes size={14} />
-                                  <span>Danh sách sản phẩm & gán số Serial Number (S/N)</span>
-                                </h4>
-                                <span className="text-[10px] bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded font-bold">Số lượng: {selectedOrder.orderItems.length} sản phẩm</span>
-                              </div>
-                              <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse text-xs">
-                                  <thead>
-                                    <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-800">
-                                      <th className="px-5 py-3">Ảnh</th>
-                                      <th className="px-5 py-3">Tên sản phẩm & Cấu hình</th>
-                                      <th className="px-5 py-3 text-center">Tình trạng</th>
-                                      <th className="px-5 py-3 text-center">SL</th>
-                                      <th className="px-5 py-3">Đơn giá</th>
-                                      <th className="px-5 py-3">Mã Số Serial (S/N)</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                    {getItemsArray(selectedOrder.orderItems).map((item, index) => {
-                                      return (
-                                        <tr key={index} className="hover:bg-slate-50/50 dark:hover:bg-slate-850/50">
-                                          <td className="px-5 py-3">
-                                            <img src={item.image} alt={item.name} className="w-8 h-8 object-cover rounded-lg border border-slate-200" />
-                                          </td>
-                                          <td className="px-5 py-3 font-semibold text-slate-900 dark:text-white max-w-[240px] truncate">{item.name}</td>
-                                          <td className="px-5 py-3 text-center">
-                                            <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${getBadgeClass(item.badge)}`}>
-                                              {item.badge || 'New'}
-                                            </span>
-                                          </td>
-                                          <td className="px-5 py-3 text-center font-bold">{item.quantity}</td>
-                                          <td className="px-5 py-3 font-black text-slate-900 dark:text-white">{formatVND(toVndInt(item.price))}</td>
-                                          <td className="px-5 py-3">
-                                            <input
-                                              type="text"
-                                              value={orderDetailSerialNumbers[item.productId] || orderDetailSerialNumbers[index] || ""}
-                                              onChange={(e) => {
-                                                const updatedSerials = { ...orderDetailSerialNumbers };
-                                                updatedSerials[item.productId] = e.target.value;
-                                                // Gán đồng thời key theo index để dự phòng tương thích ngược
-                                                updatedSerials[index] = e.target.value;
-                                                setOrderDetailSerialNumbers(updatedSerials);
-                                              }}
-                                              placeholder="Gán S/N phần cứng..."
-                                              className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-mono focus:border-blue-500 w-full"
-                                            />
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-
-                            {/* Modal Footer Actions */}
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-6 border-t border-slate-100 dark:border-slate-850">
-                              <div>
-                                <button
-                                  type="button"
-                                  onClick={() => handlePrintPackingSlip(selectedOrder)}
-                                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4.5 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
-                                >
-                                  <Printer size={14} />
-                                  <span>In phiếu xuất kho dán thùng</span>
-                                </button>
-                              </div>
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setIsOrderDetailModalOpen(false)}
-                                  className="px-4.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-extrabold text-xs rounded-xl transition-all cursor-pointer"
-                                >
-                                  Hủy bỏ
-                                </button>
-                                <button
-                                  type="submit"
-                                  disabled={savingOrderDetail}
-                                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-600 disabled:bg-blue-400 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer shadow-sm shadow-blue-500/20"
-                                >
-                                  {savingOrderDetail ? "Đang cập nhật..." : "Cập nhật đơn hàng"}
-                                </button>
-                              </div>
-                            </div>
-
-                          </form>
-                        </div>
-                      </div>
-                    );
-                  })()}
                 </div>
               );
             })()}
 
+
             {/* Tab 6: coupons (Marketing & Coupons Management) */}
             {activeTab === "coupons" && (
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors animate-fade-in-up">
                 <div className="p-6 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
                     <h2 className="text-base font-black text-slate-900 dark:text-white">Chiến dịch Khuyến mãi & Mã giảm giá</h2>
@@ -2255,13 +2009,13 @@ export default function Admin() {
                       Tạo các chương trình ưu đãi, xả kho chỉ áp dụng riêng cho hàng cũ (Old), hàng mới (New) hoặc phân loại theo Danh mục sản phẩm.
                     </p>
                   </div>
-                  <button
+                  <RippleButton
                     onClick={() => openCouponModal("add")}
-                    className="flex items-center justify-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-md transition-all active:scale-95"
+                    className="flex items-center justify-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-blue-600/20 transition-all active:scale-95 hover:shadow-lg hover:shadow-blue-600/30 hover:-translate-y-0.5"
                   >
                     <Plus className="h-4.5 w-4.5" />
                     <span>Tạo mã giảm giá mới</span>
-                  </button>
+                  </RippleButton>
                 </div>
 
                 {loadingCoupons ? (
@@ -2284,8 +2038,13 @@ export default function Admin() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
-                        {coupons.map((c) => (
-                          <tr key={c.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors text-xs text-slate-700 dark:text-slate-350">
+                        {coupons.map((c, index) => (
+                          <tr
+                            key={c.id}
+                            style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+                            onClick={() => openCouponModal("edit", c)}
+                            className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer"
+                          >
                             <td className="px-6 py-4 font-black whitespace-nowrap">
                               <span className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200/50 rounded-xl font-mono text-xs font-black uppercase">
                                 {c.code}
@@ -2333,7 +2092,7 @@ export default function Admin() {
                                 {c.isActive ? "Đang chạy" : "Tạm dừng"}
                               </span>
                             </td>
-                            <td className="px-6 py-4 text-right whitespace-nowrap">
+                            <td className="px-6 py-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                               <div className="flex justify-end gap-1.5">
                                 <button
                                   onClick={() => openCouponModal("edit", c)}
@@ -2368,7 +2127,7 @@ export default function Admin() {
       {isModalOpen && (
         <div 
           onClick={() => setIsModalOpen(false)} 
-          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 animate-fade-in-overlay"
         >
           <div 
             onClick={(e) => e.stopPropagation()} 
@@ -2558,10 +2317,10 @@ export default function Admin() {
                 >
                   Hủy bỏ
                 </button>
-                <button
+                <RippleButton
                   type="submit"
                   disabled={submittingProduct}
-                  className="flex items-center gap-1.5 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-75"
+                  className="flex items-center gap-1.5 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-75 hover:-translate-y-0.5"
                 >
                   {submittingProduct ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -2569,7 +2328,7 @@ export default function Admin() {
                     <Check className="h-4 w-4" />
                   )}
                   <span>{modalType === "add" ? "Thêm sản phẩm" : "Lưu thay đổi"}</span>
-                </button>
+                </RippleButton>
               </div>
             </form>
           </div>
@@ -2580,7 +2339,7 @@ export default function Admin() {
       {isCatModalOpen && (
         <div 
           onClick={() => setIsCatModalOpen(false)} 
-          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 animate-fade-in-overlay"
         >
           <div 
             onClick={(e) => e.stopPropagation()} 
@@ -2616,12 +2375,12 @@ export default function Admin() {
                 >
                   Hủy bỏ
                 </button>
-                <button
+                <RippleButton
                   type="submit"
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md active:scale-95"
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95 hover:-translate-y-0.5"
                 >
                   <span>{catModalType === "add" ? "Tạo danh mục" : "Lưu thay đổi"}</span>
-                </button>
+                </RippleButton>
               </div>
             </form>
           </div>
@@ -2632,7 +2391,7 @@ export default function Admin() {
       {isUserModalOpen && (
         <div 
           onClick={() => setIsUserModalOpen(false)} 
-          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 animate-fade-in-overlay"
         >
           <div 
             onClick={(e) => e.stopPropagation()} 
@@ -2777,10 +2536,10 @@ export default function Admin() {
                 >
                   Hủy bỏ
                 </button>
-                <button
+                <RippleButton
                   type="submit"
                   disabled={submittingUser}
-                  className="flex items-center gap-1.5 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-75"
+                  className="flex items-center gap-1.5 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-75 hover:-translate-y-0.5"
                 >
                   {submittingUser ? (
                     <Loader2 className="h-4.5 w-4.5 animate-spin" />
@@ -2788,7 +2547,7 @@ export default function Admin() {
                     <Check className="h-4.5 w-4.5" />
                   )}
                   <span>{userModalType === "add" ? "Thêm thành viên" : "Lưu thay đổi"}</span>
-                </button>
+                </RippleButton>
               </div>
             </form>
           </div>
@@ -2800,7 +2559,7 @@ export default function Admin() {
       {isCouponModalOpen && (
         <div 
           onClick={() => setIsCouponModalOpen(false)} 
-          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 animate-fade-in-overlay"
         >
           <div 
             onClick={(e) => e.stopPropagation()} 
@@ -3008,10 +2767,10 @@ export default function Admin() {
                 >
                   Hủy bỏ
                 </button>
-                <button
+                <RippleButton
                   type="submit"
                   disabled={submittingCoupon}
-                  className="flex items-center gap-1.5 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-75"
+                  className="flex items-center gap-1.5 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-75 hover:-translate-y-0.5"
                 >
                   {submittingCoupon ? (
                     <Loader2 className="h-4.5 w-4.5 animate-spin" />
@@ -3019,13 +2778,216 @@ export default function Admin() {
                     <Check className="h-4.5 w-4.5" />
                   )}
                   <span>{couponModalType === "add" ? "Tạo mã" : "Lưu thay đổi"}</span>
-                </button>
+                </RippleButton>
               </div>
             </form>
 
           </div>
         </div>
       )}
+      {/* ===================================================================
+          MODAL CHI TIẾT ĐỚN HÀNG (rendered at root level — no clipping)
+          =================================================================== */}
+      {isOrderDetailModalOpen && selectedOrder && (() => {
+        const isLocked = ['shipping', 'delivered', 'cancelled', 'returned'].includes(orderDetailOrderStatus);
+        const calculateSubtotal = () => {
+          const items = getItemsArray(selectedOrder.orderItems);
+          return items.reduce((acc, item) => acc + (toVndInt(item.price) * item.quantity), 0);
+        };
+        const subtotal = calculateSubtotal();
+        const discount = toVndInt(selectedOrder.discountAmount || 0);
+        const finalTotal = subtotal + toVndInt(orderDetailShippingFee) - discount;
+
+        return (
+          <div
+            onClick={() => setIsOrderDetailModalOpen(false)}
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 animate-fade-in-overlay"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-4xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto transition-all animate-scale-in"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-850 bg-slate-50 dark:bg-slate-950 rounded-t-3xl">
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>CHI TIẾT ĐỚN HÀNG #{selectedOrder.id}</span>
+                    <span className="text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded border border-blue-500/20 font-bold uppercase tracking-wider font-mono">
+                      {selectedOrder.paymentMethod === 'bank' ? 'Chuyển khoản' : selectedOrder.paymentMethod === 'store' ? 'Tại Store' : 'COD Bưu Tá'}
+                    </span>
+                  </h3>
+                  <p className="text-[10px] text-slate-400 mt-1 font-bold">Ngày đặt đơn: {new Date(selectedOrder.createdAt).toLocaleString("vi-VN")}</p>
+                </div>
+                <button
+                  onClick={() => setIsOrderDetailModalOpen(false)}
+                  className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-slate-500 transition-all cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <form onSubmit={handleSaveOrderDetail} className="p-6 space-y-6">
+                {isLocked && (
+                  <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-400 rounded-xl text-[11px] font-bold">
+                    <AlertCircle size={16} />
+                    <span>Lưu ý: Dữ liệu khách hàng đã được KHÓA cứng do đơn hàng đang giao, đã giao, đã hủy hoặc đổi trả để tránh thất thoát và đảm bảo minh bạch vận hành!</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* CỘT 1 */}
+                  <div className="bg-slate-50 dark:bg-slate-950/30 border border-slate-200/50 dark:border-slate-850 p-5 rounded-2xl space-y-4">
+                    <h4 className="text-xs font-black uppercase text-blue-600 dark:text-blue-400 border-b border-slate-100 dark:border-slate-850 pb-2 flex items-center gap-1.5">
+                      <Truck size={14} /><span>Khách hàng &amp; Vận chuyển</span>
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Họ tên khách hàng</label>
+                        <input type="text" value={orderDetailCustomerName} onChange={(e) => setOrderDetailCustomerName(e.target.value)} disabled={isLocked}
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Số điện thoại</label>
+                        <input type="text" value={orderDetailCustomerPhone} onChange={(e) => setOrderDetailCustomerPhone(e.target.value)} disabled={isLocked}
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Địa chỉ giao hàng</label>
+                        <input type="text" value={orderDetailCustomerAddress} onChange={(e) => setOrderDetailCustomerAddress(e.target.value)} disabled={isLocked}
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Đơn vị VC</label>
+                          <input type="text" value={orderDetailShippingUnit} onChange={(e) => setOrderDetailShippingUnit(e.target.value)} placeholder="GHN, GHTK, ViettelPost..."
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Mã vận đơn</label>
+                          <input type="text" value={orderDetailTrackingNumber} onChange={(e) => setOrderDetailTrackingNumber(e.target.value)} placeholder="Mã tracking..."
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Phí vận chuyển (VND)</label>
+                        <input type="number" value={orderDetailShippingFee} onChange={(e) => setOrderDetailShippingFee(e.target.value)} min="0"
+                          className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CỘT 2 */}
+                  <div className="space-y-4">
+                    <div className="bg-slate-50 dark:bg-slate-950/30 border border-slate-200/50 dark:border-slate-850 p-4 rounded-2xl space-y-3">
+                      <h4 className="text-xs font-black uppercase text-blue-600 dark:text-blue-400 border-b border-slate-100 dark:border-slate-850 pb-2 flex items-center gap-1.5">
+                        <CreditCard size={14} /><span>Trạng thái đơn hàng</span>
+                      </h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Trạng thái đơn</label>
+                          <select value={orderDetailOrderStatus} onChange={(e) => setOrderDetailOrderStatus(e.target.value)}
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all">
+                            <option value="pending">Chờ duyệt</option>
+                            <option value="processing">Đang xử lý</option>
+                            <option value="shipping">Đang giao hàng</option>
+                            <option value="delivered">Giao thành công</option>
+                            <option value="cancelled">Đã hủy đơn</option>
+                            <option value="returned">Yêu cầu đổi trả</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Thanh toán</label>
+                          <select value={orderDetailPaymentStatus} onChange={(e) => setOrderDetailPaymentStatus(e.target.value)}
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all">
+                            <option value="pending">Chưa thanh toán</option>
+                            <option value="paid">Đã thanh toán</option>
+                          </select>
+                        </div>
+                      </div>
+                      {orderDetailOrderStatus === 'cancelled' && (
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Lý do hủy đơn</label>
+                          <input type="text" value={orderDetailCancelReason} onChange={(e) => setOrderDetailCancelReason(e.target.value)} placeholder="Nhập lý do..."
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tóm tắt thanh toán */}
+                    <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200/40 p-4 rounded-2xl text-xs space-y-1.5">
+                      <h4 className="font-black uppercase text-blue-600 dark:text-blue-400 pb-1.5 border-b border-blue-100 dark:border-blue-900">Tóm tắt thanh toán</h4>
+                      <div className="flex justify-between text-slate-600 dark:text-slate-400"><span>Tiền hàng:</span><span className="font-bold">{formatVND(subtotal)}</span></div>
+                      <div className="flex justify-between text-slate-600 dark:text-slate-400"><span>Phí vận chuyển:</span><span className="font-bold">+{formatVND(toVndInt(orderDetailShippingFee))}</span></div>
+                      {discount > 0 && <div className="flex justify-between text-red-500"><span>Giảm giá ({selectedOrder.couponCode}):</span><span>-{formatVND(discount)}</span></div>}
+                      <div className="flex justify-between text-slate-900 dark:text-white font-black text-sm pt-1.5 border-t border-blue-200/50 dark:border-blue-900"><span>Tổng cộng:</span><span className="text-blue-600">{formatVND(finalTotal)}</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bảng sản phẩm & S/N */}
+                <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+                  <div className="px-5 py-3 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 font-bold uppercase text-slate-700 dark:text-slate-300 text-xs">Sản phẩm & Gán số Serial (S/N)</div>
+                  <div className="divide-y divide-slate-100 dark:divide-slate-850">
+                    {getItemsArray(selectedOrder.orderItems).map((item, idx) => {
+                      const snKey = item.productId || idx;
+                      return (
+                        <div key={idx} className="p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                          <img src={item.image} alt={item.name} className="w-10 h-10 object-cover rounded-lg border border-slate-200 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-slate-800 dark:text-white truncate">{item.name}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">SL: x{item.quantity} &bull; {formatVND(toVndInt(item.price))}</p>
+                          </div>
+                          <div className="flex-shrink-0 w-full sm:w-52">
+                            <label className="block text-[9px] font-black uppercase text-slate-400 mb-1">Số Serial (S/N)</label>
+                            <input
+                              type="text"
+                              value={orderDetailSerialNumbers[snKey] || ""}
+                              onChange={(e) => setOrderDetailSerialNumbers(prev => ({ ...prev, [snKey]: e.target.value }))}
+                              placeholder="Nhập số serial..."
+                              className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-[11px] font-mono font-bold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-6 border-t border-slate-100 dark:border-slate-850">
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => handlePrintPackingSlip(selectedOrder)}
+                      className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4.5 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+                    >
+                      <Printer size={14} />
+                      <span>In phiếu xuất kho</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsOrderDetailModalOpen(false)}
+                      className="px-4.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-extrabold text-xs rounded-xl transition-all cursor-pointer"
+                    >
+                      Hủy bỏ
+                    </button>
+                    <RippleButton
+                      type="submit"
+                      disabled={savingOrderDetail}
+                      className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-400 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer shadow-sm shadow-blue-500/20 hover:-translate-y-0.5"
+                    >
+                      {savingOrderDetail ? "Đang cập nhật..." : "Cập nhật đơn hàng"}
+                    </RippleButton>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

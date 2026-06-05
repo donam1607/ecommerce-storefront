@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { useToast } from "../context/ToastContext";
+import RippleButton from "../components/RippleButton";
 import { ShoppingCart, Star, ArrowLeft, Shield, Truck, RefreshCw, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { PRODUCTS } from "../data/products";
 import { formatVND, toVndInt } from "../utils/money";
@@ -8,6 +10,7 @@ import { formatVND, toVndInt } from "../utils/money";
 export default function ProductDetail() {
   const { id } = useParams();
   const { addToCart } = useCart();
+  const { showToast } = useToast();
   const [added, setAdded] = useState(false);
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
@@ -40,7 +43,33 @@ export default function ProductDetail() {
     fetchProduct();
   }, [id]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Đang tải sản phẩm...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 transition-colors duration-300">
+        <div className="max-w-6xl mx-auto animate-fade-in">
+          <div className="h-6 w-32 animate-shimmer rounded mb-8"></div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800">
+            <div className="space-y-4">
+              <div className="animate-shimmer aspect-square rounded-2xl w-full"></div>
+              <div className="flex gap-3">
+                <div className="animate-shimmer w-20 h-20 rounded-xl"></div>
+                <div className="animate-shimmer w-20 h-20 rounded-xl"></div>
+                <div className="animate-shimmer w-20 h-20 rounded-xl"></div>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="h-4 w-24 animate-shimmer rounded"></div>
+              <div className="h-8 w-3/4 animate-shimmer rounded"></div>
+              <div className="h-4 w-40 animate-shimmer rounded"></div>
+              <div className="h-16 w-full animate-shimmer rounded"></div>
+              <div className="h-8 w-1/3 animate-shimmer rounded"></div>
+              <div className="h-12 w-full animate-shimmer rounded-xl"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -60,11 +89,13 @@ export default function ProductDetail() {
   const handleAddToCart = () => {
     for (let i = 0; i < qty; i++) addToCart(product);
     setAdded(true);
+    showToast(`Đã thêm thành công ${qty} sản phẩm "${product.name}" vào giỏ hàng!`, "success");
     setTimeout(() => setAdded(false), 2000);
   };
 
   const handleBuyNow = () => {
     for (let i = 0; i < qty; i++) addToCart(product);
+    showToast(`Đã thêm "${product.name}" vào giỏ hàng! Đang chuyển hướng thanh toán...`, "info");
     navigate("/checkout");
   };
 
@@ -190,23 +221,23 @@ export default function ProductDetail() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <button
+              <RippleButton
                 onClick={handleAddToCart}
-                className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-base transition-all ${
+                className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-base transition-all cursor-pointer ${
                   added
-                    ? "bg-emerald-500 text-white" // Màu khi đã thêm vào giỏ
-                    : "bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-500 border border-slate-200 dark:border-slate-700 active:scale-[0.98]" // Màu mặc định
+                    ? "bg-emerald-500 text-white" 
+                    : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-850 dark:text-slate-200 border border-slate-200 dark:border-slate-700 active:scale-[0.98]" 
                 }`}
               >
                 <ShoppingCart className="h-5 w-5" />
                 {added ? "Đã thêm! ✓" : "Thêm vào giỏ"}
-              </button>
-              <button
+              </RippleButton>
+              <RippleButton
                 onClick={handleBuyNow}
-                className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold text-base py-4 rounded-2xl transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 active:scale-[0.98] text-center"
+                className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold text-base py-4 rounded-2xl transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 active:scale-[0.98] text-center cursor-pointer"
               >
                 Mua ngay
-              </button>
+              </RippleButton>
             </div>
 
             {/* Guarantees */}
