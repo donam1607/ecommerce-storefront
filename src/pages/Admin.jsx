@@ -90,6 +90,8 @@ export default function Admin() {
   const [formImages, setFormImages] = useState("");
   const [formDesc, setFormDesc] = useState("");
   const [formSpecs, setFormSpecs] = useState("");
+  const [formIsHot, setFormIsHot] = useState(false);
+  const [formDiscount, setFormDiscount] = useState("0");
   const [submittingProduct, setSubmittingProduct] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -610,6 +612,8 @@ export default function Admin() {
       setFormImages(prod.images ? prod.images.join(", ") : "");
       setFormDesc(prod.description);
       setFormSpecs(prod.specs ? prod.specs.join("\n") : "");
+      setFormIsHot(prod.isHot || false);
+      setFormDiscount(prod.discount ? prod.discount.toString() : "0");
     } else {
       setEditingId(null);
       setFormName("");
@@ -621,6 +625,8 @@ export default function Admin() {
       setFormImages("");
       setFormDesc("");
       setFormSpecs("");
+      setFormIsHot(false);
+      setFormDiscount("0");
     }
     setIsModalOpen(true);
   };
@@ -641,7 +647,9 @@ export default function Admin() {
       description: formDesc,
       specs: formSpecs.split("\n").map(s => s.trim()).filter(Boolean),
       countInStock: parseInt(formStock),
-      badge: badgeVal || null
+      badge: badgeVal || null,
+      isHot: formIsHot,
+      discount: parseInt(formDiscount) || 0
     };
 
     const url = modalType === "add" 
@@ -1449,9 +1457,40 @@ export default function Admin() {
                                   />
                                 </div>
                               </td>
-                              <td className="px-6 py-4 font-bold text-slate-850 dark:text-white max-w-[200px] truncate">{prod.name}</td>
+                              <td className="px-6 py-4 font-bold text-slate-850 dark:text-white max-w-[200px] truncate">
+                                <div className="flex flex-col gap-0.5">
+                                  <span>{prod.name}</span>
+                                  {prod.isHot && (
+                                    <span className="w-fit text-[8px] font-black uppercase tracking-wider bg-rose-500 text-white px-1.5 py-0.2 rounded-md">
+                                      🔥 HOT
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
                               <td className="px-6 py-4 font-semibold">{prod.category}</td>
-                              <td className="px-6 py-4 font-black text-slate-900 dark:text-white">{formatVND(prod.price)}</td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex flex-col">
+                                  {prod.discount > 0 ? (
+                                    <>
+                                      <span className="font-black text-slate-900 dark:text-white">
+                                        {formatVND(prod.price * (1 - prod.discount / 100))}
+                                      </span>
+                                      <div className="flex items-center gap-1.5 mt-0.5">
+                                        <span className="text-[10px] text-slate-400 line-through">
+                                          {formatVND(prod.price)}
+                                        </span>
+                                        <span className="text-[9px] font-black text-red-500">
+                                          -{prod.discount}%
+                                        </span>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <span className="font-black text-slate-900 dark:text-white">
+                                      {formatVND(prod.price)}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
                               <td className="px-6 py-4 font-bold text-emerald-600 dark:text-emerald-400">{prod.countInStock} cái</td>
                               <td className="px-6 py-4">
                                 {prod.badge ? (
@@ -2215,6 +2254,34 @@ export default function Admin() {
                     <option value="Like New">Like New (99%)</option>
                     <option value="Old">Đã qua sử dụng (Old)</option>
                   </select>
+                </div>
+
+                {/* Percentage Discount */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Giảm giá (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    placeholder="Ví dụ: 10 (cho 10%)"
+                    value={formDiscount}
+                    onChange={(e) => setFormDiscount(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                  />
+                </div>
+
+                {/* isHot Checkbox */}
+                <div className="flex items-center gap-2 pt-6">
+                  <input
+                    type="checkbox"
+                    id="isHot"
+                    checked={formIsHot}
+                    onChange={(e) => setFormIsHot(e.target.checked)}
+                    className="h-4.5 w-4.5 text-blue-600 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-blue-500 cursor-pointer"
+                  />
+                  <label htmlFor="isHot" className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 cursor-pointer">
+                    🔥 Sản phẩm HOT nổi bật
+                  </label>
                 </div>
 
 

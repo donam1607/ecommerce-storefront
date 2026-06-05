@@ -118,14 +118,22 @@ export default function Home() {
     fetchProducts();
   }, []);
 
+  // Helper lists for featured and flash sale sections
+  const hotProducts = products.filter((p) => p.isHot === true);
+  const featuredList = hotProducts.length > 0 ? hotProducts : products.slice(0, 4);
+
+  const discountedProducts = products.filter((p) => p.discount > 0);
+  const flashSaleProducts = discountedProducts.length > 0 ? discountedProducts : products.slice(0, 4);
+
   // Interval for Hero product slide rotation
   useEffect(() => {
-    if (products.length === 0) return;
+    const listLen = featuredList.length;
+    if (listLen === 0) return;
     const interval = setInterval(() => {
-      setFeaturedIndex((prev) => (prev + 1) % Math.min(products.length, 4));
+      setFeaturedIndex((prev) => (prev + 1) % listLen);
     }, 4500);
     return () => clearInterval(interval);
-  }, [products]);
+  }, [featuredList.length]);
 
   // Countdown timer clock ticking
   useEffect(() => {
@@ -247,8 +255,7 @@ export default function Home() {
     document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
   };
 
-  const featuredProduct = products.length > 0 ? products[featuredIndex] : null;
-  const flashSaleProducts = products.length > 0 ? products.slice(0, 4) : [];
+  const featuredProduct = featuredList.length > 0 ? featuredList[featuredIndex % featuredList.length] : null;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
@@ -518,7 +525,7 @@ export default function Home() {
           {/* Flash Sale Product Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {flashSaleProducts.map((product, idx) => {
-              const discountPercent = 15 + (idx * 5); // Mock discounts 15%, 20%, 25%, 30%
+              const discountPercent = product.discount > 0 ? product.discount : 15 + (idx * 5);
               const soldPercentage = 45 + (idx * 12); // Mock claims
               return (
                 <ScrollReveal key={`flash-${product.id}`} delay={idx * 80} distance="25px">
@@ -897,6 +904,11 @@ export default function Home() {
                         {product.badge}
                       </span>
                     )}
+                    {product.discount > 0 && (
+                      <span className="absolute top-3 right-3 z-30 bg-red-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md">
+                        -{product.discount}%
+                      </span>
+                    )}
                   </Link>
 
                   {/* Info */}
@@ -918,7 +930,25 @@ export default function Home() {
                     </div>
 
                     <div className="flex flex-col gap-2 pt-1">
-                      <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white">{formatVND(product.price)}</span>
+                      {product.discount > 0 ? (
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-baseline gap-1.5 flex-wrap">
+                            <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                              {formatVND(Math.floor(product.price * (1 - product.discount / 100)))}
+                            </span>
+                            <span className="text-[10px] text-red-500 font-extrabold bg-red-50 dark:bg-red-950/30 px-1.5 py-0.2 rounded">
+                              -{product.discount}%
+                            </span>
+                          </div>
+                          <span className="text-xs text-slate-400 line-through">
+                            {formatVND(product.price)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                          {formatVND(product.price)}
+                        </span>
+                      )}
                       <div className="grid grid-cols-2 gap-2">
                         <RippleButton
                           onClick={() => handleAddToCart(product)}
