@@ -91,6 +91,7 @@ export default function Admin() {
   const [formSpecs, setFormSpecs] = useState("");
   const [formIsHot, setFormIsHot] = useState(false);
   const [formDiscount, setFormDiscount] = useState("0");
+  const [formDiscountedPrice, setFormDiscountedPrice] = useState("");
   const [submittingProduct, setSubmittingProduct] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -585,6 +586,64 @@ export default function Admin() {
     return acc;
   }, {});
 
+  const formatNumberWithCommas = (value) => {
+    if (value === undefined || value === null) return "";
+    const cleanValue = value.toString().replace(/[^0-9]/g, "");
+    if (!cleanValue) return "";
+    return parseInt(cleanValue, 10).toLocaleString("en-US");
+  };
+
+  const handlePriceChange = (val) => {
+    const formattedPrice = formatNumberWithCommas(val);
+    setFormPrice(formattedPrice);
+    
+    const priceNum = parseFloat(formattedPrice.replace(/,/g, "")) || 0;
+    if (priceNum === 0) {
+      setFormDiscountedPrice("");
+      return;
+    }
+    const discountNum = parseFloat(formDiscount) || 0;
+    const finalPrice = Math.round(priceNum * (1 - discountNum / 100));
+    setFormDiscountedPrice(formatNumberWithCommas(finalPrice));
+  };
+
+  const handleDiscountChange = (val) => {
+    setFormDiscount(val);
+    let discountNum = parseFloat(val) || 0;
+    if (discountNum < 0) discountNum = 0;
+    if (discountNum > 100) discountNum = 100;
+    
+    const priceNum = parseFloat(formPrice.replace(/,/g, "")) || 0;
+    if (priceNum === 0) {
+      setFormDiscountedPrice("");
+      return;
+    }
+    const finalPrice = Math.round(priceNum * (1 - discountNum / 100));
+    setFormDiscountedPrice(formatNumberWithCommas(finalPrice));
+  };
+
+  const handleDiscountedPriceChange = (val) => {
+    if (!val) {
+      setFormDiscountedPrice("");
+      setFormDiscount("0");
+      return;
+    }
+    const formattedFinalPrice = formatNumberWithCommas(val);
+    setFormDiscountedPrice(formattedFinalPrice);
+    
+    const finalPriceNum = parseFloat(formattedFinalPrice.replace(/,/g, "")) || 0;
+    const priceNum = parseFloat(formPrice.replace(/,/g, "")) || 0;
+    
+    if (priceNum > 0) {
+      let calculatedDiscount = Math.round((1 - finalPriceNum / priceNum) * 100);
+      if (calculatedDiscount < 0) calculatedDiscount = 0;
+      if (calculatedDiscount > 100) calculatedDiscount = 100;
+      setFormDiscount(calculatedDiscount.toString());
+    } else {
+      setFormDiscount("0");
+    }
+  };
+
   // Open Modal Product
   const openModal = (type, prod = null) => {
     setModalType(type);
@@ -592,7 +651,7 @@ export default function Admin() {
       setEditingId(prod.id);
       setFormName(prod.name);
       setFormCategory(prod.category);
-      setFormPrice(prod.price.toString());
+      setFormPrice(formatNumberWithCommas(prod.price));
       setFormStock(prod.countInStock.toString());
       
       const badgeVal = prod.badge || "";
@@ -608,7 +667,9 @@ export default function Admin() {
       setFormDesc(prod.description);
       setFormSpecs(prod.specs ? prod.specs.join("\n") : "");
       setFormIsHot(prod.isHot || false);
-      setFormDiscount(prod.discount ? prod.discount.toString() : "0");
+      const discountNum = prod.discount || 0;
+      setFormDiscount(discountNum.toString());
+      setFormDiscountedPrice(formatNumberWithCommas(Math.round(prod.price * (1 - discountNum / 100))));
     } else {
       setEditingId(null);
       setFormName("");
@@ -622,6 +683,7 @@ export default function Admin() {
       setFormSpecs("");
       setFormIsHot(false);
       setFormDiscount("0");
+      setFormDiscountedPrice("");
     }
     setIsModalOpen(true);
   };
@@ -637,7 +699,7 @@ export default function Admin() {
     const payload = {
       name: formName,
       category: formCategory,
-      price: parseFloat(formPrice),
+      price: parseFloat(formPrice.toString().replace(/,/g, "")) || 0,
       images: formImages.split(",").map(i => i.trim()).filter(Boolean),
       description: formDesc,
       specs: formSpecs.split("\n").map(s => s.trim()).filter(Boolean),
@@ -2215,11 +2277,11 @@ export default function Admin() {
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Giá bán (VND) *</label>
                   <input
-                    type="number"
+                    type="text"
                     required
-                    placeholder="Ví dụ: 12990000"
+                    placeholder="Ví dụ: 12,990,000"
                     value={formPrice}
-                    onChange={(e) => setFormPrice(e.target.value)}
+                    onChange={(e) => handlePriceChange(e.target.value)}
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
                   />
                 </div>
@@ -2260,7 +2322,19 @@ export default function Admin() {
                     max="100"
                     placeholder="Ví dụ: 10 (cho 10%)"
                     value={formDiscount}
-                    onChange={(e) => setFormDiscount(e.target.value)}
+                    onChange={(e) => handleDiscountChange(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                  />
+                </div>
+
+                {/* Discounted Price */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Giá sau giảm (VND)</label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: 11,691,000"
+                    value={formDiscountedPrice}
+                    onChange={(e) => handleDiscountedPriceChange(e.target.value)}
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
                   />
                 </div>
