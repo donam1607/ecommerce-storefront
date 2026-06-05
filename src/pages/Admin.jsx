@@ -586,25 +586,18 @@ export default function Admin() {
     return acc;
   }, {});
 
-  const formatNumberWithCommas = (value) => {
-    if (value === undefined || value === null) return "";
-    const cleanValue = value.toString().replace(/[^0-9]/g, "");
-    if (!cleanValue) return "";
-    return parseInt(cleanValue, 10).toLocaleString("en-US");
-  };
-
   const handlePriceChange = (val) => {
-    const formattedPrice = formatNumberWithCommas(val);
-    setFormPrice(formattedPrice);
+    const cleanVal = val.replace(/[^0-9]/g, "");
+    setFormPrice(cleanVal);
     
-    const priceNum = parseFloat(formattedPrice.replace(/,/g, "")) || 0;
+    const priceNum = parseFloat(cleanVal) || 0;
     if (priceNum === 0) {
       setFormDiscountedPrice("");
       return;
     }
     const discountNum = parseFloat(formDiscount) || 0;
     const finalPrice = Math.round(priceNum * (1 - discountNum / 100));
-    setFormDiscountedPrice(formatNumberWithCommas(finalPrice));
+    setFormDiscountedPrice(finalPrice.toString());
   };
 
   const handleDiscountChange = (val) => {
@@ -613,35 +606,18 @@ export default function Admin() {
     if (discountNum < 0) discountNum = 0;
     if (discountNum > 100) discountNum = 100;
     
-    const priceNum = parseFloat(formPrice.replace(/,/g, "")) || 0;
+    const priceNum = parseFloat(formPrice) || 0;
     if (priceNum === 0) {
       setFormDiscountedPrice("");
       return;
     }
     const finalPrice = Math.round(priceNum * (1 - discountNum / 100));
-    setFormDiscountedPrice(formatNumberWithCommas(finalPrice));
+    setFormDiscountedPrice(finalPrice.toString());
   };
 
   const handleDiscountedPriceChange = (val) => {
-    if (!val) {
-      setFormDiscountedPrice("");
-      setFormDiscount("0");
-      return;
-    }
-    const formattedFinalPrice = formatNumberWithCommas(val);
-    setFormDiscountedPrice(formattedFinalPrice);
-    
-    const finalPriceNum = parseFloat(formattedFinalPrice.replace(/,/g, "")) || 0;
-    const priceNum = parseFloat(formPrice.replace(/,/g, "")) || 0;
-    
-    if (priceNum > 0) {
-      let calculatedDiscount = Math.round((1 - finalPriceNum / priceNum) * 100);
-      if (calculatedDiscount < 0) calculatedDiscount = 0;
-      if (calculatedDiscount > 100) calculatedDiscount = 100;
-      setFormDiscount(calculatedDiscount.toString());
-    } else {
-      setFormDiscount("0");
-    }
+    const cleanVal = val.replace(/[^0-9]/g, "");
+    setFormDiscountedPrice(cleanVal);
   };
 
   // Open Modal Product
@@ -651,7 +627,7 @@ export default function Admin() {
       setEditingId(prod.id);
       setFormName(prod.name);
       setFormCategory(prod.category);
-      setFormPrice(formatNumberWithCommas(prod.price));
+      setFormPrice(prod.price.toString());
       setFormStock(prod.countInStock.toString());
       
       const badgeVal = prod.badge || "";
@@ -669,7 +645,11 @@ export default function Admin() {
       setFormIsHot(prod.isHot || false);
       const discountNum = prod.discount || 0;
       setFormDiscount(discountNum.toString());
-      setFormDiscountedPrice(formatNumberWithCommas(Math.round(prod.price * (1 - discountNum / 100))));
+      setFormDiscountedPrice(
+        prod.discountedPrice !== null && prod.discountedPrice !== undefined
+          ? Math.round(prod.discountedPrice).toString()
+          : Math.round(prod.price * (1 - discountNum / 100)).toString()
+      );
     } else {
       setEditingId(null);
       setFormName("");
@@ -699,14 +679,15 @@ export default function Admin() {
     const payload = {
       name: formName,
       category: formCategory,
-      price: parseFloat(formPrice.toString().replace(/,/g, "")) || 0,
+      price: parseFloat(formPrice) || 0,
       images: formImages.split(",").map(i => i.trim()).filter(Boolean),
       description: formDesc,
       specs: formSpecs.split("\n").map(s => s.trim()).filter(Boolean),
       countInStock: parseInt(formStock),
       badge: badgeVal || null,
       isHot: formIsHot,
-      discount: parseInt(formDiscount) || 0
+      discount: parseInt(formDiscount) || 0,
+      discountedPrice: formDiscountedPrice ? parseFloat(formDiscountedPrice) : null
     };
 
     const url = modalType === "add" 
@@ -2277,13 +2258,18 @@ export default function Admin() {
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Giá bán (VND) *</label>
                   <input
-                    type="text"
+                    type="number"
                     required
-                    placeholder="Ví dụ: 12,990,000"
+                    placeholder="Ví dụ: 12990000"
                     value={formPrice}
                     onChange={(e) => handlePriceChange(e.target.value)}
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
                   />
+                  {formPrice && (
+                    <p className="text-[11px] text-blue-600 dark:text-blue-400 mt-1 font-bold">
+                      👉 Định dạng: {formatVND(formPrice)}
+                    </p>
+                  )}
                 </div>
 
                 {/* Stock Count */}
@@ -2331,12 +2317,17 @@ export default function Admin() {
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Giá sau giảm (VND)</label>
                   <input
-                    type="text"
-                    placeholder="Ví dụ: 11,691,000"
+                    type="number"
+                    placeholder="Ví dụ: 11691000"
                     value={formDiscountedPrice}
                     onChange={(e) => handleDiscountedPriceChange(e.target.value)}
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
                   />
+                  {formDiscountedPrice && (
+                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-bold">
+                      👉 Định dạng: {formatVND(formDiscountedPrice)}
+                    </p>
+                  )}
                 </div>
 
                 {/* isHot Checkbox */}

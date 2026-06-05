@@ -14,7 +14,16 @@ export const CartProvider = ({ children }) => {
           item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
-      return [...prev, { ...product, price: toVndInt(product.price), quantity: 1 }];
+      
+      // Determine the actual purchase price (with custom or percentage discount if applicable)
+      let actualPrice = toVndInt(product.price);
+      if (product.discountedPrice !== null && product.discountedPrice !== undefined) {
+        actualPrice = toVndInt(product.discountedPrice);
+      } else if (product.discount > 0) {
+        actualPrice = Math.floor(toVndInt(product.price) * (1 - product.discount / 100));
+      }
+      
+      return [...prev, { ...product, price: actualPrice, quantity: 1 }];
     });
   };
 

@@ -597,7 +597,11 @@ export default function Home() {
                         
                         <div className="flex items-center gap-2 mt-2">
                           <span className="font-black text-slate-900 dark:text-white text-base">
-                            {formatVND(Math.floor(product.price * (1 - discountPercent / 100)))}
+                            {formatVND(
+                              product.discountedPrice !== null && product.discountedPrice !== undefined
+                                ? toVndInt(product.discountedPrice)
+                                : Math.floor(product.price * (1 - discountPercent / 100))
+                            )}
                           </span>
                           <span className="text-xs text-slate-400 line-through">
                             {formatVND(product.price)}
@@ -967,15 +971,21 @@ export default function Home() {
                     </div>
 
                     <div className="flex flex-col gap-2 pt-1">
-                      {product.discount > 0 ? (
+                      {(product.discount > 0 || (product.discountedPrice !== null && product.discountedPrice !== undefined)) ? (
                         <div className="flex flex-col gap-0.5">
                           <div className="flex items-baseline gap-1.5 flex-wrap">
                             <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-                              {formatVND(Math.floor(product.price * (1 - product.discount / 100)))}
+                              {formatVND(
+                                product.discountedPrice !== null && product.discountedPrice !== undefined
+                                  ? toVndInt(product.discountedPrice)
+                                  : Math.floor(product.price * (1 - product.discount / 100))
+                              )}
                             </span>
-                            <span className="text-[10px] text-red-500 font-extrabold bg-red-50 dark:bg-red-950/30 px-1.5 py-0.2 rounded">
-                              -{product.discount}%
-                            </span>
+                            {product.discount > 0 && (
+                              <span className="text-[10px] text-red-500 font-extrabold bg-red-50 dark:bg-red-950/30 px-1.5 py-0.2 rounded">
+                                -{product.discount}%
+                              </span>
+                            )}
                           </div>
                           <span className="text-xs text-slate-400 line-through">
                             {formatVND(product.price)}

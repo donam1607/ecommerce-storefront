@@ -201,7 +201,29 @@ export default function ProductDetail() {
 
             {/* Price & Actions */}
             <div className="flex items-center gap-4 mb-6">
-              <span className="text-3xl font-black text-slate-900 dark:text-white">{formatVND(product.price)}</span>
+              {(product.discount > 0 || (product.discountedPrice !== null && product.discountedPrice !== undefined)) ? (
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-baseline gap-3 flex-wrap">
+                    <span className="text-3xl font-black text-slate-900 dark:text-white">
+                      {formatVND(
+                        product.discountedPrice !== null && product.discountedPrice !== undefined
+                          ? toVndInt(product.discountedPrice)
+                          : Math.floor(product.price * (1 - product.discount / 100))
+                      )}
+                    </span>
+                    {product.discount > 0 && (
+                      <span className="text-xs text-red-500 font-extrabold bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded">
+                        -{product.discount}% OFF
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-sm text-slate-400 line-through">
+                    {formatVND(product.price)}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-3xl font-black text-slate-900 dark:text-white">{formatVND(product.price)}</span>
+              )}
             </div>
 
             {/* Quantity */}
