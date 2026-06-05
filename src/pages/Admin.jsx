@@ -4,9 +4,8 @@ import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, Shield
 import { useToast } from "../context/ToastContext";
 import { formatVND, toVndInt } from "../utils/money";
 import RippleButton from "../components/RippleButton";
+import { fetchWithRetry, API_BASE as API_URL, authHeaders } from "../utils/api";
 
-
-const API_URL = "https://shoptech-backend.onrender.com";
 
 const getBadgeClass = (badge) => {
   if (!badge) return "";
@@ -213,7 +212,7 @@ export default function Admin() {
     setLoadingProducts(true);
     setError(null);
     try {
-      const response = await fetch(`${API_URL}/api/products`);
+      const response = await fetchWithRetry(`${API_URL}/api/products`, {}, 3, 2000);
       if (response.ok) {
         const data = await response.json();
         const mapped = Array.isArray(data) ? data.map((p) => ({ ...p, price: toVndInt(p.price) })) : [];
@@ -227,7 +226,7 @@ export default function Admin() {
         setError(data.message || "Không thể lấy danh sách sản phẩm.");
       }
     } catch (err) {
-      setError("Lỗi kết nối server khi tải danh sách sản phẩm.");
+      setError("Lỗi kết nối server khi tải danh sách sản phẩm. Server có thể đang khởi động lại.");
     } finally {
       setLoadingProducts(false);
     }
@@ -238,11 +237,9 @@ export default function Admin() {
     setLoadingUsers(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URL}/api/users`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
+      const response = await fetchWithRetry(`${API_URL}/api/users`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      }, 3, 2000);
       if (response.ok) {
         const data = await response.json();
         setUsers(data);
@@ -262,11 +259,9 @@ export default function Admin() {
     setLoadingOrders(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URL}/api/orders`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
+      const response = await fetchWithRetry(`${API_URL}/api/orders`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      }, 3, 2000);
       if (response.ok) {
         const data = await response.json();
         setOrders(data);

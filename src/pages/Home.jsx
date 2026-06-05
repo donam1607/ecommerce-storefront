@@ -7,10 +7,11 @@ import ScrollReveal from "../components/ScrollReveal";
 import { 
   ShoppingCart, Star, Search, Cpu, Monitor, Keyboard, Headphones, 
   Smartphone, Battery, ChevronDown, SlidersHorizontal, Check, X,
-  Flame, ShieldCheck, HelpCircle, Truck, ArrowRight, TrendingUp, Sparkles, Award
+  Flame, ShieldCheck, HelpCircle, Truck, ArrowRight, TrendingUp, Sparkles, Award, WifiOff, Loader2
 } from "lucide-react";
 
 import { formatVND, toVndInt } from "../utils/money";
+import { fetchWithRetry, API_BASE } from "../utils/api";
 
 const CATEGORIES_ICONS = {
   "laptop": Cpu,
@@ -62,6 +63,8 @@ export default function Home() {
   const { showToast } = useToast();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [serverWaking, setServerWaking] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const [categories, setCategories] = useState(["Laptop", "Monitor", "Keyboard", "Headphones", "Smartphone", "Accessories"]);
   const [activeCategory, setActiveCategory] = useState("All");
   const [activeCondition, setActiveCondition] = useState("All");
@@ -93,9 +96,16 @@ export default function Home() {
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
+      setFetchError(false);
+
+      // Show "server waking" banner after 3 seconds if still loading
+      const wakingTimer = setTimeout(() => setServerWaking(true), 3000);
+
       try {
-        const API_URL = "https://shoptech-backend.onrender.com";
-        const response = await fetch(`${API_URL}/api/products`);
+        const response = await fetchWithRetry(`${API_BASE}/api/products`, {}, 3, 2000);
+        clearTimeout(wakingTimer);
+        setServerWaking(false);
+
         if (response.ok) {
           const data = await response.json();
           if (Array.isArray(data)) {
@@ -108,8 +118,13 @@ export default function Home() {
               setCategories(extractedCats);
             }
           }
+        } else {
+          setFetchError(true);
         }
       } catch (error) {
+        clearTimeout(wakingTimer);
+        setServerWaking(false);
+        setFetchError(true);
         console.error("Lỗi tải sản phẩm:", error);
       } finally {
         setLoading(false);
@@ -259,6 +274,28 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
+
+      {/* Server Cold-Start Warning Banner */}
+      {serverWaking && (
+        <div className="fixed top-0 left-0 right-0 z-[9999] bg-amber-500 text-white px-4 py-2.5 flex items-center justify-center gap-3 text-xs font-bold shadow-lg animate-fade-in">
+          <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
+          <span>🚀 Server đang khởi động (Render free tier ngủ sau 15 phút). Vui lòng chờ 30-60 giây...</span>
+        </div>
+      )}
+
+      {/* Fetch Error Banner */}
+      {fetchError && products.length === 0 && (
+        <div className="fixed top-0 left-0 right-0 z-[9999] bg-red-600 text-white px-4 py-2.5 flex items-center justify-center gap-3 text-xs font-bold shadow-lg">
+          <WifiOff className="h-4 w-4 flex-shrink-0" />
+          <span>Không thể kết nối tới server. Hãy kiểm tra mạng hoặc thử lại sau.</span>
+          <button
+            onClick={() => window.location.reload()}
+            className="ml-2 px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg transition-colors cursor-pointer"
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
       
       {/* 1. Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white py-28 px-4 border-b border-slate-900">
