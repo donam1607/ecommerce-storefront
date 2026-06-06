@@ -385,6 +385,7 @@ export default function Orders() {
             })}
           </div>
         )}
+      </div>
 
         {/* ---------------------------------------------------------
             MODAL: XEM CHI TIẾT ĐƠN HÀNG (TIMELINE & DETAILS)
@@ -772,7 +773,6 @@ export default function Orders() {
           </div>
         )}
 
-      </div>
     </div>
   );
 }

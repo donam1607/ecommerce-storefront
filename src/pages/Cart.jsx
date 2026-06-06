@@ -61,7 +61,7 @@ export default function Cart() {
                   <div className="flex justify-between items-start gap-2">
                     <div>
                       <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">{item.category}</span>
-                      <h3 className="font-bold text-slate-800 dark:text-white text-sm truncate">{item.name}</h3>
+                      <h3 className="font-bold text-slate-800 dark:text-white text-sm whitespace-normal break-words">{item.name}</h3>
                     </div>
                     <button
                       onClick={() => removeFromCart(item.id)}

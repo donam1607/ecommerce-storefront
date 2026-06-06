@@ -468,6 +468,7 @@ export default function Admin() {
       });
       if (response.ok) {
         fetchOrders();
+        alert("Xác nhận thanh toán thành công!");
       } else {
         const data = await response.json();
         alert(data.message || "Lỗi xác nhận thanh toán.");
@@ -491,6 +492,7 @@ export default function Admin() {
       });
       if (response.ok) {
         fetchOrders();
+        alert("Xóa hóa đơn thành công!");
       } else {
         const data = await response.json();
         alert(data.message || "Lỗi xóa hóa đơn.");
@@ -709,6 +711,7 @@ export default function Admin() {
       if (response.ok) {
         setIsModalOpen(false);
         fetchProducts();
+        alert(modalType === "add" ? "Thêm sản phẩm thành công!" : "Cập nhật sản phẩm thành công!");
       } else {
         const data = await response.json();
         alert(data.message || "Đã xảy ra lỗi khi lưu sản phẩm.");
@@ -734,6 +737,7 @@ export default function Admin() {
 
       if (response.ok) {
         fetchProducts();
+        alert("Xóa sản phẩm thành công!");
       } else {
         const data = await response.json();
         alert(data.message || "Không thể xóa sản phẩm này.");
@@ -809,6 +813,7 @@ export default function Admin() {
     if (catModalType === "add") {
       setCategoriesList(prev => Array.from(new Set([...prev, cName])));
       setIsCatModalOpen(false);
+      alert("Thêm danh mục mới thành công!");
     } else {
       // Rename Category across products
       const token = localStorage.getItem("token");
@@ -834,6 +839,7 @@ export default function Admin() {
         setCategoriesList(prev => prev.map(c => c === editingCatName ? cName : c));
         setIsCatModalOpen(false);
         fetchProducts();
+        alert("Đổi tên danh mục thành công!");
       } catch (err) {
         alert("Lỗi đổi tên danh mục của sản phẩm.");
       } finally {
@@ -851,6 +857,7 @@ export default function Admin() {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa danh mục "${catName}" khỏi danh sách?`)) return;
 
     setCategoriesList(prev => prev.filter(c => c !== catName));
+    alert("Xóa danh mục thành công!");
   };
 
   // Role changes
@@ -868,6 +875,7 @@ export default function Admin() {
 
       if (response.ok) {
         fetchUsers();
+        alert("Cập nhật quyền thành viên thành công!");
       } else {
         const data = await response.json();
         alert(data.message || "Không thể cập nhật quyền người dùng.");
@@ -896,6 +904,7 @@ export default function Admin() {
 
       if (response.ok) {
         fetchUsers();
+        alert("Xóa thành viên thành công!");
       } else {
         const data = await response.json();
         alert(data.message || "Không thể xóa người dùng này.");
@@ -977,6 +986,7 @@ export default function Admin() {
       if (response.ok) {
         setIsUserModalOpen(false);
         fetchUsers();
+        alert(userModalType === "add" ? "Thêm thành viên mới thành công!" : "Cập nhật thông tin thành viên thành công!");
       } else {
         alert(data.message || "Đã xảy ra lỗi khi lưu thông tin thành viên.");
       }
@@ -1059,6 +1069,7 @@ export default function Admin() {
       if (response.ok) {
         setIsCouponModalOpen(false);
         fetchCoupons();
+        alert(couponModalType === "add" ? "Tạo mã giảm giá mới thành công!" : "Cập nhật mã giảm giá thành công!");
       } else {
         alert(data.message || "Đã xảy ra lỗi khi lưu mã giảm giá.");
       }
@@ -1082,6 +1093,7 @@ export default function Admin() {
       });
       if (response.ok) {
         fetchCoupons();
+        alert("Xóa mã giảm giá thành công!");
       } else {
         const data = await response.json();
         alert(data.message || "Lỗi xóa mã giảm giá.");
@@ -1155,10 +1167,10 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-850 dark:text-slate-100 transition-colors duration-300 admin-panel">
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="max-w-[115%] mx-auto px-2 py-8 sm:px-4 lg:px-6">
         
         {/* Main Administrative Layout Grid */}
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-4">
           
           {/* LEFT SIDEBAR PANEL (Desktop) / TOP PANEL (Mobile) */}
           <aside className={`w-full flex-shrink-0 transition-all duration-300 ${isCollapsed ? "lg:w-20" : "lg:w-64"}`}>
