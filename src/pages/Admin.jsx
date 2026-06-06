@@ -1508,17 +1508,24 @@ export default function Admin() {
                               <td className="px-6 py-4 font-semibold">{prod.category}</td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex flex-col">
-                                  {prod.discount > 0 ? (
+                                  {(prod.discount > 0 || (prod.discountedPrice !== null && prod.discountedPrice !== undefined && toVndInt(prod.discountedPrice) < toVndInt(prod.price))) ? (
                                     <>
                                       <span className="font-black text-slate-900 dark:text-white">
-                                        {formatVND(prod.price * (1 - prod.discount / 100))}
+                                        {formatVND(
+                                          prod.discountedPrice !== null && prod.discountedPrice !== undefined
+                                            ? toVndInt(prod.discountedPrice)
+                                            : Math.floor(prod.price * (1 - prod.discount / 100))
+                                        )}
                                       </span>
                                       <div className="flex items-center gap-1.5 mt-0.5">
                                         <span className="text-[10px] text-slate-400 line-through">
                                           {formatVND(prod.price)}
                                         </span>
                                         <span className="text-[9px] font-black text-red-500">
-                                          -{prod.discount}%
+                                          -{prod.discount > 0
+                                            ? prod.discount
+                                            : Math.round((1 - toVndInt(prod.discountedPrice) / toVndInt(prod.price)) * 100)
+                                          }%
                                         </span>
                                       </div>
                                     </>

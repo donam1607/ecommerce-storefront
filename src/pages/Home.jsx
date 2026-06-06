@@ -137,7 +137,13 @@ export default function Home() {
   const hotProducts = products.filter((p) => p.isHot === true);
   const featuredList = hotProducts.length > 0 ? hotProducts : products.slice(0, 4);
 
-  const discountedProducts = products.filter((p) => p.discount > 0);
+  const discountedProducts = products.filter(
+    (p) =>
+      p.discount > 0 ||
+      (p.discountedPrice !== null &&
+        p.discountedPrice !== undefined &&
+        toVndInt(p.discountedPrice) < toVndInt(p.price))
+  );
   const flashSaleProducts = discountedProducts.length > 0 ? discountedProducts : products.slice(0, 4);
 
   // Interval for Hero product slide rotation
