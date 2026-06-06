@@ -1167,7 +1167,7 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-850 dark:text-slate-100 transition-colors duration-300 admin-panel">
-      <div className="max-w-[115%] mx-auto px-2 py-8 sm:px-4 lg:px-6">
+      <div className="w-full pl-1 pr-2 py-8 sm:pl-2 sm:pr-4 lg:pl-4 lg:pr-6">
         
         {/* Main Administrative Layout Grid */}
         <div className="flex flex-col lg:flex-row gap-4">
