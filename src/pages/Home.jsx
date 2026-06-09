@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
@@ -6,7 +6,7 @@ import RippleButton from "../components/RippleButton";
 import ScrollReveal from "../components/ScrollReveal";
 import { 
   ShoppingCart, Star, Search, Cpu, Monitor, Keyboard, Headphones, 
-  Smartphone, Battery, ChevronDown, SlidersHorizontal, Check, X,
+  Smartphone, Battery, ChevronDown, ChevronLeft, ChevronRight, SlidersHorizontal, Check, X,
   Flame, ShieldCheck, HelpCircle, Truck, ArrowRight, TrendingUp, Sparkles, Award, WifiOff, Loader2
 } from "lucide-react";
 
@@ -58,6 +58,26 @@ const getBadgeClass = (badge) => {
   return "bg-blue-600 text-white border border-blue-400";
 };
 
+const isPromotionalProduct = (product) => {
+  const hasDiscountPercent = product.discount > 0;
+  const hasLowerDiscountedPrice =
+    product.discountedPrice !== null &&
+    product.discountedPrice !== undefined &&
+    toVndInt(product.discountedPrice) < toVndInt(product.price);
+  const badge = product.badge ? product.badge.toLowerCase() : "";
+  const hasPromoBadge =
+    badge.includes("sale") ||
+    badge.includes("off") ||
+    badge.includes("giảm giá") ||
+    badge.includes("giam gia") ||
+    badge.includes("khuyến mãi") ||
+    badge.includes("khuyen mai") ||
+    badge.includes("ưu đãi") ||
+    badge.includes("uu dai");
+
+  return hasDiscountPercent || hasLowerDiscountedPrice || hasPromoBadge;
+};
+
 export default function Home() {
   const { addToCart } = useCart();
   const { showToast } = useToast();
@@ -68,8 +88,10 @@ export default function Home() {
   const [categories, setCategories] = useState(["Laptop", "Monitor", "Keyboard", "Headphones", "Smartphone", "Accessories"]);
   const [activeCategory, setActiveCategory] = useState("All");
   const [activeCondition, setActiveCondition] = useState("All");
+  const [promoOnly, setPromoOnly] = useState(false);
   const [addedId, setAddedId] = useState(null);
   const navigate = useNavigate();
+  const flashTrackRef = useRef(null);
 
   // Sorting & Price Range States
   const [sortBy, setSortBy] = useState("newest");
@@ -85,6 +107,7 @@ export default function Home() {
 
   // Rotating featured product slideshow in Hero
   const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [flashIndex, setFlashIndex] = useState(0);
   
   // Countdown Timer for Flash Sale
   const [timeLeft, setTimeLeft] = useState({ hours: 12, minutes: 45, seconds: 30 });
@@ -137,14 +160,8 @@ export default function Home() {
   const hotProducts = products.filter((p) => p.isHot === true);
   const featuredList = hotProducts.length > 0 ? hotProducts : products.slice(0, 4);
 
-  const discountedProducts = products.filter(
-    (p) =>
-      p.discount > 0 ||
-      (p.discountedPrice !== null &&
-        p.discountedPrice !== undefined &&
-        toVndInt(p.discountedPrice) < toVndInt(p.price))
-  );
-  const flashSaleProducts = discountedProducts.length > 0 ? discountedProducts : products.slice(0, 4);
+  const discountedProducts = products.filter(isPromotionalProduct);
+  const flashSaleProducts = discountedProducts;
 
   // Interval for Hero product slide rotation
   useEffect(() => {
@@ -155,6 +172,29 @@ export default function Home() {
     }, 4500);
     return () => clearInterval(interval);
   }, [featuredList.length]);
+
+  const scrollFlashTo = (index) => {
+    const track = flashTrackRef.current;
+    if (!track || flashSaleProducts.length === 0) return;
+
+    const nextIndex = (index + flashSaleProducts.length) % flashSaleProducts.length;
+    const target = track.children[nextIndex];
+    if (!target) return;
+
+    track.scrollTo({
+      left: target.offsetLeft,
+      behavior: "smooth",
+    });
+    setFlashIndex(nextIndex);
+  };
+
+  useEffect(() => {
+    if (flashSaleProducts.length <= 1) return;
+    const interval = setInterval(() => {
+      scrollFlashTo(flashIndex + 1);
+    }, 4200);
+    return () => clearInterval(interval);
+  }, [flashIndex, flashSaleProducts.length]);
 
   // Countdown timer clock ticking
   useEffect(() => {
@@ -220,8 +260,10 @@ export default function Home() {
       const max = customMax ? Number(customMax) : Infinity;
       matchPrice = priceVal >= min && priceVal <= max;
     }
+
+    const matchPromo = !promoOnly || isPromotionalProduct(p);
     
-    return matchSearch && matchCat && matchCondition && matchPrice;
+    return matchSearch && matchCat && matchCondition && matchPrice && matchPromo;
   });
 
   const sorted = [...filtered].sort((a, b) => {
@@ -273,6 +315,12 @@ export default function Home() {
 
   const handleCategoryCardClick = (cat) => {
     setActiveCategory(cat);
+    document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleViewAllPromotions = () => {
+    setPromoOnly(true);
+    setOpenDropdown(null);
     document.getElementById('products').scrollIntoView({ behavior: 'smooth' });
   };
 
@@ -567,7 +615,8 @@ export default function Home() {
                 </div>
 
                 {/* Countdown Timer Widget */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="flex items-center gap-2">
                   <span className="text-xs font-bold mr-1 text-red-50">Kết thúc sau:</span>
                   <div className="flex items-center gap-1 font-mono text-sm font-black">
                     <div className="bg-white/15 backdrop-blur-md px-3 py-2 rounded-xl border border-white/20 min-w-[42px] text-center">
@@ -582,13 +631,42 @@ export default function Home() {
                       {timeLeft.seconds.toString().padStart(2, '0')}
                     </div>
                   </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleViewAllPromotions}
+                    className="inline-flex items-center justify-center gap-1.5 bg-white text-red-600 hover:bg-red-50 font-black text-[10px] uppercase tracking-wider px-4 py-2.5 rounded-xl shadow-lg shadow-red-950/10 transition-all active:scale-95"
+                  >
+                    <span>Xem tất cả</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
             </div>
           </ScrollReveal>
 
-          {/* Flash Sale Product Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Flash Sale Product Slider */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => scrollFlashTo(flashIndex - 1)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-xl text-slate-700 dark:text-slate-200 hover:text-red-600 dark:hover:text-red-400 flex items-center justify-center transition-all active:scale-95"
+              aria-label="Trượt sang trái"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollFlashTo(flashIndex + 1)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-xl text-slate-700 dark:text-slate-200 hover:text-red-600 dark:hover:text-red-400 flex items-center justify-center transition-all active:scale-95"
+              aria-label="Trượt sang phải"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+            <div
+              ref={flashTrackRef}
+              className="flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none pb-2 px-1"
+            >
             {flashSaleProducts.map((product, idx) => {
               const hasDiscountPercent = product.discount > 0;
               const discountPercent = hasDiscountPercent ? product.discount : 0;
@@ -600,7 +678,12 @@ export default function Home() {
                     : product.price;
               const soldPercentage = 45 + (idx * 12); // Mock claims
               return (
-                <ScrollReveal key={`flash-${product.id}`} delay={idx * 80} distance="25px">
+                <ScrollReveal
+                  key={`flash-${product.id}`}
+                  delay={idx * 80}
+                  distance="25px"
+                  className="snap-start flex-shrink-0 w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(25%-1.125rem)]"
+                >
                   <div className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 flex flex-col relative">
                     
                     {/* Discount Tag */}
@@ -678,6 +761,7 @@ export default function Home() {
                 </ScrollReveal>
               );
             })}
+            </div>
           </div>
         </section>
       )}
@@ -767,6 +851,19 @@ export default function Home() {
                   </div>
                 )}
               </div>
+
+              <button
+                type="button"
+                onClick={() => setPromoOnly((prev) => !prev)}
+                className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border rounded-full transition-all ${
+                  promoOnly
+                    ? "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/60"
+                    : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                }`}
+              >
+                <Flame className={`h-3.5 w-3.5 ${promoOnly ? "fill-red-500 text-red-500" : ""}`} />
+                <span>Đang ưu đãi</span>
+              </button>
 
               {/* Price Range Trigger */}
               <div className="relative">
@@ -887,12 +984,13 @@ export default function Home() {
               <span className="text-xs text-slate-400 dark:text-slate-500 font-bold whitespace-nowrap">
                 Tìm thấy {sorted.length} sản phẩm
               </span>
-              {(activeCategory !== "All" || activeCondition !== "All" || sortBy !== "newest" || priceRange !== "all" || search !== "") && (
+              {(activeCategory !== "All" || activeCondition !== "All" || promoOnly || sortBy !== "newest" || priceRange !== "all" || search !== "") && (
                 <button
                   type="button"
                   onClick={() => {
                     setActiveCategory("All");
                     setActiveCondition("All");
+                    setPromoOnly(false);
                     setSortBy("newest");
                     setPriceRange("all");
                     setSearch("");
