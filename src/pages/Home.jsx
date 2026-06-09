@@ -277,6 +277,14 @@ export default function Home() {
   };
 
   const featuredProduct = featuredList.length > 0 ? featuredList[featuredIndex % featuredList.length] : null;
+  const featuredHasDiscount = featuredProduct?.discount > 0;
+  const featuredSalePrice = featuredProduct
+    ? featuredProduct.discountedPrice !== null && featuredProduct.discountedPrice !== undefined
+      ? toVndInt(featuredProduct.discountedPrice)
+      : featuredHasDiscount
+        ? Math.floor(featuredProduct.price * (1 - featuredProduct.discount / 100))
+        : featuredProduct.price
+    : 0;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
@@ -418,7 +426,21 @@ export default function Home() {
                     <div className="flex items-center justify-between pt-2 border-t border-white/5">
                       <div>
                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Giá ưu đãi</p>
-                        <p className="font-black text-white text-base mt-0.5">{formatVND(featuredProduct.price)}</p>
+                        <div className="mt-0.5">
+                          <div className="flex items-baseline gap-2 flex-wrap">
+                            <p className="font-black text-white text-base">{formatVND(featuredSalePrice)}</p>
+                            {featuredHasDiscount && (
+                              <span className="text-[10px] text-red-300 font-extrabold bg-red-500/15 px-1.5 py-0.5 rounded">
+                                -{featuredProduct.discount}%
+                              </span>
+                            )}
+                          </div>
+                          {featuredHasDiscount && (
+                            <p className="text-xs text-slate-500 line-through">
+                              {formatVND(featuredProduct.price)}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <Link 
                         to={`/product/${featuredProduct.id}`}
@@ -568,16 +590,25 @@ export default function Home() {
           {/* Flash Sale Product Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {flashSaleProducts.map((product, idx) => {
-              const discountPercent = product.discount > 0 ? product.discount : 15 + (idx * 5);
+              const hasDiscountPercent = product.discount > 0;
+              const discountPercent = hasDiscountPercent ? product.discount : 0;
+              const salePrice =
+                product.discountedPrice !== null && product.discountedPrice !== undefined
+                  ? toVndInt(product.discountedPrice)
+                  : hasDiscountPercent
+                    ? Math.floor(product.price * (1 - discountPercent / 100))
+                    : product.price;
               const soldPercentage = 45 + (idx * 12); // Mock claims
               return (
                 <ScrollReveal key={`flash-${product.id}`} delay={idx * 80} distance="25px">
                   <div className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 flex flex-col relative">
                     
                     {/* Discount Tag */}
-                    <span className="absolute top-3 right-3 z-30 bg-red-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md">
-                      -{discountPercent}%
-                    </span>
+                    {hasDiscountPercent && (
+                      <span className="absolute top-3 right-3 z-30 bg-red-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md">
+                        -{discountPercent}%
+                      </span>
+                    )}
 
                     {/* Image */}
                     <Link to={`/product/${product.id}`} className="block relative overflow-hidden bg-slate-100 dark:bg-slate-800 aspect-[4/3]">
@@ -603,15 +634,13 @@ export default function Home() {
                         
                         <div className="flex items-center gap-2 mt-2">
                           <span className="font-black text-slate-900 dark:text-white text-base">
-                            {formatVND(
-                              product.discountedPrice !== null && product.discountedPrice !== undefined
-                                ? toVndInt(product.discountedPrice)
-                                : Math.floor(product.price * (1 - discountPercent / 100))
-                            )}
+                            {formatVND(salePrice)}
                           </span>
-                          <span className="text-xs text-slate-400 line-through">
-                            {formatVND(product.price)}
-                          </span>
+                          {hasDiscountPercent && (
+                            <span className="text-xs text-slate-400 line-through">
+                              {formatVND(product.price)}
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -993,9 +1022,11 @@ export default function Home() {
                               </span>
                             )}
                           </div>
-                          <span className="text-xs text-slate-400 line-through">
-                            {formatVND(product.price)}
-                          </span>
+                          {product.discount > 0 && (
+                            <span className="text-xs text-slate-400 line-through">
+                              {formatVND(product.price)}
+                            </span>
+                          )}
                         </div>
                       ) : (
                         <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white">

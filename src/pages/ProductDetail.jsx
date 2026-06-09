@@ -217,9 +217,11 @@ export default function ProductDetail() {
                       </span>
                     )}
                   </div>
-                  <span className="text-sm text-slate-400 line-through">
-                    {formatVND(product.price)}
-                  </span>
+                  {product.discount > 0 && (
+                    <span className="text-sm text-slate-400 line-through">
+                      {formatVND(product.price)}
+                    </span>
+                  )}
                 </div>
               ) : (
                 <span className="text-3xl font-black text-slate-900 dark:text-white">{formatVND(product.price)}</span>
