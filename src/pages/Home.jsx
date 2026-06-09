@@ -684,7 +684,7 @@ export default function Home() {
                   distance="25px"
                   className="snap-start flex-shrink-0 w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(25%-1.125rem)]"
                 >
-                  <div className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 flex flex-col relative">
+                  <div className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-md transition-all duration-300 flex flex-col relative">
                     
                     {/* Discount Tag */}
                     {hasDiscountPercent && (
@@ -713,6 +713,7 @@ export default function Home() {
                           <h3 className="font-extrabold text-slate-850 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1 text-sm">
                             {product.name}
                           </h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-405 mt-0.5 line-clamp-1">{product.description}</p>
                         </Link>
                         
                         <div className="flex items-center gap-2 mt-2">
