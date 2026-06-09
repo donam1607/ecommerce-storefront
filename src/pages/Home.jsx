@@ -699,7 +699,7 @@ export default function Home() {
         </div>
 
         {/* Filter Selection Bar */}
-        <ScrollReveal>
+        <ScrollReveal className="relative z-[1000]">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3 px-4 rounded-2xl shadow-sm transition-all duration-300">
             
             {/* Dropdown Filters */}
@@ -719,7 +719,7 @@ export default function Home() {
                   <ChevronDown className={`h-3.5 w-3.5 transition-transform ${openDropdown === "condition" ? "rotate-180" : ""}`} />
                 </button>
                 {openDropdown === "condition" && (
-                  <div className="absolute left-0 mt-2 w-52 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-2 z-[999] animate-fade-in">
+                  <div className="absolute left-0 mt-2 w-52 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-2 z-[10000] animate-fade-in">
                     {[
                       { id: "All", label: "Tất cả tình trạng" },
                       { id: "New", label: "Hàng mới (New)" },
@@ -760,7 +760,7 @@ export default function Home() {
                   <ChevronDown className={`h-3.5 w-3.5 transition-transform ${openDropdown === "price" ? "rotate-180" : ""}`} />
                 </button>
                 {openDropdown === "price" && (
-                  <div className="absolute left-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-2 z-[999] animate-fade-in space-y-0.5">
+                  <div className="absolute left-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-2 z-[10000] animate-fade-in space-y-0.5">
                     {[
                       { id: "all", label: "Mọi mức giá" },
                       { id: "under_5m", label: "Dưới 5 triệu" },
@@ -831,7 +831,7 @@ export default function Home() {
                   <ChevronDown className={`h-3.5 w-3.5 transition-transform ${openDropdown === "sort" ? "rotate-180" : ""}`} />
                 </button>
                 {openDropdown === "sort" && (
-                  <div className="absolute left-0 mt-2 w-48 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-2 z-[999] animate-fade-in">
+                  <div className="absolute left-0 mt-2 w-48 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-2 z-[10000] animate-fade-in">
                     {[
                       { id: "newest", label: "Mới nhất" },
                       { id: "oldest", label: "Cũ nhất" },

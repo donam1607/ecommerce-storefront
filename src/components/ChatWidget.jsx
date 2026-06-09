@@ -355,13 +355,13 @@ export default function ChatWidget() {
   ];
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] font-sans antialiased">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] font-sans antialiased">
       
       {/* 1. BONG BÓNG CHÀO MỪNG */}
       {showWelcomeBubble && (
         <div 
           onClick={handleToggleChat}
-          className="absolute bottom-[72px] right-2 w-72 p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl shadow-xl backdrop-blur-md cursor-pointer animate-bounce hover:scale-102 transition-transform select-none"
+          className="absolute bottom-[64px] right-0 w-[min(18rem,calc(100vw-2rem))] p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl shadow-xl backdrop-blur-md cursor-pointer animate-bounce hover:scale-102 transition-transform select-none"
         >
           <button 
             onClick={handleDismissBubble}
@@ -384,7 +384,7 @@ export default function ChatWidget() {
       {/* 2. NÚT CHAT NỔI */}
       <button
         onClick={handleToggleChat}
-        className={`w-14 h-14 rounded-full flex items-center justify-center bg-gradient-to-br ${
+        className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-gradient-to-br ${
           isOpen 
             ? 'from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700' 
             : 'from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
@@ -397,11 +397,11 @@ export default function ChatWidget() {
       {/* 3. KHUNG CHAT CHÍNH */}
       {isOpen && (
         <div
-          className="absolute bottom-[72px] right-0 w-[420px] h-[580px] bg-white/97 dark:bg-slate-900/97 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-2xl backdrop-blur-xl flex flex-col overflow-hidden"
+          className="absolute bottom-[64px] sm:bottom-[72px] right-0 w-[min(360px,calc(100vw-2rem))] h-[min(520px,calc(100vh-6rem))] bg-white/97 dark:bg-slate-900/97 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl sm:rounded-3xl shadow-2xl backdrop-blur-xl flex flex-col overflow-hidden"
           style={{ animation: 'chatFadeIn 0.25s ease-out' }}
         >
           {/* Header */}
-          <div className="px-5 py-3.5 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white flex items-center justify-between shadow-md flex-shrink-0">
+          <div className="px-4 py-3 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white flex items-center justify-between shadow-md flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="w-9 h-9 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-300">
@@ -427,7 +427,7 @@ export default function ChatWidget() {
           </div>
 
           {/* Vùng Tin Nhắn */}
-          <div className="flex-grow p-4 overflow-y-auto space-y-4 bg-slate-50/40 dark:bg-slate-950/30 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+          <div className="flex-grow p-3 overflow-y-auto space-y-3 bg-slate-50/40 dark:bg-slate-950/30 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
             {history.map((chat, idx) => (
               <div
                 key={idx}
