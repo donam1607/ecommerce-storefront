@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search, FileText, Printer, Truck, Calendar, Clock, CreditCard, Tag, ChevronLeft, ChevronRight, Menu } from "lucide-react";
+import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search, FileText, Printer, Truck, Calendar, Clock, CreditCard, Tag, ChevronLeft, ChevronRight, ChevronDown, Menu } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import { formatVND, toVndInt } from "../utils/money";
 import RippleButton from "../components/RippleButton";
@@ -97,6 +97,9 @@ export default function Admin() {
   const [formCategory, setFormCategory] = useState("Laptop");
   const [formBrand, setFormBrand] = useState("");
   const [formSubCategory, setFormSubCategory] = useState("");
+  const [productPickerOpen, setProductPickerOpen] = useState(null);
+  const [subCategorySearch, setSubCategorySearch] = useState("");
+  const [brandSearch, setBrandSearch] = useState("");
   const [formPrice, setFormPrice] = useState("");
   const [formStock, setFormStock] = useState("10");
   const [formBadgePreset, setFormBadgePreset] = useState(""); // New | Like New | Old | Custom
@@ -686,6 +689,104 @@ export default function Admin() {
   const formSubCategoryOptions = getSubCategoryOptions(formCategory);
   const formBrandOptions = getBrandOptions(formCategory, formSubCategory);
 
+  const renderSmartPicker = ({
+    id,
+    label,
+    value,
+    options,
+    searchValue,
+    setSearchValue,
+    onPick,
+    placeholder,
+    emptyText,
+    helperText,
+  }) => {
+    const isOpen = productPickerOpen === id;
+    const cleanSearch = searchValue.trim();
+    const filteredOptions = options.filter((option) =>
+      option.toLowerCase().includes(searchValue.toLowerCase())
+    );
+    const canCreate = cleanSearch && !options.some((option) => option.toLowerCase() === cleanSearch.toLowerCase());
+
+    const chooseValue = (nextValue) => {
+      onPick(nextValue);
+      setSearchValue("");
+      setProductPickerOpen(null);
+    };
+
+    return (
+      <div className="relative">
+        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">{label}</label>
+        <button
+          type="button"
+          onClick={() => {
+            setProductPickerOpen(isOpen ? null : id);
+            setSearchValue("");
+          }}
+          className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold flex items-center justify-between gap-3 text-left"
+        >
+          <span className={value ? "truncate" : "truncate text-slate-400"}>{value || placeholder}</span>
+          <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+        </button>
+
+        {isOpen && (
+          <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[100000] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden animate-fade-in">
+            <div className="p-2 border-b border-slate-100 dark:border-slate-800">
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && cleanSearch) {
+                      e.preventDefault();
+                      chooseValue(cleanSearch);
+                    }
+                    if (e.key === "Escape") {
+                      setProductPickerOpen(null);
+                    }
+                  }}
+                  placeholder="Tìm kiếm hoặc nhập tên mới..."
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 font-semibold"
+                />
+              </div>
+            </div>
+
+            <div className="max-h-56 overflow-y-auto p-1.5">
+              {filteredOptions.length > 0 ? filteredOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => chooseValue(option)}
+                  className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                >
+                  <span className="truncate">{option}</span>
+                  {value === option && <Check className="h-4 w-4 text-blue-600" />}
+                </button>
+              )) : (
+                <div className="px-3 py-4 text-center text-xs font-bold text-slate-400">{emptyText}</div>
+              )}
+
+              {canCreate && (
+                <button
+                  type="button"
+                  onClick={() => chooseValue(cleanSearch)}
+                  className="mt-1 w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-black text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 rounded-xl transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="truncate">Tạo mới "{cleanSearch}"</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        <p className="mt-1 text-[9px] font-semibold text-slate-400">{helperText}</p>
+      </div>
+    );
+  };
+
   useEffect(() => {
     localStorage.setItem(CATEGORY_META_STORAGE_KEY, JSON.stringify(categoryMeta));
   }, [categoryMeta]);
@@ -736,6 +837,9 @@ export default function Admin() {
   // Open Modal Product
   const openModal = (type, prod = null) => {
     setModalType(type);
+    setProductPickerOpen(null);
+    setSubCategorySearch("");
+    setBrandSearch("");
     if (type === "edit" && prod) {
       setEditingId(prod.id);
       setFormName(prod.name);
@@ -2615,6 +2719,7 @@ export default function Admin() {
                       setFormCategory(e.target.value);
                       setFormSubCategory("");
                       setFormBrand("");
+                      setProductPickerOpen(null);
                     }}
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
                   >
@@ -2624,42 +2729,34 @@ export default function Admin() {
                   </select>
                 </div>
 
-                {/* Sub-category */}
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Phân loại</label>
-                  <input
-                    type="text"
-                    list="product-subcategory-options"
-                    placeholder="Chọn hoặc nhập mới: Laptop gaming, Laptop văn phòng..."
-                    value={formSubCategory}
-                    onChange={(e) => {
-                      setFormSubCategory(e.target.value);
-                      setFormBrand("");
-                    }}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
-                  />
-                  <datalist id="product-subcategory-options">
-                    {formSubCategoryOptions.map(s => <option key={s} value={s} />)}
-                  </datalist>
-                  <p className="mt-1 text-[9px] font-semibold text-slate-400">Nhập tên mới nếu chưa có trong danh sách.</p>
-                </div>
+                {renderSmartPicker({
+                  id: "subCategory",
+                  label: "Phân loại",
+                  value: formSubCategory,
+                  options: formSubCategoryOptions,
+                  searchValue: subCategorySearch,
+                  setSearchValue: setSubCategorySearch,
+                  onPick: (nextValue) => {
+                    setFormSubCategory(nextValue);
+                    setFormBrand("");
+                  },
+                  placeholder: "Chọn hoặc tạo phân loại",
+                  emptyText: "Chưa có phân loại phù hợp.",
+                  helperText: "Chọn phân loại đã tạo hoặc nhập tên mới ngay trong cửa sổ chọn.",
+                })}
 
-                {/* Brand */}
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Hãng sản phẩm</label>
-                  <input
-                    type="text"
-                    list="product-brand-options"
-                    placeholder="Chọn hoặc nhập mới: Acer, Asus, Aula, Samsung..."
-                    value={formBrand}
-                    onChange={(e) => setFormBrand(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
-                  />
-                  <datalist id="product-brand-options">
-                    {formBrandOptions.map(b => <option key={b} value={b} />)}
-                  </datalist>
-                  <p className="mt-1 text-[9px] font-semibold text-slate-400">Danh sách hãng ưu tiên theo danh mục và phân loại đang chọn.</p>
-                </div>
+                {renderSmartPicker({
+                  id: "brand",
+                  label: "Hãng sản phẩm",
+                  value: formBrand,
+                  options: formBrandOptions,
+                  searchValue: brandSearch,
+                  setSearchValue: setBrandSearch,
+                  onPick: setFormBrand,
+                  placeholder: "Chọn hoặc tạo hãng",
+                  emptyText: "Chưa có hãng phù hợp.",
+                  helperText: "Danh sách hãng ưu tiên theo danh mục và phân loại đang chọn.",
+                })}
 
                 {/* Price */}
                 <div>
