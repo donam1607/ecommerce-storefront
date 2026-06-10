@@ -715,7 +715,7 @@ export default function Admin() {
     };
 
     return (
-      <div className="relative">
+      <div className="relative" data-product-picker>
         <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">{label}</label>
         <button
           type="button"
@@ -730,10 +730,10 @@ export default function Admin() {
         </button>
 
         {isOpen && (
-          <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[100000] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden animate-fade-in">
-            <div className="p-2 border-b border-slate-100 dark:border-slate-800">
+          <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[100000] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden animate-fade-in max-h-[min(18rem,45vh)] flex flex-col">
+            <div className="p-2.5 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
               <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
                   type="text"
                   autoFocus
@@ -749,18 +749,18 @@ export default function Admin() {
                     }
                   }}
                   placeholder="Tìm kiếm hoặc nhập tên mới..."
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 font-semibold"
+                  className="w-full pl-9 pr-3 py-2.5 sm:py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm sm:text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 font-semibold"
                 />
               </div>
             </div>
 
-            <div className="max-h-56 overflow-y-auto p-1.5">
+            <div className="overflow-y-auto overscroll-contain p-1.5 flex-1">
               {filteredOptions.length > 0 ? filteredOptions.map((option) => (
                 <button
                   key={option}
                   type="button"
                   onClick={() => chooseValue(option)}
-                  className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                  className="w-full min-h-11 sm:min-h-0 flex items-center justify-between gap-3 px-3 py-2.5 sm:py-2 text-left text-sm sm:text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors"
                 >
                   <span className="truncate">{option}</span>
                   {value === option && <Check className="h-4 w-4 text-blue-600" />}
@@ -773,7 +773,7 @@ export default function Admin() {
                 <button
                   type="button"
                   onClick={() => chooseValue(cleanSearch)}
-                  className="mt-1 w-full flex items-center gap-2 px-3 py-2 text-left text-xs font-black text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 rounded-xl transition-colors"
+                  className="mt-1 w-full min-h-11 sm:min-h-0 flex items-center gap-2 px-3 py-2.5 sm:py-2 text-left text-sm sm:text-xs font-black text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 rounded-xl transition-colors"
                 >
                   <Plus className="h-4 w-4" />
                   <span className="truncate">Tạo mới "{cleanSearch}"</span>
@@ -799,6 +799,17 @@ export default function Admin() {
       return next.length === prev.length ? prev : next;
     });
   }, [categoryMeta]);
+
+  useEffect(() => {
+    if (!productPickerOpen) return;
+    const handlePointerDown = (event) => {
+      if (!event.target.closest("[data-product-picker]")) {
+        setProductPickerOpen(null);
+      }
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [productPickerOpen]);
 
   const handlePriceChange = (val) => {
     const cleanVal = val.replace(/[^0-9]/g, "");
@@ -2678,7 +2689,7 @@ export default function Admin() {
         >
           <div 
             onClick={(e) => e.stopPropagation()} 
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto transition-all scale-100 animate-scale-in"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl max-h-[92vh] overflow-y-auto overflow-x-hidden transition-all scale-100 animate-scale-in"
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-850">
@@ -2694,11 +2705,11 @@ export default function Admin() {
             </div>
 
             {/* Modal Body Form */}
-            <form onSubmit={handleProductSubmit} className="p-6 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form onSubmit={handleProductSubmit} className="p-4 sm:p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4">
                 
                 {/* Product Name */}
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Tên sản phẩm *</label>
                   <input
                     type="text"
@@ -2850,7 +2861,7 @@ export default function Admin() {
 
 
                 {/* Multiple Images Upload Handler */}
-                <div className="col-span-2 space-y-3">
+                <div className="sm:col-span-2 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-t border-slate-100 dark:border-slate-850 pt-3">
                     <div>
                       <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500">Danh sách ảnh sản phẩm (Ngăn cách bằng dấu phẩy) *</label>
@@ -2914,7 +2925,7 @@ export default function Admin() {
                 </div>
 
                 {/* Short description */}
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Mô tả ngắn gọn *</label>
                   <textarea
                     rows="2"
@@ -2927,7 +2938,7 @@ export default function Admin() {
                 </div>
 
                 {/* Product Specifications (each on a line) */}
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Thông số kỹ thuật quan trọng (Mỗi thông số đặt trên một dòng)</label>
                   <textarea
                     rows="3"
@@ -3374,7 +3385,7 @@ export default function Admin() {
                 </div>
 
                 {/* Active Status */}
-                <div className="col-span-2 flex items-center gap-2 mt-2">
+                <div className="sm:col-span-2 flex items-center gap-2 mt-2">
                   <input
                     type="checkbox"
                     id="isActive"
