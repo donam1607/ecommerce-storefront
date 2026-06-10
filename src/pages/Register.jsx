@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, User, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import RippleButton from "../components/RippleButton";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -14,6 +15,34 @@ export default function Register() {
   const [shake, setShake] = useState(false);
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  const completeGoogleAuth = (data) => {
+    setResult({ success: true, data });
+    showToast("Đăng nhập Google thành công!", "success");
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify({
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      role: data.role,
+      phone: data.phone || "",
+      address: data.address || "",
+      city: data.city || "",
+      zip: data.zip || "",
+    }));
+
+    setTimeout(() => {
+      window.dispatchEvent(new Event("auth-changed"));
+      navigate(data.role === "admin" ? "/admin" : "/");
+    }, 1000);
+  };
+
+  const handleGoogleError = (message) => {
+    setResult({ success: false, message });
+    showToast(message || "Đăng nhập Google không thành công!", "error");
+    setShake(true);
+    setTimeout(() => setShake(false), 550);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -170,6 +199,19 @@ export default function Register() {
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Đăng ký ngay"}
           </RippleButton>
         </form>
+
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Hoặc</span>
+          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+        </div>
+
+        <GoogleLoginButton
+          disabled={loading}
+          text="signup_with"
+          onSuccess={completeGoogleAuth}
+          onError={handleGoogleError}
+        />
 
         {/* Results */}
         {result && (

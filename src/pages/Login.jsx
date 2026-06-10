@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Lock, Mail, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import RippleButton from "../components/RippleButton";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 
 export default function Login() {
   const [email, setEmail] = useState("admin@example.com");
@@ -12,6 +13,38 @@ export default function Login() {
   const [shake, setShake] = useState(false);
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  const completeLogin = (data, message = "Đăng nhập thành công! Đang chuyển hướng...") => {
+    setResult({ success: true, data });
+    showToast(message, "success");
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify({
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      role: data.role,
+      phone: data.phone || "",
+      address: data.address || "",
+      city: data.city || "",
+      zip: data.zip || "",
+    }));
+
+    setTimeout(() => {
+      window.dispatchEvent(new Event("auth-changed"));
+      if (data.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
+    }, 1000);
+  };
+
+  const handleGoogleError = (message) => {
+    setResult({ success: false, message });
+    showToast(message || "Đăng nhập Google không thành công!", "error");
+    setShake(true);
+    setTimeout(() => setShake(false), 550);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -127,6 +160,18 @@ export default function Login() {
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Đăng nhập ngay"}
           </RippleButton>
         </form>
+
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Hoặc</span>
+          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+        </div>
+
+        <GoogleLoginButton
+          disabled={loading}
+          onSuccess={(data) => completeLogin(data, "Đăng nhập Google thành công! Đang chuyển hướng...")}
+          onError={handleGoogleError}
+        />
 
         {/* Kết quả đăng nhập */}
         {result && (
