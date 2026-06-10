@@ -102,6 +102,19 @@ export default function Home() {
   const [customMax, setCustomMax] = useState("");
   const [openDropdown, setOpenDropdown] = useState(null); // 'category' | 'condition' | 'price' | 'sort' | null
 
+  useEffect(() => {
+    if (!openDropdown) return;
+
+    const handlePointerDown = (event) => {
+      if (!event.target.closest("[data-home-filter-dropdown]")) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [openDropdown]);
+
   // Search parameters from URL
   const [searchParams, setSearchParams] = useSearchParams();
   const searchUrl = searchParams.get("search") || "";
@@ -845,7 +858,7 @@ export default function Home() {
 
         {/* Filter Selection Bar */}
         <ScrollReveal className="relative z-[1000]">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3 px-4 rounded-2xl shadow-sm transition-all duration-300">
+          <div data-home-filter-dropdown className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3 px-4 rounded-2xl shadow-sm transition-all duration-300">
             
             {/* Dropdown Filters */}
             <div className="flex flex-wrap items-center gap-2">

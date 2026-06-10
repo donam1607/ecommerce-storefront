@@ -91,6 +91,10 @@ export default function Admin() {
   const [prodBrandFilter, setProdBrandFilter] = useState("All");
   const [prodSubCatFilter, setProdSubCatFilter] = useState("All");
   const [prodCondFilter, setProdCondFilter] = useState("All");
+  const [statsRange, setStatsRange] = useState("30");
+  const [trendMetric, setTrendMetric] = useState("revenue");
+  const [selectedTrendIndex, setSelectedTrendIndex] = useState(null);
+  const [selectedCategoryStat, setSelectedCategoryStat] = useState(null);
   
   // Auth states
   const [isAdmin, setIsAdmin] = useState(false);
@@ -608,6 +612,112 @@ export default function Admin() {
     .map(([id, info]) => ({ id, ...info }))
     .sort((a, b) => b.quantity - a.quantity)
     .slice(0, 5);
+
+  const normalizeStatus = (value, fallback = "pending") => String(value || fallback).toLowerCase();
+  const getOrderDateValue = (order) => {
+    const date = new Date(order.createdAt || order.updatedAt || Date.now());
+    return Number.isNaN(date.getTime()) ? new Date() : date;
+  };
+  const statsRangeDays = statsRange === "all" ? null : Number(statsRange);
+  const rangeStartDate = statsRangeDays
+    ? new Date(Date.now() - (statsRangeDays - 1) * 24 * 60 * 60 * 1000)
+    : null;
+  if (rangeStartDate) rangeStartDate.setHours(0, 0, 0, 0);
+
+  const rangedOrders = orders.filter((order) => {
+    if (!rangeStartDate) return true;
+    return getOrderDateValue(order) >= rangeStartDate;
+  });
+  const rangedPaidOrders = rangedOrders.filter((order) => normalizeStatus(order.paymentStatus) === "paid");
+  const rangedRevenue = rangedPaidOrders.reduce((sum, order) => sum + toVndInt(order.totalAmount), 0);
+  const rangedOrderTotal = rangedOrders.length;
+  const rangedPaidTotal = rangedPaidOrders.length;
+  const averageOrderValue = rangedPaidTotal ? Math.round(rangedRevenue / rangedPaidTotal) : 0;
+  const paymentRate = rangedOrderTotal ? Math.round((rangedPaidTotal / rangedOrderTotal) * 100) : 0;
+  const pendingOrdersCount = orders.filter((order) => normalizeStatus(order.orderStatus) === "pending").length;
+  const shippingOrdersCount = orders.filter((order) => normalizeStatus(order.orderStatus) === "shipping").length;
+  const lowStockProducts = products.filter((product) => {
+    const stock = Number(product.countInStock) || 0;
+    return stock > 0 && stock <= 3;
+  }).length;
+  const outOfStockProducts = products.filter((product) => (Number(product.countInStock) || 0) === 0).length;
+
+  const getTrendKey = (date) => {
+    if (statsRange === "all") {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    }
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  };
+  const getTrendLabel = (key) => {
+    if (statsRange === "all") {
+      const [year, month] = key.split("-");
+      return `T${Number(month)}/${year}`;
+    }
+    const [, month, day] = key.split("-");
+    return `${day}/${month}`;
+  };
+  const trendMap = {};
+  if (statsRangeDays) {
+    Array.from({ length: statsRangeDays }).forEach((_, index) => {
+      const date = new Date(rangeStartDate);
+      date.setDate(rangeStartDate.getDate() + index);
+      const key = getTrendKey(date);
+      trendMap[key] = { key, label: getTrendLabel(key), revenue: 0, orders: 0, paidOrders: 0, items: 0 };
+    });
+  }
+  rangedOrders.forEach((order) => {
+    const date = getOrderDateValue(order);
+    const key = getTrendKey(date);
+    if (!trendMap[key]) {
+      trendMap[key] = { key, label: getTrendLabel(key), revenue: 0, orders: 0, paidOrders: 0, items: 0 };
+    }
+    trendMap[key].orders += 1;
+    if (normalizeStatus(order.paymentStatus) === "paid") {
+      trendMap[key].paidOrders += 1;
+      trendMap[key].revenue += toVndInt(order.totalAmount);
+      trendMap[key].items += getItemsArray(order.orderItems).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+    }
+  });
+  const trendData = Object.values(trendMap).sort((a, b) => a.key.localeCompare(b.key));
+  const selectedTrend = trendData[selectedTrendIndex ?? Math.max(trendData.length - 1, 0)] || trendData[0] || null;
+
+  const statusLabelMap = {
+    pending: "Chờ xử lý",
+    confirmed: "Đã xác nhận",
+    shipping: "Đang giao",
+    delivered: "Đã giao",
+    cancelled: "Đã hủy",
+    returned: "Đổi trả",
+  };
+  const orderStatusStats = ["pending", "confirmed", "shipping", "delivered", "cancelled", "returned"].map((status) => ({
+    key: status,
+    label: statusLabelMap[status],
+    count: rangedOrders.filter((order) => normalizeStatus(order.orderStatus) === status).length,
+  }));
+  const paymentStatusStats = ["pending", "paid", "failed", "refunded"].map((status) => ({
+    key: status,
+    label: status === "paid" ? "Đã thanh toán" : status === "failed" ? "Thất bại" : status === "refunded" ? "Hoàn tiền" : "Chờ thanh toán",
+    count: rangedOrders.filter((order) => normalizeStatus(order.paymentStatus) === status).length,
+  })).filter((item) => item.count > 0 || ["pending", "paid"].includes(item.key));
+
+  const categoryRevenueMap = {};
+  rangedPaidOrders.forEach((order) => {
+    getItemsArray(order.orderItems).forEach((item) => {
+      const linkedProduct = products.find((product) => String(product.id) === String(item.productId || item.id));
+      const category = item.category || linkedProduct?.category || "Khác";
+      const quantity = Number(item.quantity) || 0;
+      const prev = categoryRevenueMap[category] || { label: category, revenue: 0, items: 0, orders: new Set() };
+      prev.revenue += toVndInt(item.price) * quantity;
+      prev.items += quantity;
+      prev.orders.add(order.id);
+      categoryRevenueMap[category] = prev;
+    });
+  });
+  const categoryRevenueStats = Object.values(categoryRevenueMap)
+    .map((item) => ({ ...item, orders: item.orders.size }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 8);
+  const activeCategoryStat = categoryRevenueStats.find((item) => item.label === selectedCategoryStat) || categoryRevenueStats[0] || null;
 
   const addUnique = (items = [], value) => {
     const clean = String(value || "").trim();
@@ -1481,6 +1591,26 @@ export default function Admin() {
     return matchSearch && matchCat && matchBrand && matchSubCat && matchCond;
   });
 
+  const statsRangeOptions = [
+    { value: "7", label: "7 ngày" },
+    { value: "30", label: "30 ngày" },
+    { value: "90", label: "90 ngày" },
+    { value: "all", label: "Tất cả" },
+  ];
+  const trendChartMax = Math.max(...trendData.map((item) => trendMetric === "revenue" ? item.revenue : item.orders), 1);
+  const trendPoints = trendData.map((item, index) => {
+    const x = trendData.length <= 1 ? 50 : (index / (trendData.length - 1)) * 100;
+    const value = trendMetric === "revenue" ? item.revenue : item.orders;
+    const y = 88 - (value / trendChartMax) * 70;
+    return { ...item, x, y, value };
+  });
+  const trendPath = trendPoints.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+  const trendAreaPath = trendPoints.length
+    ? `${trendPath} L ${trendPoints[trendPoints.length - 1].x} 94 L ${trendPoints[0].x} 94 Z`
+    : "";
+  const statusChartMax = Math.max(...orderStatusStats.map((item) => item.count), 1);
+  const categoryChartMax = Math.max(...categoryRevenueStats.map((item) => item.revenue), 1);
+
   if (checkingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -1656,6 +1786,190 @@ export default function Admin() {
                       <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{totalStock} máy</p>
                       <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5">Tổng số máy còn lại trong kho</p>
                     </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                  {[
+                    { label: "Doanh thu kỳ này", value: formatVND(rangedRevenue), note: `${rangedPaidTotal}/${rangedOrderTotal} đơn đã thanh toán`, color: "text-blue-600 dark:text-blue-400" },
+                    { label: "Giá trị đơn TB", value: formatVND(averageOrderValue), note: "Tính trên đơn đã thanh toán", color: "text-emerald-600 dark:text-emerald-400" },
+                    { label: "Tỷ lệ thanh toán", value: `${paymentRate}%`, note: "Paid / tổng đơn trong kỳ", color: "text-amber-600 dark:text-amber-400" },
+                    { label: "Đơn cần xử lý", value: pendingOrdersCount, note: `${shippingOrdersCount} đơn đang giao`, color: "text-rose-600 dark:text-rose-400" },
+                    { label: "Cảnh báo kho", value: lowStockProducts + outOfStockProducts, note: `${outOfStockProducts} hết hàng, ${lowStockProducts} sắp hết`, color: "text-purple-600 dark:text-purple-400" },
+                  ].map((item) => (
+                    <div key={item.label} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{item.label}</p>
+                      <p className={`mt-1 text-lg font-black ${item.color}`}>{item.value}</p>
+                      <p className="mt-1 text-[10px] font-semibold text-slate-500 dark:text-slate-400">{item.note}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Interactive Charts */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                  <div className="xl:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900 dark:text-white">Xu hướng kinh doanh</h3>
+                        <p className="text-[10px] font-semibold text-slate-400 mt-1">Hover hoặc bấm vào điểm trên biểu đồ để xem chi tiết.</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <div className="flex rounded-2xl bg-slate-100 dark:bg-slate-950 p-1">
+                          {statsRangeOptions.map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => {
+                                setStatsRange(option.value);
+                                setSelectedTrendIndex(null);
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all ${statsRange === option.value ? "bg-white dark:bg-slate-800 text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900 dark:hover:text-white"}`}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex rounded-2xl bg-slate-100 dark:bg-slate-950 p-1">
+                          {[
+                            { value: "revenue", label: "Doanh thu" },
+                            { value: "orders", label: "Đơn hàng" },
+                          ].map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => setTrendMetric(option.value)}
+                              className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all ${trendMetric === option.value ? "bg-blue-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-900 dark:hover:text-white"}`}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="relative h-72 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-850 overflow-hidden">
+                      {trendPoints.length > 0 ? (
+                        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
+                          <defs>
+                            <linearGradient id="trendFill" x1="0" x2="0" y1="0" y2="1">
+                              <stop offset="0%" stopColor="#2563eb" stopOpacity="0.28" />
+                              <stop offset="100%" stopColor="#2563eb" stopOpacity="0.02" />
+                            </linearGradient>
+                          </defs>
+                          {[18, 36, 54, 72, 90].map((y) => (
+                            <line key={y} x1="0" x2="100" y1={y} y2={y} stroke="currentColor" className="text-slate-200 dark:text-slate-800" strokeWidth="0.3" />
+                          ))}
+                          <path d={trendAreaPath} fill="url(#trendFill)" />
+                          <path d={trendPath} fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+                          {trendPoints.map((point, index) => {
+                            const active = selectedTrend?.key === point.key;
+                            return (
+                              <g
+                                key={point.key}
+                                onMouseEnter={() => setSelectedTrendIndex(index)}
+                                onClick={() => setSelectedTrendIndex(index)}
+                                className="cursor-pointer"
+                              >
+                                <line x1={point.x} x2={point.x} y1="10" y2="94" stroke="#2563eb" strokeOpacity={active ? "0.22" : "0"} strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                                <circle cx={point.x} cy={point.y} r={active ? "2.2" : "1.35"} fill={active ? "#0f172a" : "#2563eb"} stroke="white" strokeWidth="0.7" vectorEffect="non-scaling-stroke" />
+                                <circle cx={point.x} cy={point.y} r="5" fill="transparent" />
+                              </g>
+                            );
+                          })}
+                        </svg>
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-xs font-bold text-slate-400">Chưa có dữ liệu biểu đồ.</div>
+                      )}
+
+                      {selectedTrend && (
+                        <div className="absolute left-3 top-3 rounded-2xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-lg p-3 min-w-40">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{selectedTrend.label}</p>
+                          <p className="mt-1 text-sm font-black text-blue-600 dark:text-blue-400">{formatVND(selectedTrend.revenue)}</p>
+                          <p className="mt-1 text-[10px] font-semibold text-slate-500">{selectedTrend.orders} đơn, {selectedTrend.paidOrders} đã thanh toán, {selectedTrend.items} sản phẩm</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-4 sm:grid-cols-7 gap-1 text-[9px] font-bold text-slate-400">
+                      {trendPoints.filter((_, index) => trendPoints.length <= 7 || index % Math.ceil(trendPoints.length / 7) === 0).map((point) => (
+                        <span key={point.key} className="truncate">{point.label}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-5">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 dark:text-white">Trạng thái đơn hàng</h3>
+                      <p className="text-[10px] font-semibold text-slate-400 mt-1">Cột có thể hover để xem số lượng.</p>
+                    </div>
+                    <div className="h-56 flex items-end gap-2 border-b border-slate-200 dark:border-slate-800 px-1">
+                      {orderStatusStats.map((item) => (
+                        <div key={item.key} className="group flex-1 h-full flex flex-col justify-end items-center gap-2">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-black text-slate-900 dark:text-white">{item.count}</div>
+                          <div
+                            className="w-full max-w-10 rounded-t-2xl bg-blue-500 group-hover:bg-blue-600 transition-all"
+                            style={{ height: `${Math.max((item.count / statusChartMax) * 82, item.count ? 8 : 2)}%` }}
+                            title={`${item.label}: ${item.count}`}
+                          />
+                          <span className="h-8 text-[9px] font-bold text-slate-400 text-center leading-tight line-clamp-2">{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="space-y-2">
+                      {paymentStatusStats.map((item) => (
+                        <div key={item.key}>
+                          <div className="flex justify-between text-[10px] font-black text-slate-500 dark:text-slate-400 mb-1">
+                            <span>{item.label}</span>
+                            <span>{item.count}</span>
+                          </div>
+                          <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                            <div className="h-full rounded-full bg-emerald-500" style={{ width: `${rangedOrderTotal ? (item.count / rangedOrderTotal) * 100 : 0}%` }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 dark:text-white">Doanh thu theo danh mục</h3>
+                      <p className="text-[10px] font-semibold text-slate-400 mt-1">Bấm vào từng thanh để xem số đơn và số lượng đã bán.</p>
+                    </div>
+                    {activeCategoryStat && (
+                      <div className="rounded-2xl bg-blue-50 dark:bg-blue-950/30 px-4 py-2 text-xs">
+                        <span className="font-black text-blue-700 dark:text-blue-300">{activeCategoryStat.label}</span>
+                        <span className="mx-2 text-slate-300">•</span>
+                        <span className="font-bold text-slate-700 dark:text-slate-200">{formatVND(activeCategoryStat.revenue)}</span>
+                        <span className="ml-2 text-slate-500">{activeCategoryStat.items} sản phẩm</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {categoryRevenueStats.length > 0 ? categoryRevenueStats.map((item) => {
+                      const active = activeCategoryStat?.label === item.label;
+                      return (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => setSelectedCategoryStat(item.label)}
+                          onMouseEnter={() => setSelectedCategoryStat(item.label)}
+                          className={`text-left rounded-2xl border p-4 transition-all ${active ? "border-blue-300 dark:border-blue-700 bg-blue-50/70 dark:bg-blue-950/25" : "border-slate-200 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-800"}`}
+                        >
+                          <div className="flex items-center justify-between gap-3 text-xs">
+                            <span className="font-black text-slate-850 dark:text-white truncate">{item.label}</span>
+                            <span className="font-black text-blue-600 dark:text-blue-400">{formatVND(item.revenue)}</span>
+                          </div>
+                          <div className="mt-3 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                            <div className="h-full rounded-full bg-blue-600 transition-all duration-500" style={{ width: `${Math.max((item.revenue / categoryChartMax) * 100, 4)}%` }} />
+                          </div>
+                          <p className="mt-2 text-[10px] font-semibold text-slate-500">{item.orders} đơn hàng • {item.items} sản phẩm đã bán</p>
+                        </button>
+                      );
+                    }) : (
+                      <div className="lg:col-span-2 py-8 text-center text-sm font-bold text-slate-400">Chưa có dữ liệu doanh thu theo danh mục trong khoảng thời gian này.</div>
+                    )}
                   </div>
                 </div>
 
