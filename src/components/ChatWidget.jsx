@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   MessageCircle, X, Send, Bot, Sparkles,
   ExternalLink, ShoppingBag, 
   Check, Star, Tag
 } from 'lucide-react';
+import { useCart } from '../context/CartContext';
+import { formatVND } from '../utils/money';
+import { API_BASE } from '../utils/api';
 
-const API_BASE_URL = "https://shoptech-backend.onrender.com";
+const API_BASE_URL = API_BASE;
 const CONTACT_ACTIONS = [
   { id: 'chat', label: 'Chat AI', className: 'bg-transparent text-blue-600 shadow-transparent', iconType: 'chat' },
   { id: 'zalo', label: 'Zalo', href: 'https://zalo.me/03333310964', className: 'bg-transparent text-[#0068ff] shadow-transparent', iconType: 'zalo' },
@@ -28,14 +32,43 @@ function ContactActionIcon({ type, size = 24 }) {
   return <MessageCircle size={size} />;
 }
 
+const normalizeChatProduct = (product = {}) => {
+  const image = Array.isArray(product.images) && product.images.length > 0
+    ? product.images[0]
+    : product.image;
+
+  return {
+    id: product.id,
+    name: product.name || 'Sản phẩm ShopTech',
+    category: product.category || '',
+    price: Number(product.price || product.discountedPrice || 0),
+    originalPrice: Number(product.originalPrice || product.price || 0),
+    discountPercent: Number(product.discountPercent || product.discount || 0),
+    badge: product.badge || 'New',
+    rating: Number(product.rating || 0),
+    countInStock: Number(product.countInStock || 0),
+    image: image || '/images/placeholder.jpg',
+  };
+};
+
+const normalizeBotPayload = (data = {}) => ({
+  text: typeof data.text === 'string' && data.text.trim()
+    ? data.text
+    : 'Dạ, em chưa hiểu rõ câu hỏi của anh/chị. Anh/chị có thể hỏi lại rõ hơn không ạ?',
+  products: Array.isArray(data.products)
+    ? data.products.filter((product) => product && product.id !== undefined).map(normalizeChatProduct)
+    : [],
+});
+
 // ---------------------------------------------------------
 // MARKDOWN RENDERER ĐƠN GIẢN (BỘ PHÂN TÍCH MARKDOWN NỘI BỘ)
 // ---------------------------------------------------------
 function renderMarkdown(text) {
   if (!text) return null;
+  const safeText = String(text);
 
   // Tách các đoạn bởi dòng trống
-  const blocks = text.split(/\n{2,}/);
+  const blocks = safeText.split(/\n{2,}/);
 
   return blocks.map((block, bi) => {
     const lines = block.split('\n');
@@ -86,18 +119,19 @@ function renderMarkdown(text) {
 // Xử lý inline markdown: **bold**, *italic*, `code`
 function inlineMarkdown(text) {
   if (!text) return null;
+  const safeText = String(text);
   const parts = [];
   // regex: **bold** | *italic* | `code`
   const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
   let last = 0, match;
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > last) parts.push(text.slice(last, match.index));
+  while ((match = regex.exec(safeText)) !== null) {
+    if (match.index > last) parts.push(safeText.slice(last, match.index));
     if (match[2]) parts.push(<strong key={match.index} className="font-bold">{match[2]}</strong>);
     else if (match[3]) parts.push(<em key={match.index} className="italic">{match[3]}</em>);
     else if (match[4]) parts.push(<code key={match.index} className="bg-slate-100 dark:bg-slate-700 px-1 rounded text-[11px] font-mono">{match[4]}</code>);
     last = match.index + match[0].length;
   }
-  if (last < text.length) parts.push(text.slice(last));
+  if (last < safeText.length) parts.push(safeText.slice(last));
   return parts;
 }
 
@@ -141,9 +175,9 @@ const ProductCard = ({ product }) => {
   const hasLowerPrice = product.originalPrice && product.price < product.originalPrice;
 
   return (
-    <div className="flex flex-col bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-100 dark:border-slate-700/80 shadow-sm overflow-hidden my-3 hover:shadow-lg transition-all duration-300 w-full max-w-[260px]">
+    <div className="flex gap-3 bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-100 dark:border-slate-700/80 shadow-sm overflow-hidden my-2 hover:shadow-lg transition-all duration-300 w-full max-w-[320px] p-2">
       {/* Product Image and Badge */}
-      <div className="relative h-32 bg-slate-50/50 dark:bg-slate-900/60 flex items-center justify-center p-2">
+      <div className="relative h-20 w-20 bg-slate-50/50 dark:bg-slate-900/60 flex items-center justify-center p-1.5 rounded-xl flex-shrink-0">
         <img 
           src={imageSrc} 
           alt={product.name} 
@@ -153,11 +187,11 @@ const ProductCard = ({ product }) => {
             e.target.src = 'https://placehold.co/200x200?text=Product';
           }}
         />
-        <span className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${getBadgeColor(product.badge)}`}>
+        <span className={`absolute top-1 left-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider ${getBadgeColor(product.badge)}`}>
           {product.badge || 'New'}
         </span>
         {hasDiscount && (
-          <span className="absolute top-2 right-2 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+          <span className="absolute bottom-1 right-1 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
             <Tag size={8} />
             -{product.discountPercent}%
           </span>
@@ -165,8 +199,8 @@ const ProductCard = ({ product }) => {
       </div>
       
       {/* Product Details */}
-      <div className="p-3 flex flex-col flex-grow">
-        <h4 className="text-[11px] font-bold text-slate-800 dark:text-slate-100 line-clamp-2 leading-tight min-h-[2rem]">
+      <div className="flex flex-col flex-grow min-w-0 py-0.5 pr-1">
+        <h4 className="text-[11px] font-bold text-slate-800 dark:text-slate-100 line-clamp-2 leading-tight">
           {product.name}
         </h4>
 
@@ -180,10 +214,7 @@ const ProductCard = ({ product }) => {
           </div>
         )}
         
-        <div className="mt-1.5 flex flex-col gap-0.5">
-          <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
-            {product.category}
-          </span>
+        <div className="mt-1 flex flex-col gap-0.5">
           <div className="flex items-baseline gap-2 flex-wrap">
             <span className="text-sm font-extrabold text-blue-600 dark:text-blue-400">
               {formatVND(product.price)}
@@ -197,7 +228,7 @@ const ProductCard = ({ product }) => {
         </div>
         
         {/* Actions */}
-        <div className="mt-3 grid grid-cols-2 gap-2 pt-2 border-t border-slate-50 dark:border-slate-700/50">
+        <div className="mt-auto grid grid-cols-2 gap-2 pt-2">
           <button
             onClick={() => navigate(`/product/${product.id}`)}
             className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl text-[10px] font-semibold bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 transition-all cursor-pointer"
@@ -229,16 +260,24 @@ const ProductCard = ({ product }) => {
 // ---------------------------------------------------------
 const parseMessageContent = (text, products) => {
   if (!text) return null;
+  const safeText = String(text);
+  const safeProducts = Array.isArray(products) ? products : [];
   
-  const segments = text.split(/(\[ProductCard:\s*\d+\])/g);
+  const segments = safeText.split(/(\[ProductCard:\s*\d+\])/g);
   return (
     <div className="space-y-1">
       {segments.map((seg, idx) => {
         const match = seg.match(/\[ProductCard:\s*(\d+)\]/);
         if (match) {
           const productId = parseInt(match[1]);
-          const product = products && products.find(p => p.id === productId);
-          return product ? <ProductCard key={idx} product={product} /> : null;
+          const product = safeProducts.find(p => Number(p.id) === productId);
+          return product ? (
+            <ProductCard key={idx} product={product} />
+          ) : (
+            <span key={idx} className="block text-[10px] font-semibold text-slate-400">
+              Sản phẩm #{productId} hiện chưa tải được.
+            </span>
+          );
         }
         // Render markdown cho text thường
         if (seg.trim()) {
@@ -395,15 +434,20 @@ export default function ChatWidget() {
         })
       });
 
+      const contentType = res.headers.get('content-type') || '';
+      const data = contentType.includes('application/json')
+        ? await res.json()
+        : { text: await res.text(), products: [] };
+
       if (res.ok) {
-        const data = await res.json();
+        const botPayload = normalizeBotPayload(data);
         setHistory(prev => [...prev, {
           sender: 'bot',
-          text: data.text || 'Dạ, em chưa hiểu rõ câu hỏi của anh/chị. Anh/chị có thể hỏi lại rõ hơn không ạ?',
-          products: data.products || []
+          text: botPayload.text,
+          products: botPayload.products
         }]);
       } else {
-        throw new Error(`HTTP ${res.status}`);
+        throw new Error(data.message || `HTTP ${res.status}`);
       }
     } catch (error) {
       console.error('Chat error:', error);
