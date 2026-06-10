@@ -167,6 +167,7 @@ export default function Home() {
   const brands = Array.from(new Set(
     products
       .filter((p) => activeCategory === "All" || p.category === activeCategory)
+      .filter((p) => activeSubCategory === "All" || p.subCategory === activeSubCategory)
       .map((p) => p.brand)
       .filter(Boolean)
   )).sort();
@@ -176,6 +177,12 @@ export default function Home() {
       .map((p) => p.subCategory)
       .filter(Boolean)
   )).sort();
+
+  useEffect(() => {
+    if (activeBrand !== "All" && !brands.includes(activeBrand)) {
+      setActiveBrand("All");
+    }
+  }, [activeBrand, brands]);
 
   // Interval for Hero product slide rotation
   useEffect(() => {

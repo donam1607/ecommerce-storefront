@@ -7,6 +7,9 @@ import RippleButton from "../components/RippleButton";
 import { fetchWithRetry, API_BASE as API_URL, authHeaders } from "../utils/api";
 
 
+const DEFAULT_CATEGORIES = ["Laptop", "Monitor", "Keyboard", "Headphones", "Smartphone", "Accessories"];
+const CATEGORY_META_STORAGE_KEY = "admin_category_hierarchy";
+
 const getBadgeClass = (badge) => {
   if (!badge) return "";
   const b = badge.toLowerCase().trim();
@@ -59,7 +62,15 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState("stats"); // stats | products | categories | users | orders
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
-  const [categoriesList, setCategoriesList] = useState(["Laptop", "Monitor", "Keyboard", "Headphones", "Smartphone", "Accessories"]);
+  const [categoriesList, setCategoriesList] = useState(DEFAULT_CATEGORIES);
+  const [categoryMeta, setCategoryMeta] = useState(() => {
+    try {
+      const saved = localStorage.getItem(CATEGORY_META_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : {};
+    } catch (err) {
+      return {};
+    }
+  });
   const [orders, setOrders] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -104,6 +115,8 @@ export default function Admin() {
   const [catModalType, setCatModalType] = useState("add"); // add | edit
   const [editingCatName, setEditingCatName] = useState("");
   const [formCatName, setFormCatName] = useState("");
+  const [newSubCategoryByCat, setNewSubCategoryByCat] = useState({});
+  const [newBrandBySubCategory, setNewBrandBySubCategory] = useState({});
 
   // Modal User states
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -579,6 +592,72 @@ export default function Admin() {
     .sort((a, b) => b.quantity - a.quantity)
     .slice(0, 5);
 
+  const addUnique = (items = [], value) => {
+    const clean = String(value || "").trim();
+    if (!clean) return items;
+    return items.some((item) => item.toLowerCase() === clean.toLowerCase())
+      ? items
+      : [...items, clean].sort((a, b) => a.localeCompare(b, "vi"));
+  };
+
+  const buildCategoryTree = () => {
+    const tree = {};
+
+    categoriesList.forEach((cat) => {
+      if (!cat) return;
+      tree[cat] = { subCategories: {}, brands: [] };
+    });
+
+    Object.entries(categoryMeta || {}).forEach(([cat, meta]) => {
+      if (!cat) return;
+      if (!tree[cat]) tree[cat] = { subCategories: {}, brands: [] };
+
+      Object.entries(meta.subCategories || {}).forEach(([subCat, brands]) => {
+        if (!subCat) return;
+        if (!tree[cat].subCategories[subCat]) tree[cat].subCategories[subCat] = { brands: [] };
+        (Array.isArray(brands?.brands) ? brands.brands : Array.isArray(brands) ? brands : []).forEach((brand) => {
+          tree[cat].subCategories[subCat].brands = addUnique(tree[cat].subCategories[subCat].brands, brand);
+        });
+      });
+
+      (meta.brands || []).forEach((brand) => {
+        tree[cat].brands = addUnique(tree[cat].brands, brand);
+      });
+    });
+
+    products.forEach((p) => {
+      const cat = String(p.category || "").trim();
+      if (!cat) return;
+      if (!tree[cat]) tree[cat] = { subCategories: {}, brands: [] };
+
+      const subCat = String(p.subCategory || "").trim();
+      const brand = String(p.brand || "").trim();
+      if (subCat) {
+        if (!tree[cat].subCategories[subCat]) tree[cat].subCategories[subCat] = { brands: [] };
+        if (brand) {
+          tree[cat].subCategories[subCat].brands = addUnique(tree[cat].subCategories[subCat].brands, brand);
+        }
+      } else if (brand) {
+        tree[cat].brands = addUnique(tree[cat].brands, brand);
+      }
+    });
+
+    return tree;
+  };
+
+  const categoryTree = buildCategoryTree();
+  const getSubCategoryOptions = (category = formCategory) => Object.keys(categoryTree[category]?.subCategories || {}).sort((a, b) => a.localeCompare(b, "vi"));
+  const getBrandOptions = (category = formCategory, subCategory = formSubCategory) => {
+    const catNode = categoryTree[category];
+    if (!catNode) return [];
+    const scopedBrands = subCategory ? (catNode.subCategories[subCategory]?.brands || []) : [];
+    const allCategoryBrands = [
+      ...(catNode.brands || []),
+      ...Object.values(catNode.subCategories || {}).flatMap((sub) => sub.brands || []),
+    ];
+    return Array.from(new Set([...(scopedBrands || []), ...allCategoryBrands].filter(Boolean))).sort((a, b) => a.localeCompare(b, "vi"));
+  };
+
   const categoryStats = products.reduce((acc, p) => {
     const key = p.category || "Khác";
     const prev = acc[key] || { count: 0, stock: 0, value: 0 };
@@ -591,8 +670,34 @@ export default function Admin() {
     };
     return acc;
   }, {});
-  const brandsList = Array.from(new Set(products.map(p => p.brand).filter(Boolean))).sort();
-  const subCategoriesList = Array.from(new Set(products.map(p => p.subCategory).filter(Boolean))).sort();
+  const brandsList = Object.values(categoryTree)
+    .flatMap((cat) => [
+      ...(cat.brands || []),
+      ...Object.values(cat.subCategories || {}).flatMap((sub) => sub.brands || []),
+    ])
+    .filter(Boolean)
+    .filter((value, index, arr) => arr.indexOf(value) === index)
+    .sort((a, b) => a.localeCompare(b, "vi"));
+  const subCategoriesList = Object.values(categoryTree)
+    .flatMap((cat) => Object.keys(cat.subCategories || {}))
+    .filter(Boolean)
+    .filter((value, index, arr) => arr.indexOf(value) === index)
+    .sort((a, b) => a.localeCompare(b, "vi"));
+  const formSubCategoryOptions = getSubCategoryOptions(formCategory);
+  const formBrandOptions = getBrandOptions(formCategory, formSubCategory);
+
+  useEffect(() => {
+    localStorage.setItem(CATEGORY_META_STORAGE_KEY, JSON.stringify(categoryMeta));
+  }, [categoryMeta]);
+
+  useEffect(() => {
+    const metaCategories = Object.keys(categoryMeta || {});
+    if (metaCategories.length === 0) return;
+    setCategoriesList((prev) => {
+      const next = metaCategories.reduce((items, cat) => addUnique(items, cat), prev);
+      return next.length === prev.length ? prev : next;
+    });
+  }, [categoryMeta]);
 
   const handlePriceChange = (val) => {
     const cleanVal = val.replace(/[^0-9]/g, "");
@@ -721,6 +826,7 @@ export default function Admin() {
       });
 
       if (response.ok) {
+        rememberCategoryMeta(payload.category, payload.subCategory, payload.brand);
         setIsModalOpen(false);
         fetchProducts();
         alert(modalType === "add" ? "Thêm sản phẩm thành công!" : "Cập nhật sản phẩm thành công!");
@@ -805,6 +911,93 @@ export default function Admin() {
   };
 
   // Category Management Methods
+  const rememberCategoryMeta = (category, subCategory, brand) => {
+    const cleanCategory = String(category || "").trim();
+    const cleanSubCategory = String(subCategory || "").trim();
+    const cleanBrand = String(brand || "").trim();
+    if (!cleanCategory) return;
+
+    setCategoriesList((prev) => addUnique(prev, cleanCategory));
+    setCategoryMeta((prev) => {
+      const next = { ...prev };
+      const catNode = next[cleanCategory] || { subCategories: {}, brands: [] };
+      const subCategories = { ...(catNode.subCategories || {}) };
+
+      if (cleanSubCategory) {
+        const subNode = subCategories[cleanSubCategory] || { brands: [] };
+        subCategories[cleanSubCategory] = {
+          ...subNode,
+          brands: cleanBrand ? addUnique(subNode.brands || [], cleanBrand) : (subNode.brands || []),
+        };
+      } else if (cleanBrand) {
+        catNode.brands = addUnique(catNode.brands || [], cleanBrand);
+      }
+
+      next[cleanCategory] = { ...catNode, subCategories };
+      return next;
+    });
+  };
+
+  const handleAddSubCategory = (catName) => {
+    const subName = String(newSubCategoryByCat[catName] || "").trim();
+    if (!subName) return;
+    rememberCategoryMeta(catName, subName, "");
+    setNewSubCategoryByCat((prev) => ({ ...prev, [catName]: "" }));
+    alert("Thêm phân loại thành công!");
+  };
+
+  const handleAddBrandToSubCategory = (catName, subName) => {
+    const key = `${catName}__${subName}`;
+    const brandName = String(newBrandBySubCategory[key] || "").trim();
+    if (!brandName) return;
+    rememberCategoryMeta(catName, subName, brandName);
+    setNewBrandBySubCategory((prev) => ({ ...prev, [key]: "" }));
+    alert("Thêm hãng thành công!");
+  };
+
+  const handleDeleteSubCategory = (catName, subName) => {
+    const associatedCount = products.filter(p => p.category === catName && p.subCategory === subName).length;
+    if (associatedCount > 0) {
+      alert(`Không thể xóa phân loại "${subName}" vì đang có ${associatedCount} sản phẩm sử dụng.`);
+      return;
+    }
+    setCategoryMeta((prev) => {
+      const catNode = prev[catName];
+      if (!catNode?.subCategories?.[subName]) return prev;
+      const subCategories = { ...catNode.subCategories };
+      delete subCategories[subName];
+      return { ...prev, [catName]: { ...catNode, subCategories } };
+    });
+    alert("Xóa phân loại thành công!");
+  };
+
+  const handleDeleteBrandFromSubCategory = (catName, subName, brandName) => {
+    const associatedCount = products.filter(p => p.category === catName && p.subCategory === subName && p.brand === brandName).length;
+    if (associatedCount > 0) {
+      alert(`Không thể xóa hãng "${brandName}" vì đang có ${associatedCount} sản phẩm sử dụng.`);
+      return;
+    }
+    setCategoryMeta((prev) => {
+      const catNode = prev[catName];
+      const subNode = catNode?.subCategories?.[subName];
+      if (!subNode) return prev;
+      return {
+        ...prev,
+        [catName]: {
+          ...catNode,
+          subCategories: {
+            ...catNode.subCategories,
+            [subName]: {
+              ...subNode,
+              brands: (subNode.brands || []).filter((brand) => brand !== brandName),
+            },
+          },
+        },
+      };
+    });
+    alert("Xóa hãng thành công!");
+  };
+
   const openCatModal = (type, catName = "") => {
     setCatModalType(type);
     if (type === "edit") {
@@ -824,6 +1017,7 @@ export default function Admin() {
 
     if (catModalType === "add") {
       setCategoriesList(prev => Array.from(new Set([...prev, cName])));
+      setCategoryMeta((prev) => ({ ...prev, [cName]: prev[cName] || { subCategories: {}, brands: [] } }));
       setIsCatModalOpen(false);
       alert("Thêm danh mục mới thành công!");
     } else {
@@ -849,6 +1043,14 @@ export default function Admin() {
         
         // Update list
         setCategoriesList(prev => prev.map(c => c === editingCatName ? cName : c));
+        setCategoryMeta((prev) => {
+          const next = { ...prev };
+          if (next[editingCatName]) {
+            next[cName] = { ...(next[cName] || { subCategories: {}, brands: [] }), ...next[editingCatName] };
+            delete next[editingCatName];
+          }
+          return next;
+        });
         setIsCatModalOpen(false);
         fetchProducts();
         alert("Đổi tên danh mục thành công!");
@@ -869,6 +1071,11 @@ export default function Admin() {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa danh mục "${catName}" khỏi danh sách?`)) return;
 
     setCategoriesList(prev => prev.filter(c => c !== catName));
+    setCategoryMeta((prev) => {
+      const next = { ...prev };
+      delete next[catName];
+      return next;
+    });
     alert("Xóa danh mục thành công!");
   };
 
@@ -1651,62 +1858,148 @@ export default function Admin() {
                   </RippleButton>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
-                          <th className="px-6 py-4">Tên danh mục</th>
-                          <th className="px-6 py-4">Số lượng sản phẩm liên đới</th>
-                          <th className="px-6 py-4">Hãng</th>
-                          <th className="px-6 py-4">Phân loại</th>
-                          <th className="px-6 py-4 text-right">Hành động</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
-                        {categoriesList.map((catName, index) => {
-                          const associatedCount = products.filter(p => p.category === catName).length;
-                          const catBrands = Array.from(new Set(products.filter(p => p.category === catName).map(p => p.brand).filter(Boolean)));
-                          const catSubCategories = Array.from(new Set(products.filter(p => p.category === catName).map(p => p.subCategory).filter(Boolean)));
-                          return (
-                            <tr
-                              key={catName}
-                              style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                  {categoriesList.map((catName, index) => {
+                    const catNode = categoryTree[catName] || { subCategories: {}, brands: [] };
+                    const subEntries = Object.entries(catNode.subCategories || {}).sort(([a], [b]) => a.localeCompare(b, "vi"));
+                    const associatedCount = products.filter(p => p.category === catName).length;
+                    const subCount = subEntries.length;
+                    const brandCount = Array.from(new Set([
+                      ...(catNode.brands || []),
+                      ...subEntries.flatMap(([, sub]) => sub.brands || []),
+                    ].filter(Boolean))).length;
+
+                    return (
+                      <div
+                        key={catName}
+                        style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-all animate-fade-in-up opacity-0"
+                      >
+                        <div className="p-5 border-b border-slate-100 dark:border-slate-850 flex items-start justify-between gap-4">
+                          <div>
+                            <h3 className="text-sm font-black text-slate-900 dark:text-white">{catName}</h3>
+                            <div className="flex flex-wrap gap-2 mt-2 text-[10px] font-black text-slate-500">
+                              <span className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800">{associatedCount} sản phẩm</span>
+                              <span className="px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-300">{subCount} phân loại</span>
+                              <span className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-300">{brandCount} hãng</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-1.5">
+                            <button
                               onClick={() => openCatModal("edit", catName)}
-                              className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer"
+                              className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all"
+                              title="Sửa tên danh mục"
                             >
-                              <td className="px-6 py-4 font-black text-slate-850 dark:text-white">{catName}</td>
-                              <td className="px-6 py-4 font-bold text-slate-500">{associatedCount} sản phẩm đang bán</td>
-                              <td className="px-6 py-4 font-bold text-slate-500 max-w-[220px]">
-                                {catBrands.length > 0 ? catBrands.join(", ") : "—"}
-                              </td>
-                              <td className="px-6 py-4 font-bold text-slate-500 max-w-[260px]">
-                                {catSubCategories.length > 0 ? catSubCategories.join(", ") : "—"}
-                              </td>
-                              <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                                <div className="flex justify-end gap-1.5">
-                                  <button
-                                    onClick={() => openCatModal("edit", catName)}
-                                    className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all"
-                                    title="Sửa tên danh mục"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteCategory(catName)}
-                                    className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all"
-                                    title="Xóa danh mục"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCategory(catName)}
+                              className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all"
+                              title="Xóa danh mục"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="p-5 space-y-4">
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder={`Thêm phân loại cho ${catName}`}
+                              value={newSubCategoryByCat[catName] || ""}
+                              onChange={(e) => setNewSubCategoryByCat((prev) => ({ ...prev, [catName]: e.target.value }))}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  handleAddSubCategory(catName);
+                                }
+                              }}
+                              className="min-w-0 flex-1 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleAddSubCategory(catName)}
+                              className="h-9 w-9 flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white rounded-2xl transition-all"
+                              title="Thêm phân loại"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                          {subEntries.length === 0 ? (
+                            <div className="py-6 text-center text-xs font-bold text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                              Chưa có phân loại nào.
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              {subEntries.map(([subName, subNode]) => {
+                                const brandInputKey = `${catName}__${subName}`;
+                                const brands = (subNode.brands || []).filter(Boolean).sort((a, b) => a.localeCompare(b, "vi"));
+                                return (
+                                  <div key={subName} className="border border-slate-200 dark:border-slate-800 rounded-2xl p-3 bg-slate-50/60 dark:bg-slate-950/30">
+                                    <div className="flex items-center justify-between gap-3">
+                                      <div className="font-black text-xs text-slate-800 dark:text-slate-100">{subName}</div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteSubCategory(catName, subName)}
+                                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-all"
+                                        title="Xóa phân loại"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </button>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-1.5 mt-3">
+                                      {brands.length > 0 ? brands.map((brand) => (
+                                        <span key={brand} className="inline-flex items-center gap-1.5 px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                                          {brand}
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteBrandFromSubCategory(catName, subName, brand)}
+                                            className="text-slate-300 hover:text-red-500"
+                                            title="Xóa hãng"
+                                          >
+                                            <X className="h-3 w-3" />
+                                          </button>
+                                        </span>
+                                      )) : (
+                                        <span className="text-[10px] font-bold text-slate-400">Chưa có hãng trong phân loại này.</span>
+                                      )}
+                                    </div>
+
+                                    <div className="flex gap-2 mt-3">
+                                      <input
+                                        type="text"
+                                        placeholder={`Thêm hãng cho ${subName}`}
+                                        value={newBrandBySubCategory[brandInputKey] || ""}
+                                        onChange={(e) => setNewBrandBySubCategory((prev) => ({ ...prev, [brandInputKey]: e.target.value }))}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            handleAddBrandToSubCategory(catName, subName);
+                                          }
+                                        }}
+                                        className="min-w-0 flex-1 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleAddBrandToSubCategory(catName, subName)}
+                                        className="h-8 w-8 flex items-center justify-center bg-slate-900 hover:bg-slate-700 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 rounded-xl transition-all"
+                                        title="Thêm hãng"
+                                      >
+                                        <Plus className="h-3.5 w-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -2318,7 +2611,11 @@ export default function Admin() {
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Danh mục *</label>
                   <select
                     value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
+                    onChange={(e) => {
+                      setFormCategory(e.target.value);
+                      setFormSubCategory("");
+                      setFormBrand("");
+                    }}
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
                   >
                     {categoriesList.map(c => (
@@ -2327,36 +2624,41 @@ export default function Admin() {
                   </select>
                 </div>
 
-                {/* Brand */}
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Hãng sản phẩm</label>
-                  <input
-                    type="text"
-                    list="product-brand-options"
-                    placeholder="Ví dụ: Acer, Asus, Aula, Samsung"
-                    value={formBrand}
-                    onChange={(e) => setFormBrand(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
-                  />
-                  <datalist id="product-brand-options">
-                    {brandsList.map(b => <option key={b} value={b} />)}
-                  </datalist>
-                </div>
-
                 {/* Sub-category */}
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Phân loại</label>
                   <input
                     type="text"
                     list="product-subcategory-options"
-                    placeholder="Ví dụ: Laptop gaming, Laptop văn phòng, Màn hình gaming"
+                    placeholder="Chọn hoặc nhập mới: Laptop gaming, Laptop văn phòng..."
                     value={formSubCategory}
-                    onChange={(e) => setFormSubCategory(e.target.value)}
+                    onChange={(e) => {
+                      setFormSubCategory(e.target.value);
+                      setFormBrand("");
+                    }}
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
                   />
                   <datalist id="product-subcategory-options">
-                    {subCategoriesList.map(s => <option key={s} value={s} />)}
+                    {formSubCategoryOptions.map(s => <option key={s} value={s} />)}
                   </datalist>
+                  <p className="mt-1 text-[9px] font-semibold text-slate-400">Nhập tên mới nếu chưa có trong danh sách.</p>
+                </div>
+
+                {/* Brand */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Hãng sản phẩm</label>
+                  <input
+                    type="text"
+                    list="product-brand-options"
+                    placeholder="Chọn hoặc nhập mới: Acer, Asus, Aula, Samsung..."
+                    value={formBrand}
+                    onChange={(e) => setFormBrand(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                  />
+                  <datalist id="product-brand-options">
+                    {formBrandOptions.map(b => <option key={b} value={b} />)}
+                  </datalist>
+                  <p className="mt-1 text-[9px] font-semibold text-slate-400">Danh sách hãng ưu tiên theo danh mục và phân loại đang chọn.</p>
                 </div>
 
                 {/* Price */}
