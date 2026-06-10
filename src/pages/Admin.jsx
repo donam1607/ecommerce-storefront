@@ -325,6 +325,23 @@ export default function Admin() {
     e.preventDefault();
     setSavingOrderDetail(true);
     const token = localStorage.getItem("token");
+    const lockedCustomerInfo = ['shipping', 'delivered', 'cancelled', 'returned'].includes(selectedOrder?.orderStatus);
+    const payload = {
+      paymentStatus: orderDetailPaymentStatus,
+      orderStatus: orderDetailOrderStatus,
+      shippingUnit: orderDetailShippingUnit,
+      trackingNumber: orderDetailTrackingNumber,
+      shippingFee: Number(orderDetailShippingFee),
+      serialNumbers: orderDetailSerialNumbers,
+      cancelReason: orderDetailCancelReason
+    };
+
+    if (!lockedCustomerInfo) {
+      payload.customerName = orderDetailCustomerName;
+      payload.customerPhone = orderDetailCustomerPhone;
+      payload.customerAddress = orderDetailCustomerAddress;
+    }
+
     try {
       const response = await fetch(`${API_URL}/api/orders/${selectedOrder.id}`, {
         method: "PUT",
@@ -332,18 +349,7 @@ export default function Admin() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({
-          customerName: orderDetailCustomerName,
-          customerPhone: orderDetailCustomerPhone,
-          customerAddress: orderDetailCustomerAddress,
-          paymentStatus: orderDetailPaymentStatus,
-          orderStatus: orderDetailOrderStatus,
-          shippingUnit: orderDetailShippingUnit,
-          trackingNumber: orderDetailTrackingNumber,
-          shippingFee: Number(orderDetailShippingFee),
-          serialNumbers: orderDetailSerialNumbers,
-          cancelReason: orderDetailCancelReason
-        })
+        body: JSON.stringify(payload)
       });
       if (response.ok) {
         alert("Cập nhật thông tin đơn hàng thành công!");
