@@ -14,7 +14,7 @@ const CONTACT_ACTIONS = [
 
 function ContactActionIcon({ type, size = 24 }) {
   if (type === 'chat') {
-    return <img src="/images/icons8-ai-chatting-100.png" alt="" className="h-full w-full object-contain drop-shadow-lg" />;
+    return <img src="/images/icons8-jasper-ai-750.png" alt="" className="h-full w-full object-contain drop-shadow-lg" />;
   }
 
   if (type === 'zalo') {
@@ -274,6 +274,7 @@ export default function ChatWidget() {
   
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
+  const contactCloseTimerRef = useRef(null);
   
   // Tự động hiện bong bóng chào mừng sau 3 giây
   useEffect(() => {
@@ -306,6 +307,41 @@ export default function ChatWidget() {
     return () => clearInterval(timer);
   }, [isOpen, contactHubOpen]);
 
+  useEffect(() => {
+    return () => {
+      if (contactCloseTimerRef.current) {
+        clearTimeout(contactCloseTimerRef.current);
+      }
+    };
+  }, []);
+
+  const openContactHub = () => {
+    if (isOpen) return;
+    if (contactCloseTimerRef.current) {
+      clearTimeout(contactCloseTimerRef.current);
+      contactCloseTimerRef.current = null;
+    }
+    setContactHubOpen(true);
+  };
+
+  const closeContactHub = () => {
+    if (contactCloseTimerRef.current) {
+      clearTimeout(contactCloseTimerRef.current);
+      contactCloseTimerRef.current = null;
+    }
+    setContactHubOpen(false);
+  };
+
+  const closeContactHubSoon = () => {
+    if (contactCloseTimerRef.current) {
+      clearTimeout(contactCloseTimerRef.current);
+    }
+    contactCloseTimerRef.current = setTimeout(() => {
+      setContactHubOpen(false);
+      contactCloseTimerRef.current = null;
+    }, 220);
+  };
+
   const handleDismissBubble = (e) => {
     e.stopPropagation();
     setShowWelcomeBubble(false);
@@ -314,7 +350,7 @@ export default function ChatWidget() {
 
   const handleToggleChat = () => {
     setIsOpen(!isOpen);
-    setContactHubOpen(false);
+    closeContactHub();
     setShowWelcomeBubble(false);
     sessionStorage.setItem('dismiss_ai_welcome', 'true');
   };
@@ -322,7 +358,7 @@ export default function ChatWidget() {
   const handleContactAction = (action) => {
     setShowWelcomeBubble(false);
     sessionStorage.setItem('dismiss_ai_welcome', 'true');
-    setContactHubOpen(false);
+    closeContactHub();
 
     if (action.id === 'chat') {
       setIsOpen(true);
@@ -428,24 +464,27 @@ export default function ChatWidget() {
       {/* Contact hub */}
       <div
         className="relative w-12 h-12 sm:w-14 sm:h-14"
-        onMouseEnter={() => !isOpen && setContactHubOpen(true)}
-        onMouseLeave={() => setContactHubOpen(false)}
-        onFocus={() => !isOpen && setContactHubOpen(true)}
+        onMouseEnter={openContactHub}
+        onMouseLeave={closeContactHubSoon}
+        onFocus={openContactHub}
         onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) {
-            setContactHubOpen(false);
+            closeContactHub();
           }
         }}
       >
         {!isOpen && (
-          <div className={'absolute bottom-[58px] sm:bottom-[66px] right-0 flex flex-col items-end gap-2.5 transition-all duration-300 ' + (contactHubOpen ? 'pointer-events-auto opacity-100 translate-y-0' : 'pointer-events-none opacity-0 translate-y-2')}>
+          <div
+            className={'absolute bottom-[44px] sm:bottom-[52px] right-0 flex flex-col items-end gap-2 pb-5 transition-all duration-300 ' + (contactHubOpen ? 'pointer-events-auto opacity-100 translate-y-0' : 'pointer-events-none opacity-0 translate-y-3')}
+            onMouseEnter={openContactHub}
+          >
             {CONTACT_ACTIONS.map((action, index) => (
               <button
                 key={action.id}
                 type="button"
                 onClick={() => handleContactAction(action)}
-                className={'group relative w-10 h-10 sm:w-11 sm:h-11 rounded-none ' + action.className + ' flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 contact-menu-item'}
-                style={{ transitionDelay: contactHubOpen ? String(index * 35) + 'ms' : '0ms' }}
+                className={'group relative w-10 h-10 sm:w-11 sm:h-11 rounded-none ' + action.className + ' flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 ' + (contactHubOpen ? 'contact-menu-item-open' : 'contact-menu-item-closed')}
+                style={{ animationDelay: contactHubOpen ? String(index * 70) + 'ms' : '0ms' }}
                 aria-label={action.label}
                 title={action.label}
               >
@@ -463,7 +502,11 @@ export default function ChatWidget() {
             if (isOpen) {
               handleToggleChat();
             } else {
-              setContactHubOpen((open) => !open);
+              if (contactHubOpen) {
+                closeContactHub();
+              } else {
+                openContactHub();
+              }
               setShowWelcomeBubble(false);
             }
           }}
@@ -625,11 +668,24 @@ export default function ChatWidget() {
           0%, 100% { transform: scale(1); opacity: 0.55; }
           50% { transform: scale(1.16); opacity: 0; }
         }
+        @keyframes contactMenuPop {
+          0% { opacity: 0; transform: translateY(14px) scale(0.72); }
+          62% { opacity: 1; transform: translateY(-4px) scale(1.1); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
         .contact-main-icon {
           animation: contactIconSwap 0.28s ease-out;
         }
         .contact-ring {
           animation: contactRingPulse 1.8s ease-in-out infinite;
+        }
+        .contact-menu-item-open {
+          animation: contactMenuPop 0.42s cubic-bezier(0.2, 0.9, 0.2, 1.2) both;
+          will-change: transform, opacity;
+        }
+        .contact-menu-item-closed {
+          opacity: 0;
+          transform: translateY(10px) scale(0.82);
         }
       `}</style>
     </div>

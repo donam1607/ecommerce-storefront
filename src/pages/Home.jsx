@@ -319,7 +319,6 @@ export default function Home() {
 
   const handleBuyNow = (product) => {
     addToCart(product);
-    showToast(`Đã thêm "${product.name}" vào giỏ hàng! Đang chuyển hướng thanh toán...`, "info");
     navigate("/checkout");
   };
 
