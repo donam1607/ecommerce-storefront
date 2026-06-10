@@ -1,7 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
-import { formatVND } from '../utils/money';
 import { 
   MessageCircle, X, Send, Bot, Sparkles,
   ExternalLink, ShoppingBag, 
@@ -9,6 +6,27 @@ import {
 } from 'lucide-react';
 
 const API_BASE_URL = "https://shoptech-backend.onrender.com";
+const CONTACT_ACTIONS = [
+  { id: 'chat', label: 'Chat AI', className: 'bg-transparent text-blue-600 shadow-transparent', iconType: 'chat' },
+  { id: 'zalo', label: 'Zalo', href: 'https://zalo.me/03333310964', className: 'bg-transparent text-[#0068ff] shadow-transparent', iconType: 'zalo' },
+  { id: 'messenger', label: 'Messenger', href: 'https://www.facebook.com/donam1607', className: 'bg-transparent text-[#006aff] shadow-transparent', iconType: 'messenger' },
+];
+
+function ContactActionIcon({ type, size = 24 }) {
+  if (type === 'chat') {
+    return <img src="/images/icons8-ai-chatting-100.png" alt="" className="h-full w-full object-contain drop-shadow-lg" />;
+  }
+
+  if (type === 'zalo') {
+    return <img src="/images/icons8-zalo-480.png" alt="" className="h-full w-full object-contain drop-shadow-lg" />;
+  }
+
+  if (type === 'messenger') {
+    return <img src="/images/icons8-messenger-480.png" alt="" className="h-full w-full object-contain drop-shadow-lg" />;
+  }
+
+  return <MessageCircle size={size} />;
+}
 
 // ---------------------------------------------------------
 // MARKDOWN RENDERER ĐƠN GIẢN (BỘ PHÂN TÍCH MARKDOWN NỘI BỘ)
@@ -213,7 +231,6 @@ const parseMessageContent = (text, products) => {
   if (!text) return null;
   
   const segments = text.split(/(\[ProductCard:\s*\d+\])/g);
-  
   return (
     <div className="space-y-1">
       {segments.map((seg, idx) => {
@@ -252,6 +269,8 @@ export default function ChatWidget() {
   ]);
   const [loading, setLoading] = useState(false);
   const [showWelcomeBubble, setShowWelcomeBubble] = useState(false);
+  const [activeActionIndex, setActiveActionIndex] = useState(0);
+  const [contactHubOpen, setContactHubOpen] = useState(false);
   
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -279,6 +298,14 @@ export default function ChatWidget() {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (isOpen || contactHubOpen) return;
+    const timer = setInterval(() => {
+      setActiveActionIndex((prev) => (prev + 1) % CONTACT_ACTIONS.length);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isOpen, contactHubOpen]);
+
   const handleDismissBubble = (e) => {
     e.stopPropagation();
     setShowWelcomeBubble(false);
@@ -287,8 +314,24 @@ export default function ChatWidget() {
 
   const handleToggleChat = () => {
     setIsOpen(!isOpen);
+    setContactHubOpen(false);
     setShowWelcomeBubble(false);
     sessionStorage.setItem('dismiss_ai_welcome', 'true');
+  };
+
+  const handleContactAction = (action) => {
+    setShowWelcomeBubble(false);
+    sessionStorage.setItem('dismiss_ai_welcome', 'true');
+    setContactHubOpen(false);
+
+    if (action.id === 'chat') {
+      setIsOpen(true);
+      return;
+    }
+
+    if (action.href) {
+      window.open(action.href, '_blank', 'noopener,noreferrer');
+    }
   };
 
   // Gửi tin nhắn lên Backend API
@@ -353,15 +396,16 @@ export default function ChatWidget() {
     { label: '❓ Like New vs Old', text: 'Hàng Like New 99% khác gì hàng Old thế em?' },
     { label: '🔧 Tư vấn nâng cấp RAM', text: 'Muốn nâng cấp RAM laptop lên 16GB, em tư vấn giúp tôi với' },
   ];
+  const activeAction = isOpen ? CONTACT_ACTIONS[0] : CONTACT_ACTIONS[activeActionIndex];
 
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] font-sans antialiased">
       
       {/* 1. BONG BÓNG CHÀO MỪNG */}
-      {showWelcomeBubble && (
+      {showWelcomeBubble && !contactHubOpen && (
         <div 
           onClick={handleToggleChat}
-          className="absolute bottom-[64px] right-0 w-[min(18rem,calc(100vw-2rem))] p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl shadow-xl backdrop-blur-md cursor-pointer animate-bounce hover:scale-102 transition-transform select-none"
+          className="absolute bottom-[64px] sm:bottom-[72px] right-0 w-[min(18rem,calc(100vw-2rem))] p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl shadow-xl backdrop-blur-md cursor-pointer animate-bounce hover:scale-102 transition-transform select-none"
         >
           <button 
             onClick={handleDismissBubble}
@@ -381,18 +425,57 @@ export default function ChatWidget() {
         </div>
       )}
 
-      {/* 2. NÚT CHAT NỔI */}
-      <button
-        onClick={handleToggleChat}
-        className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-gradient-to-br ${
-          isOpen 
-            ? 'from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700' 
-            : 'from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
-        } text-white shadow-lg shadow-blue-500/25 hover:scale-105 active:scale-95 transition-all duration-300 z-50 cursor-pointer`}
-        aria-label={isOpen ? 'Đóng chat' : 'Mở chat'}
+      {/* Contact hub */}
+      <div
+        className="relative w-12 h-12 sm:w-14 sm:h-14"
+        onMouseEnter={() => !isOpen && setContactHubOpen(true)}
+        onMouseLeave={() => setContactHubOpen(false)}
+        onFocus={() => !isOpen && setContactHubOpen(true)}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            setContactHubOpen(false);
+          }
+        }}
       >
-        {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
-      </button>
+        {!isOpen && (
+          <div className={'absolute bottom-[58px] sm:bottom-[66px] right-0 flex flex-col items-end gap-2.5 transition-all duration-300 ' + (contactHubOpen ? 'pointer-events-auto opacity-100 translate-y-0' : 'pointer-events-none opacity-0 translate-y-2')}>
+            {CONTACT_ACTIONS.map((action, index) => (
+              <button
+                key={action.id}
+                type="button"
+                onClick={() => handleContactAction(action)}
+                className={'group relative w-10 h-10 sm:w-11 sm:h-11 rounded-none ' + action.className + ' flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 contact-menu-item'}
+                style={{ transitionDelay: contactHubOpen ? String(index * 35) + 'ms' : '0ms' }}
+                aria-label={action.label}
+                title={action.label}
+              >
+                <ContactActionIcon type={action.iconType} size={18} />
+                <span className="pointer-events-none absolute right-[calc(100%+10px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-slate-950/90 px-3 py-1.5 text-[10px] font-black text-white opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all shadow-lg hidden sm:block">
+                  {action.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <button
+          onClick={() => {
+            if (isOpen) {
+              handleToggleChat();
+            } else {
+              setContactHubOpen((open) => !open);
+              setShowWelcomeBubble(false);
+            }
+          }}
+          className={'relative w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ' + (isOpen ? 'rounded-full bg-gradient-to-br from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white shadow-lg' : 'rounded-none ' + activeAction.className) + ' hover:scale-105 active:scale-95 transition-all duration-300 z-50 cursor-pointer overflow-visible'}
+          aria-label={isOpen ? 'Đóng chat' : 'Mở lựa chọn liên hệ'}
+          type="button"
+        >
+          <span key={isOpen ? 'close' : activeAction.id} className="contact-main-icon flex items-center justify-center">
+            {isOpen ? <X size={24} /> : <ContactActionIcon type={activeAction.iconType} size={24} />}
+          </span>
+        </button>
+      </div>
 
       {/* 3. KHUNG CHAT CHÍNH */}
       {isOpen && (
@@ -533,6 +616,20 @@ export default function ChatWidget() {
         @keyframes chatFadeIn {
           from { opacity: 0; transform: translateY(16px) scale(0.97); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes contactIconSwap {
+          from { opacity: 0; transform: translateY(8px) scale(0.85); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes contactRingPulse {
+          0%, 100% { transform: scale(1); opacity: 0.55; }
+          50% { transform: scale(1.16); opacity: 0; }
+        }
+        .contact-main-icon {
+          animation: contactIconSwap 0.28s ease-out;
+        }
+        .contact-ring {
+          animation: contactRingPulse 1.8s ease-in-out infinite;
         }
       `}</style>
     </div>

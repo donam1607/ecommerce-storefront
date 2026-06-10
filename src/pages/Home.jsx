@@ -489,10 +489,7 @@ export default function Home() {
                     </div>
 
                     <div>
-                      <span className="text-[9px] font-extrabold uppercase text-purple-400 tracking-wider">
-                        {[featuredProduct.category, featuredProduct.brand, featuredProduct.subCategory].filter(Boolean).join(" • ")}
-                      </span>
-                      <h3 className="font-extrabold text-white text-base truncate mt-0.5 group-hover/showcase:text-blue-400 transition-colors">
+                      <h3 className="font-extrabold text-white text-base truncate group-hover/showcase:text-blue-400 transition-colors">
                         {featuredProduct.name}
                       </h3>
                       <p className="text-slate-400 text-xs line-clamp-1 mt-0.5 font-medium">{featuredProduct.description}</p>
@@ -734,7 +731,7 @@ export default function Home() {
                     <div className="p-4 flex-grow flex flex-col justify-between space-y-4">
                       <div className="space-y-1">
                         <span className="text-[9px] text-red-500 font-extrabold uppercase tracking-widest flex items-center gap-0.5">
-                          <Flame className="h-3 w-3 fill-red-500" /> {[product.brand, product.subCategory].filter(Boolean).join(" • ") || "Giá Sập Sàn"}
+                          <Flame className="h-3 w-3 fill-red-500" /> Giá Sập Sàn
                         </span>
                         <Link to={`/product/${product.id}`}>
                           <h3 className="font-extrabold text-slate-850 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1 text-sm">
@@ -1186,9 +1183,6 @@ export default function Home() {
                   {/* Info */}
                   <div className="p-4 flex-grow flex flex-col justify-between space-y-4">
                     <div className="space-y-1">
-                      <span className="text-[9px] text-blue-600 dark:text-blue-400 font-extrabold uppercase tracking-widest">
-                        {[product.category, product.brand, product.subCategory].filter(Boolean).join(" • ")}
-                      </span>
                       <Link to={`/product/${product.id}`}>
                         <h3 className="font-extrabold text-slate-850 dark:text-slate-100 group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400 transition-colors line-clamp-1 text-sm">
                           {product.name}

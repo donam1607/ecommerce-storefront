@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import RippleButton from "../components/RippleButton";
-import { ShoppingCart, Star, ArrowLeft, Shield, Truck, RefreshCw, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShoppingCart, Star, ArrowLeft, Shield, Truck, RefreshCw, Check, ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
 import { PRODUCTS } from "../data/products";
 import { formatVND, toVndInt } from "../utils/money";
 
@@ -14,6 +14,7 @@ export default function ProductDetail() {
   const [added, setAdded] = useState(false);
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -107,6 +108,11 @@ export default function ProductDetail() {
     setActiveImage((prev) => (prev - 1 + images.length) % images.length);
   };
 
+  const openLightbox = (index = activeImage) => {
+    setActiveImage(index);
+    setIsLightboxOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 transition-colors duration-300">
       <div className="max-w-6xl mx-auto">
@@ -120,23 +126,46 @@ export default function ProductDetail() {
           {/* Image Gallery */}
           <div className="space-y-4">
             {/* Main Image */}
-            <div className="relative bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden aspect-square group">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => openLightbox(activeImage)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openLightbox(activeImage);
+                }
+              }}
+              className="relative bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden aspect-square group w-full text-left cursor-zoom-in"
+              aria-label="Xem ảnh sản phẩm toàn màn hình"
+            >
               <img
                 src={images[activeImage]}
                 alt={`${product.name} - Image ${activeImage + 1}`}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
+              <div className="absolute top-3 right-3 w-10 h-10 bg-black/45 backdrop-blur-sm rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all">
+                <ZoomIn className="h-5 w-5" />
+              </div>
               {/* Navigation Arrows */}
               {images.length > 1 && (
                 <>
                   <button
-                    onClick={prevImage}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      prevImage();
+                    }}
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white dark:hover:bg-slate-700 hover:scale-110"
                   >
                     <ChevronLeft className="h-5 w-5 text-slate-700 dark:text-slate-200" />
                   </button>
                   <button
-                    onClick={nextImage}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      nextImage();
+                    }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white dark:hover:bg-slate-700 hover:scale-110"
                   >
                     <ChevronRight className="h-5 w-5 text-slate-700 dark:text-slate-200" />
@@ -157,7 +186,7 @@ export default function ProductDetail() {
                 {images.map((img, i) => (
                   <button
                     key={i}
-                    onClick={() => setActiveImage(i)}
+                    onClick={() => openLightbox(i)}
                     className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all duration-200 ${
                       activeImage === i
                         ? "border-blue-500 ring-2 ring-blue-500/30 scale-105"
@@ -173,9 +202,6 @@ export default function ProductDetail() {
 
           {/* Info */}
           <div className="flex flex-col justify-center">
-            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-2">
-              {[product.category, product.brand, product.subCategory].filter(Boolean).join(" • ")}
-            </span>
             <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-3">{product.name}</h1>
 
             {/* Rating */}
@@ -284,6 +310,64 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      {isLightboxOpen && images[activeImage] && (
+        <div
+          className="fixed inset-0 z-[100000] bg-slate-950/95 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setIsLightboxOpen(false)}
+            className="absolute top-4 right-4 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
+            aria-label="Đóng ảnh"
+          >
+            <X className="h-6 w-6" />
+          </button>
+
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
+                className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
+                aria-label="Ảnh trước"
+              >
+                <ChevronLeft className="h-7 w-7" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
+                className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
+                aria-label="Ảnh tiếp theo"
+              >
+                <ChevronRight className="h-7 w-7" />
+              </button>
+            </>
+          )}
+
+          <div className="max-w-6xl max-h-[88vh] w-full h-full flex items-center justify-center">
+            <img
+              src={images[activeImage]}
+              alt={`${product.name} - Full image ${activeImage + 1}`}
+              onClick={(e) => e.stopPropagation()}
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
+
+          {images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full">
+              {activeImage + 1} / {images.length}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

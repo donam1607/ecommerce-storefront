@@ -59,6 +59,14 @@ export default function Admin() {
     }
   };
 
+  const getOrderItemBadge = (item) => {
+    const directBadge = item?.badge || item?.condition || item?.status;
+    if (directBadge) return directBadge;
+
+    const linkedProduct = products.find((p) => String(p.id) === String(item?.productId || item?.id));
+    return linkedProduct?.badge || "";
+  };
+
   const [activeTab, setActiveTab] = useState("stats"); // stats | products | categories | users | orders
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
@@ -2224,8 +2232,9 @@ export default function Admin() {
                 let matchesUsedOnly = true;
                 if (filterUsedOnly) {
                   matchesUsedOnly = getItemsArray(o.orderItems).some((item) => {
-                    if (!item.badge) return false;
-                    const b = item.badge.toLowerCase();
+                    const itemBadge = getOrderItemBadge(item);
+                    if (!itemBadge) return false;
+                    const b = itemBadge.toLowerCase();
                     return b.includes("old") || b.includes("cũ") || b.includes("like new") || b.includes("likenew") || b.includes("99") || b.includes("98") || b.includes("95");
                   });
                 }
@@ -2436,16 +2445,6 @@ export default function Admin() {
                                   <td className="px-6 py-4 font-bold text-slate-800 dark:text-white whitespace-nowrap">
                                     <div className="flex flex-col gap-1.5">
                                       <span className="font-extrabold text-slate-900 dark:text-white">#{o.id}</span>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          openOrderDetailModal(o);
-                                        }}
-                                        className="px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition-all shadow-xs shadow-blue-500/10 hover:shadow-sm hover:shadow-blue-500/20 active:scale-95 cursor-pointer w-max"
-                                      >
-                                        Chi tiết
-                                      </button>
                                       {o.serialNumbers && Object.keys(o.serialNumbers).length > 0 && (
                                         <span className="text-[9px] text-blue-500 font-bold uppercase tracking-wide">🎯 Đã gán S/N</span>
                                       )}
@@ -2464,20 +2463,29 @@ export default function Admin() {
                                   {/* Sản phẩm đã bán */}
                                   <td className="px-6 py-4 min-w-[220px]">
                                     <div className="space-y-1.5">
-                                      {getItemsArray(o.orderItems).map((item, index) => (
-                                        <div key={index} className="flex items-center gap-2 text-[11px]">
-                                          <img src={item.image} alt={item.name} className="w-7 h-7 object-cover rounded-lg border border-slate-100 dark:border-slate-800" />
-                                          <div className="flex flex-col min-w-0 flex-1">
-                                            <span className="truncate font-semibold text-slate-700 dark:text-slate-200 max-w-[150px]">{item.name}</span>
-                                            <div className="flex items-center gap-1.5 mt-0.5">
-                                              <span className={`px-1.5 py-0.2 rounded text-[8px] font-extrabold uppercase ${getBadgeClass(item.badge)}`}>
-                                                {item.badge || 'New'}
-                                              </span>
-                                              <span className="text-[9px] text-slate-400 font-bold">x{item.quantity}</span>
+                                      {getItemsArray(o.orderItems).map((item, index) => {
+                                        const itemBadge = getOrderItemBadge(item);
+                                        return (
+                                          <div key={index} className="flex items-center gap-2 text-[11px]">
+                                            <img src={item.image} alt={item.name} className="w-7 h-7 object-cover rounded-lg border border-slate-100 dark:border-slate-800" />
+                                            <div className="flex flex-col min-w-0 flex-1">
+                                              <span className="truncate font-semibold text-slate-700 dark:text-slate-200 max-w-[150px]">{item.name}</span>
+                                              <div className="flex items-center gap-1.5 mt-0.5">
+                                                {itemBadge ? (
+                                                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase ${getBadgeClass(itemBadge)}`}>
+                                                    {itemBadge}
+                                                  </span>
+                                                ) : (
+                                                  <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-slate-100 dark:bg-slate-800 text-slate-400">
+                                                    Chưa rõ
+                                                  </span>
+                                                )}
+                                                <span className="text-[9px] text-slate-400 font-bold">x{item.quantity}</span>
+                                              </div>
                                             </div>
                                           </div>
-                                        </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   </td>
                                   
@@ -2536,13 +2544,22 @@ export default function Admin() {
                                   
                                   {/* Hành động — chỉ giữ nút Xóa nhỏ gọn, click row đã mở detail */}
                                   <td className="px-3 py-4" onClick={(e) => e.stopPropagation()}>
-                                    <button
-                                      onClick={() => handleDeleteOrder(o.id)}
-                                      className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-400 hover:text-red-600 rounded-xl border border-red-200/20 transition-all cursor-pointer active:scale-90"
-                                      title="Xóa hóa đơn"
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
+                                    <div className="flex justify-end gap-1.5">
+                                      <button
+                                        onClick={() => openOrderDetailModal(o)}
+                                        className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all cursor-pointer active:scale-90"
+                                        title="Sửa / xem chi tiết hóa đơn"
+                                      >
+                                        <Edit className="h-3.5 w-3.5" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteOrder(o.id)}
+                                        className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-400 hover:text-red-600 rounded-xl border border-red-200/20 transition-all cursor-pointer active:scale-90"
+                                        title="Xóa hóa đơn"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </button>
+                                    </div>
                                   </td>
                                 </tr>
                               );
@@ -3473,7 +3490,7 @@ export default function Admin() {
                 {isLocked && (
                   <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-400 rounded-xl text-[11px] font-bold">
                     <AlertCircle size={16} />
-                    <span>Lưu ý: Dữ liệu khách hàng đã được KHÓA cứng do đơn hàng đang giao, đã giao, đã hủy hoặc đổi trả để tránh thất thoát và đảm bảo minh bạch vận hành!</span>
+                    <span>Lưu ý: Thông tin khách hàng đã được khóa khi đơn đang giao, đã giao, đã hủy hoặc đổi trả. Admin vẫn có thể cập nhật trạng thái đơn, thanh toán, vận chuyển và serial.</span>
                   </div>
                 )}
 

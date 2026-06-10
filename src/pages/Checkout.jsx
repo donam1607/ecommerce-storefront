@@ -172,7 +172,8 @@ export default function Checkout() {
           name: item.name,
           price: toVndInt(item.price),
           quantity: item.quantity,
-          image: item.images?.[0] || item.image
+          image: item.images?.[0] || item.image,
+          badge: item.badge || null
         }))
       };
 
