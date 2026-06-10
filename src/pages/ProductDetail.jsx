@@ -173,7 +173,9 @@ export default function ProductDetail() {
 
           {/* Info */}
           <div className="flex flex-col justify-center">
-            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-2">{product.category}</span>
+            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-2">
+              {[product.category, product.brand, product.subCategory].filter(Boolean).join(" • ")}
+            </span>
             <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-3">{product.name}</h1>
 
             {/* Rating */}

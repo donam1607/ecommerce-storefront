@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search, FileText, Printer, Truck, Calendar, Clock, CreditCard, Tag, ChevronLeft, ChevronRight, Menu } from "lucide-react";
 import { useToast } from "../context/ToastContext";
@@ -69,6 +69,8 @@ export default function Admin() {
   // Filters for product list
   const [prodSearch, setProdSearch] = useState("");
   const [prodCatFilter, setProdCatFilter] = useState("All");
+  const [prodBrandFilter, setProdBrandFilter] = useState("All");
+  const [prodSubCatFilter, setProdSubCatFilter] = useState("All");
   const [prodCondFilter, setProdCondFilter] = useState("All");
   
   // Auth states
@@ -82,6 +84,8 @@ export default function Admin() {
   const [editingId, setEditingId] = useState(null);
   const [formName, setFormName] = useState("");
   const [formCategory, setFormCategory] = useState("Laptop");
+  const [formBrand, setFormBrand] = useState("");
+  const [formSubCategory, setFormSubCategory] = useState("");
   const [formPrice, setFormPrice] = useState("");
   const [formStock, setFormStock] = useState("10");
   const [formBadgePreset, setFormBadgePreset] = useState(""); // New | Like New | Old | Custom
@@ -587,6 +591,8 @@ export default function Admin() {
     };
     return acc;
   }, {});
+  const brandsList = Array.from(new Set(products.map(p => p.brand).filter(Boolean))).sort();
+  const subCategoriesList = Array.from(new Set(products.map(p => p.subCategory).filter(Boolean))).sort();
 
   const handlePriceChange = (val) => {
     const cleanVal = val.replace(/[^0-9]/g, "");
@@ -629,6 +635,8 @@ export default function Admin() {
       setEditingId(prod.id);
       setFormName(prod.name);
       setFormCategory(prod.category);
+      setFormBrand(prod.brand || "");
+      setFormSubCategory(prod.subCategory || "");
       setFormPrice(prod.price.toString());
       setFormStock(prod.countInStock.toString());
       
@@ -656,6 +664,8 @@ export default function Admin() {
       setEditingId(null);
       setFormName("");
       setFormCategory(categoriesList[0] || "Laptop");
+      setFormBrand("");
+      setFormSubCategory("");
       setFormPrice("");
       setFormStock("10");
       setFormBadgePreset("New");
@@ -681,6 +691,8 @@ export default function Admin() {
     const payload = {
       name: formName,
       category: formCategory,
+      brand: formBrand.trim() || null,
+      subCategory: formSubCategory.trim() || null,
       price: parseFloat(formPrice) || 0,
       images: formImages.split(",").map(i => i.trim()).filter(Boolean),
       description: formDesc,
@@ -1107,8 +1119,12 @@ export default function Admin() {
   const filteredProducts = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(prodSearch.toLowerCase()) || 
                         p.category.toLowerCase().includes(prodSearch.toLowerCase()) ||
+                        (p.brand && p.brand.toLowerCase().includes(prodSearch.toLowerCase())) ||
+                        (p.subCategory && p.subCategory.toLowerCase().includes(prodSearch.toLowerCase())) ||
                         (p.badge && p.badge.toLowerCase().includes(prodSearch.toLowerCase()));
     const matchCat = prodCatFilter === "All" || p.category === prodCatFilter;
+    const matchBrand = prodBrandFilter === "All" || p.brand === prodBrandFilter;
+    const matchSubCat = prodSubCatFilter === "All" || p.subCategory === prodSubCatFilter;
     
     let matchCond = true;
     if (prodCondFilter !== "All") {
@@ -1126,7 +1142,7 @@ export default function Admin() {
       }
     }
 
-    return matchSearch && matchCat && matchCond;
+    return matchSearch && matchCat && matchBrand && matchSubCat && matchCond;
   });
 
   if (checkingAuth) {
@@ -1423,7 +1439,7 @@ export default function Admin() {
                     </RippleButton>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                     {/* Search Bar */}
                     <div className="relative">
                       <input
@@ -1445,6 +1461,30 @@ export default function Admin() {
                       <option value="All">Tất cả danh mục</option>
                       {categoriesList.map(c => (
                         <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+
+                    {/* Brand Filter */}
+                    <select
+                      value={prodBrandFilter}
+                      onChange={(e) => setProdBrandFilter(e.target.value)}
+                      className="px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-850 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
+                    >
+                      <option value="All">Tất cả hãng</option>
+                      {brandsList.map(b => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
+
+                    {/* Sub-category Filter */}
+                    <select
+                      value={prodSubCatFilter}
+                      onChange={(e) => setProdSubCatFilter(e.target.value)}
+                      className="px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-850 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
+                    >
+                      <option value="All">Tất cả phân loại</option>
+                      {subCategoriesList.map(s => (
+                        <option key={s} value={s}>{s}</option>
                       ))}
                     </select>
 
@@ -1482,6 +1522,8 @@ export default function Admin() {
                             <th className="px-6 py-4">Ảnh</th>
                             <th className="px-6 py-4">Tên sản phẩm</th>
                             <th className="px-6 py-4">Danh mục</th>
+                            <th className="px-6 py-4">Hãng</th>
+                            <th className="px-6 py-4">Phân loại</th>
                             <th className="px-6 py-4">Giá tiền</th>
                             <th className="px-6 py-4">Kho hàng</th>
                             <th className="px-6 py-4">Nhãn (Badge)</th>
@@ -1518,6 +1560,8 @@ export default function Admin() {
                                 </div>
                               </td>
                               <td className="px-6 py-4 font-semibold">{prod.category}</td>
+                              <td className="px-6 py-4 font-semibold">{prod.brand || "—"}</td>
+                              <td className="px-6 py-4 font-semibold">{prod.subCategory || "—"}</td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex flex-col">
                                   {(prod.discount > 0 || (prod.discountedPrice !== null && prod.discountedPrice !== undefined && toVndInt(prod.discountedPrice) < toVndInt(prod.price))) ? (
@@ -1614,12 +1658,16 @@ export default function Admin() {
                         <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
                           <th className="px-6 py-4">Tên danh mục</th>
                           <th className="px-6 py-4">Số lượng sản phẩm liên đới</th>
+                          <th className="px-6 py-4">Hãng</th>
+                          <th className="px-6 py-4">Phân loại</th>
                           <th className="px-6 py-4 text-right">Hành động</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
                         {categoriesList.map((catName, index) => {
                           const associatedCount = products.filter(p => p.category === catName).length;
+                          const catBrands = Array.from(new Set(products.filter(p => p.category === catName).map(p => p.brand).filter(Boolean)));
+                          const catSubCategories = Array.from(new Set(products.filter(p => p.category === catName).map(p => p.subCategory).filter(Boolean)));
                           return (
                             <tr
                               key={catName}
@@ -1629,6 +1677,12 @@ export default function Admin() {
                             >
                               <td className="px-6 py-4 font-black text-slate-850 dark:text-white">{catName}</td>
                               <td className="px-6 py-4 font-bold text-slate-500">{associatedCount} sản phẩm đang bán</td>
+                              <td className="px-6 py-4 font-bold text-slate-500 max-w-[220px]">
+                                {catBrands.length > 0 ? catBrands.join(", ") : "—"}
+                              </td>
+                              <td className="px-6 py-4 font-bold text-slate-500 max-w-[260px]">
+                                {catSubCategories.length > 0 ? catSubCategories.join(", ") : "—"}
+                              </td>
                               <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex justify-end gap-1.5">
                                   <button
@@ -2271,6 +2325,38 @@ export default function Admin() {
                       <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
+                </div>
+
+                {/* Brand */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Hãng sản phẩm</label>
+                  <input
+                    type="text"
+                    list="product-brand-options"
+                    placeholder="Ví dụ: Acer, Asus, Aula, Samsung"
+                    value={formBrand}
+                    onChange={(e) => setFormBrand(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                  />
+                  <datalist id="product-brand-options">
+                    {brandsList.map(b => <option key={b} value={b} />)}
+                  </datalist>
+                </div>
+
+                {/* Sub-category */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Phân loại</label>
+                  <input
+                    type="text"
+                    list="product-subcategory-options"
+                    placeholder="Ví dụ: Laptop gaming, Laptop văn phòng, Màn hình gaming"
+                    value={formSubCategory}
+                    onChange={(e) => setFormSubCategory(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                  />
+                  <datalist id="product-subcategory-options">
+                    {subCategoriesList.map(s => <option key={s} value={s} />)}
+                  </datalist>
                 </div>
 
                 {/* Price */}
@@ -3137,3 +3223,4 @@ export default function Admin() {
     </div>
   );
 }
+
