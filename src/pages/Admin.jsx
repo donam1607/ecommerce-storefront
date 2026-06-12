@@ -9,6 +9,62 @@ import { fetchWithRetry, API_BASE as API_URL, authHeaders } from "../utils/api";
 
 const DEFAULT_CATEGORIES = ["Laptop", "Monitor", "Keyboard", "Headphones", "Smartphone", "Accessories"];
 const CATEGORY_META_STORAGE_KEY = "admin_category_hierarchy";
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
+function PaginationControls({ page, totalPages, totalItems, pageSize, onPageChange, onPageSizeChange }) {
+  if (totalItems === 0) return null;
+  const safeTotal = Math.max(totalPages, 1);
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, totalItems);
+
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-t border-slate-100 dark:border-slate-850">
+      <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
+        Hiển thị {start}-{end} / {totalItems}
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={pageSize}
+          onChange={(e) => onPageSizeChange(Number(e.target.value))}
+          className="h-9 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 outline-none"
+        >
+          {PAGE_SIZE_OPTIONS.map((size) => (
+            <option key={size} value={size}>{size}/trang</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+          disabled={page <= 1}
+          className="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <span className="h-9 px-3 inline-flex items-center rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-300 text-xs font-black">
+          {page}/{safeTotal}
+        </span>
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.min(safeTotal, page + 1))}
+          disabled={page >= safeTotal}
+          className="h-9 w-9 inline-flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-40"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const getPaged = (items, page, pageSize) => {
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  return {
+    totalPages,
+    currentPage,
+    pageItems: items.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+  };
+};
 
 const getBadgeClass = (badge) => {
   if (!badge) return "";
@@ -91,6 +147,15 @@ export default function Admin() {
   const [prodBrandFilter, setProdBrandFilter] = useState("All");
   const [prodSubCatFilter, setProdSubCatFilter] = useState("All");
   const [prodCondFilter, setProdCondFilter] = useState("All");
+  const [productPage, setProductPage] = useState(1);
+  const [productPageSize, setProductPageSize] = useState(10);
+  const [selectedProductIds, setSelectedProductIds] = useState([]);
+  const [userPage, setUserPage] = useState(1);
+  const [userPageSize, setUserPageSize] = useState(10);
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
+  const [orderPage, setOrderPage] = useState(1);
+  const [orderPageSize, setOrderPageSize] = useState(10);
+  const [selectedOrderIds, setSelectedOrderIds] = useState([]);
   const [statsRange, setStatsRange] = useState("30");
   const [trendMetric, setTrendMetric] = useState("revenue");
   const [selectedTrendIndex, setSelectedTrendIndex] = useState(null);
@@ -156,6 +221,9 @@ export default function Admin() {
   // Coupon management states
   const [coupons, setCoupons] = useState([]);
   const [loadingCoupons, setLoadingCoupons] = useState(false);
+  const [couponPage, setCouponPage] = useState(1);
+  const [couponPageSize, setCouponPageSize] = useState(10);
+  const [selectedCouponIds, setSelectedCouponIds] = useState([]);
   const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
   const [couponModalType, setCouponModalType] = useState("add"); // add | edit
   const [editingCouponId, setEditingCouponId] = useState(null);
@@ -1764,6 +1832,67 @@ export default function Admin() {
     }
   };
 
+  const toggleSelectedId = (id, selectedIds, setSelectedIds) => {
+    setSelectedIds((prev) => (
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    ));
+  };
+
+  const togglePageSelection = (pageItems, selectedIds, setSelectedIds) => {
+    const pageIds = pageItems.map((item) => item.id);
+    const allSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.includes(id));
+    setSelectedIds(allSelected ? [] : pageIds);
+  };
+
+  const handleBulkDelete = async (type, ids) => {
+    const validIds = type === "users" ? ids.filter((id) => id !== currentUser?.id) : ids;
+    if (validIds.length === 0) {
+      alert("Chưa có mục hợp lệ để xóa.");
+      return;
+    }
+    const labels = {
+      products: "sản phẩm",
+      coupons: "mã giảm giá",
+      orders: "hóa đơn",
+      users: "thành viên",
+    };
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${validIds.length} ${labels[type]} đã chọn?`)) return;
+
+    const token = localStorage.getItem("token");
+    const endpoints = {
+      products: "/api/products",
+      coupons: "/api/coupons",
+      orders: "/api/orders",
+      users: "/api/users",
+    };
+
+    try {
+      const results = await Promise.all(validIds.map((id) => fetch(`${API_URL}${endpoints[type]}/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      })));
+      const failed = results.filter((response) => !response.ok).length;
+
+      if (type === "products") {
+        setSelectedProductIds([]);
+        fetchProducts();
+      } else if (type === "coupons") {
+        setSelectedCouponIds([]);
+        fetchCoupons();
+      } else if (type === "orders") {
+        setSelectedOrderIds([]);
+        fetchOrders();
+      } else if (type === "users") {
+        setSelectedUserIds([]);
+        fetchUsers();
+      }
+
+      alert(failed ? `Đã xóa xong nhưng có ${failed} mục bị lỗi.` : "Xóa các mục đã chọn thành công!");
+    } catch (err) {
+      alert("Không thể kết nối đến server khi xóa hàng loạt.");
+    }
+  };
+
   // Filter products for display in Table
   const filteredProducts = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(prodSearch.toLowerCase()) || 
@@ -1793,6 +1922,57 @@ export default function Admin() {
 
     return matchSearch && matchCat && matchBrand && matchSubCat && matchCond;
   });
+  const {
+    totalPages: productTotalPages,
+    currentPage: currentProductPage,
+    pageItems: pagedProducts,
+  } = getPaged(filteredProducts, productPage, productPageSize);
+  const {
+    totalPages: userTotalPages,
+    currentPage: currentUserPage,
+    pageItems: pagedUsers,
+  } = getPaged(users, userPage, userPageSize);
+  const {
+    totalPages: couponTotalPages,
+    currentPage: currentCouponPage,
+    pageItems: pagedCoupons,
+  } = getPaged(coupons, couponPage, couponPageSize);
+
+  useEffect(() => {
+    setProductPage(1);
+    setSelectedProductIds([]);
+  }, [prodSearch, prodCatFilter, prodBrandFilter, prodSubCatFilter, prodCondFilter, productPageSize]);
+
+  useEffect(() => {
+    setSelectedProductIds([]);
+  }, [productPage]);
+
+  useEffect(() => {
+    setUserPage(1);
+    setSelectedUserIds([]);
+  }, [users.length, userPageSize]);
+
+  useEffect(() => {
+    setSelectedUserIds([]);
+  }, [userPage]);
+
+  useEffect(() => {
+    setCouponPage(1);
+    setSelectedCouponIds([]);
+  }, [coupons.length, couponPageSize]);
+
+  useEffect(() => {
+    setSelectedCouponIds([]);
+  }, [couponPage]);
+
+  useEffect(() => {
+    setOrderPage(1);
+    setSelectedOrderIds([]);
+  }, [orderSearchKeyword, filterOrderStatus, filterPaymentStatus, filterPaymentMethod, filterUsedOnly, filterStartDate, filterEndDate, orderPageSize]);
+
+  useEffect(() => {
+    setSelectedOrderIds([]);
+  }, [orderPage]);
 
   const statsRangeOptions = [
     { value: "7", label: "7 ngày" },
@@ -2376,6 +2556,20 @@ export default function Admin() {
 
                 {/* Products Table Card */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors">
+                  <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <p className="text-xs font-bold text-slate-500">
+                      Đã chọn {selectedProductIds.length} sản phẩm
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleBulkDelete("products", selectedProductIds)}
+                      disabled={!canWriteProducts || selectedProductIds.length === 0}
+                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-xs font-black transition-all disabled:opacity-40"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Xóa đã chọn</span>
+                    </button>
+                  </div>
                   {loadingProducts ? (
                     <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
                   ) : error ? (
@@ -2391,6 +2585,14 @@ export default function Admin() {
                       <table className="w-full text-left border-collapse">
                         <thead>
                           <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                            <th className="px-6 py-4">
+                              <input
+                                type="checkbox"
+                                checked={pagedProducts.length > 0 && pagedProducts.every((prod) => selectedProductIds.includes(prod.id))}
+                                onChange={() => togglePageSelection(pagedProducts, selectedProductIds, setSelectedProductIds)}
+                                className="h-4 w-4 accent-blue-600"
+                              />
+                            </th>
                             <th className="px-6 py-4">Ảnh</th>
                             <th className="px-6 py-4">Tên sản phẩm</th>
                             <th className="px-6 py-4">Danh mục</th>
@@ -2404,13 +2606,21 @@ export default function Admin() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
-                          {filteredProducts.map((prod, index) => (
+                          {pagedProducts.map((prod, index) => (
                             <tr
                               key={prod.id}
                               style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
                               onClick={() => canWriteProducts && openModal("edit", prod)}
                               className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer"
                             >
+                              <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedProductIds.includes(prod.id)}
+                                  onChange={() => toggleSelectedId(prod.id, selectedProductIds, setSelectedProductIds)}
+                                  className="h-4 w-4 accent-blue-600"
+                                />
+                              </td>
                               <td className="px-6 py-4">
                                 <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-200/60 dark:border-slate-700/60 flex-shrink-0">
                                   <img
@@ -2502,6 +2712,14 @@ export default function Admin() {
                           ))}
                         </tbody>
                       </table>
+                      <PaginationControls
+                        page={currentProductPage}
+                        totalPages={productTotalPages}
+                        totalItems={filteredProducts.length}
+                        pageSize={productPageSize}
+                        onPageChange={setProductPage}
+                        onPageSizeChange={setProductPageSize}
+                      />
                     </div>
                   )}
                 </div>
@@ -2691,6 +2909,18 @@ export default function Admin() {
                     <span>Thêm thành viên mới</span>
                   </RippleButton>
                 </div>
+                <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <p className="text-xs font-bold text-slate-500">Đã chọn {selectedUserIds.length} thành viên</p>
+                  <button
+                    type="button"
+                    onClick={() => handleBulkDelete("users", selectedUserIds)}
+                    disabled={!canWriteUsers || selectedUserIds.length === 0}
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-xs font-black transition-all disabled:opacity-40"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Xóa đã chọn</span>
+                  </button>
+                </div>
 
                 {loadingUsers ? (
                   <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
@@ -2699,6 +2929,14 @@ export default function Admin() {
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                          <th className="px-6 py-4">
+                            <input
+                              type="checkbox"
+                              checked={pagedUsers.filter((u) => u.id !== currentUser?.id).length > 0 && pagedUsers.filter((u) => u.id !== currentUser?.id).every((u) => selectedUserIds.includes(u.id))}
+                              onChange={() => togglePageSelection(pagedUsers.filter((u) => u.id !== currentUser?.id), selectedUserIds, setSelectedUserIds)}
+                              className="h-4 w-4 accent-blue-600"
+                            />
+                          </th>
                           <th className="px-6 py-4">Tên người dùng</th>
                           <th className="px-6 py-4">Email</th>
                           <th className="px-6 py-4">Ngày đăng ký</th>
@@ -2707,13 +2945,22 @@ export default function Admin() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
-                        {users.map((u, index) => (
+                        {pagedUsers.map((u, index) => (
                           <tr
                             key={u.id}
                             style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
                             onClick={() => openUserModal("edit", u)}
                             className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer"
                           >
+                            <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                checked={selectedUserIds.includes(u.id)}
+                                disabled={currentUser?.id === u.id}
+                                onChange={() => toggleSelectedId(u.id, selectedUserIds, setSelectedUserIds)}
+                                className="h-4 w-4 accent-blue-600 disabled:opacity-40"
+                              />
+                            </td>
                             <td className="px-6 py-4 font-bold text-slate-850 dark:text-white flex items-center gap-2">
                               <div className="h-8 w-8 rounded-xl bg-slate-105 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-xs uppercase flex-shrink-0">
                                 {u.name.charAt(0)}
@@ -2761,6 +3008,14 @@ export default function Admin() {
                         ))}
                       </tbody>
                     </table>
+                    <PaginationControls
+                      page={currentUserPage}
+                      totalPages={userTotalPages}
+                      totalItems={users.length}
+                      pageSize={userPageSize}
+                      onPageChange={setUserPage}
+                      onPageSizeChange={setUserPageSize}
+                    />
                   </div>
                 )}
               </div>
@@ -3207,6 +3462,11 @@ export default function Admin() {
                 
                 return matchesKeyword && matchesOrderStatus && matchesPaymentStatus && matchesPaymentMethod && matchesUsedOnly && matchesDate;
               });
+              const {
+                totalPages: orderTotalPages,
+                currentPage: currentOrderPage,
+                pageItems: pagedOrders,
+              } = getPaged(filteredOrders, orderPage, orderPageSize);
 
               return (
                 <div className="space-y-6 animate-fade-in-up">
@@ -3337,6 +3597,18 @@ export default function Admin() {
 
                   {/* BẢNG DANH SÁCH ĐƠN HÀNG */}
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+                    <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <p className="text-xs font-bold text-slate-500">Đã chọn {selectedOrderIds.length} hóa đơn</p>
+                      <button
+                        type="button"
+                        onClick={() => handleBulkDelete("orders", selectedOrderIds)}
+                        disabled={!canWriteOrders || selectedOrderIds.length === 0}
+                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-xs font-black transition-all disabled:opacity-40"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span>Xóa đã chọn</span>
+                      </button>
+                    </div>
                     {loadingOrders ? (
                       <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
                     ) : filteredOrders.length === 0 ? (
@@ -3346,6 +3618,14 @@ export default function Admin() {
                         <table className="w-full text-left border-collapse">
                           <thead>
                             <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                              <th className="px-6 py-4">
+                                <input
+                                  type="checkbox"
+                                  checked={pagedOrders.length > 0 && pagedOrders.every((o) => selectedOrderIds.includes(o.id))}
+                                  onChange={() => togglePageSelection(pagedOrders, selectedOrderIds, setSelectedOrderIds)}
+                                  className="h-4 w-4 accent-blue-600"
+                                />
+                              </th>
                               <th className="px-6 py-4">Mã đơn</th>
                               <th className="px-6 py-4">Khách hàng / Liên hệ</th>
                               <th className="px-6 py-4">Sản phẩm & Tình trạng</th>
@@ -3357,7 +3637,7 @@ export default function Admin() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
-                            {filteredOrders.map((o, index) => {
+                            {pagedOrders.map((o, index) => {
                               // Định nghĩa màu sắc cho Trạng thái Đơn hàng
                               const getOrderStatusBadge = (status) => {
                                 const st = status || 'pending';
@@ -3394,6 +3674,14 @@ export default function Admin() {
                                   onClick={() => openOrderDetailModal(o)}
                                   className="hover:bg-blue-50/40 dark:hover:bg-blue-950/10 transition-all duration-200 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer group"
                                 >
+                                  <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedOrderIds.includes(o.id)}
+                                      onChange={() => toggleSelectedId(o.id, selectedOrderIds, setSelectedOrderIds)}
+                                      className="h-4 w-4 accent-blue-600"
+                                    />
+                                  </td>
                                   {/* Mã đơn */}
                                   <td className="px-6 py-4 font-bold text-slate-800 dark:text-white whitespace-nowrap">
                                     <div className="flex flex-col gap-1.5">
@@ -3519,6 +3807,14 @@ export default function Admin() {
                             })}
                           </tbody>
                         </table>
+                        <PaginationControls
+                          page={currentOrderPage}
+                          totalPages={orderTotalPages}
+                          totalItems={filteredOrders.length}
+                          pageSize={orderPageSize}
+                          onPageChange={setOrderPage}
+                          onPageSizeChange={setOrderPageSize}
+                        />
                       </div>
                     )}
                   </div>
@@ -3546,6 +3842,18 @@ export default function Admin() {
                     <span>Tạo mã giảm giá mới</span>
                   </RippleButton>
                 </div>
+                <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <p className="text-xs font-bold text-slate-500">Đã chọn {selectedCouponIds.length} mã giảm giá</p>
+                  <button
+                    type="button"
+                    onClick={() => handleBulkDelete("coupons", selectedCouponIds)}
+                    disabled={!canWriteCoupons || selectedCouponIds.length === 0}
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-xs font-black transition-all disabled:opacity-40"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Xóa đã chọn</span>
+                  </button>
+                </div>
 
                 {loadingCoupons ? (
                   <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
@@ -3556,6 +3864,14 @@ export default function Admin() {
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                          <th className="px-6 py-4">
+                            <input
+                              type="checkbox"
+                              checked={pagedCoupons.length > 0 && pagedCoupons.every((c) => selectedCouponIds.includes(c.id))}
+                              onChange={() => togglePageSelection(pagedCoupons, selectedCouponIds, setSelectedCouponIds)}
+                              className="h-4 w-4 accent-blue-600"
+                            />
+                          </th>
                           <th className="px-6 py-4">Mã Coupon</th>
                           <th className="px-6 py-4">Mô tả chương trình</th>
                           <th className="px-6 py-4">Mức giảm</th>
@@ -3567,13 +3883,21 @@ export default function Admin() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
-                        {coupons.map((c, index) => (
+                        {pagedCoupons.map((c, index) => (
                           <tr
                             key={c.id}
                             style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
                             onClick={() => canWriteCoupons && openCouponModal("edit", c)}
                             className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer"
                           >
+                            <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                checked={selectedCouponIds.includes(c.id)}
+                                onChange={() => toggleSelectedId(c.id, selectedCouponIds, setSelectedCouponIds)}
+                                className="h-4 w-4 accent-blue-600"
+                              />
+                            </td>
                             <td className="px-6 py-4 font-black whitespace-nowrap">
                               <span className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200/50 rounded-xl font-mono text-xs font-black uppercase">
                                 {c.code}
@@ -3645,6 +3969,14 @@ export default function Admin() {
                         ))}
                       </tbody>
                     </table>
+                    <PaginationControls
+                      page={currentCouponPage}
+                      totalPages={couponTotalPages}
+                      totalItems={coupons.length}
+                      pageSize={couponPageSize}
+                      onPageChange={setCouponPage}
+                      onPageSizeChange={setCouponPageSize}
+                    />
                   </div>
                 )}
               </div>

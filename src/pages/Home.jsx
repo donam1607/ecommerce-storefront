@@ -78,6 +78,71 @@ const isPromotionalProduct = (product) => {
   return hasDiscountPercent || hasLowerDiscountedPrice || hasPromoBadge;
 };
 
+const PAGE_SIZE_OPTIONS = [8, 12, 20, 40];
+
+function PaginationControls({ page, totalPages, totalItems, pageSize, onPageChange, onPageSizeChange }) {
+  if (totalItems === 0) return null;
+  const safeTotal = Math.max(totalPages, 1);
+  const pages = Array.from(
+    new Set([1, page - 1, page, page + 1, safeTotal].filter((item) => item >= 1 && item <= safeTotal))
+  ).sort((a, b) => a - b);
+  const start = 0;
+  const end = 0;
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 py-6">
+      <div className="hidden">
+        Hiển thị {start}-{end} / {totalItems} sản phẩm
+      </div>
+      <div className="inline-flex items-center gap-1.5 rounded-2xl bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-sm p-1.5">
+        <select
+          value={pageSize}
+          onChange={(e) => onPageSizeChange(Number(e.target.value))}
+          className="h-9 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-black text-slate-700 dark:text-slate-200 outline-none"
+        >
+          {PAGE_SIZE_OPTIONS.map((size) => (
+            <option key={size} value={size}>{size}/trang</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+          disabled={page <= 1}
+          className="h-9 w-9 inline-flex items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-35 transition-all"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        {pages.map((item, index) => (
+          <React.Fragment key={item}>
+            {index > 0 && item - pages[index - 1] > 1 && (
+              <span className="h-9 px-1.5 inline-flex items-center text-xs font-black text-slate-300 dark:text-slate-600">...</span>
+            )}
+            <button
+              type="button"
+              onClick={() => onPageChange(item)}
+              className={`h-9 min-w-9 px-3 rounded-xl text-xs font-black transition-all ${
+                page === item
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              {item}
+            </button>
+          </React.Fragment>
+        ))}
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.min(safeTotal, page + 1))}
+          disabled={page >= safeTotal}
+          className="h-9 w-9 inline-flex items-center justify-center rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-35 transition-all"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const { addToCart } = useCart();
   const { showToast } = useToast();
@@ -101,6 +166,8 @@ export default function Home() {
   const [customMin, setCustomMin] = useState("");
   const [customMax, setCustomMax] = useState("");
   const [openDropdown, setOpenDropdown] = useState(null); // 'category' | 'condition' | 'price' | 'sort' | null
+  const [productPage, setProductPage] = useState(1);
+  const [productPageSize, setProductPageSize] = useState(12);
 
   useEffect(() => {
     if (!openDropdown) return;
@@ -322,6 +389,13 @@ export default function Home() {
     }
     return 0;
   });
+  const productTotalPages = Math.max(1, Math.ceil(sorted.length / productPageSize));
+  const currentProductPage = Math.min(productPage, productTotalPages);
+  const paginatedProducts = sorted.slice((currentProductPage - 1) * productPageSize, currentProductPage * productPageSize);
+
+  useEffect(() => {
+    setProductPage(1);
+  }, [search, activeCategory, activeBrand, activeSubCategory, activeCondition, promoOnly, sortBy, priceRange, customMin, customMax, productPageSize]);
 
   const handleAddToCart = (product) => {
     addToCart(product);
@@ -1157,15 +1231,16 @@ export default function Home() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {sorted.map((product, idx) => (
-              <ScrollReveal 
-                key={product.id} 
-                delay={(idx % 4) * 80} 
-                distance="30px"
-                duration={600}
-              >
-                <div className="group/card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-blue-500/5 hover:-translate-y-2 hover:border-blue-300 dark:hover:border-blue-900/60 transition-all duration-300 flex flex-col relative h-full">
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {paginatedProducts.map((product, idx) => (
+                <ScrollReveal 
+                  key={product.id} 
+                  delay={(idx % 4) * 80} 
+                  distance="30px"
+                  duration={600}
+                >
+                  <div className="group/card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-blue-500/5 hover:-translate-y-2 hover:border-blue-300 dark:hover:border-blue-900/60 transition-all duration-300 flex flex-col relative h-full">
                   
                   {/* Glint/Shine hover effect overlay */}
                   <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-20">
@@ -1258,10 +1333,19 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+            <PaginationControls
+              page={currentProductPage}
+              totalPages={productTotalPages}
+              totalItems={sorted.length}
+              pageSize={productPageSize}
+              onPageChange={setProductPage}
+              onPageSizeChange={setProductPageSize}
+            />
+          </>
         )}
       </section>
 
