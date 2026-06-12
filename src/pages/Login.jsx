@@ -26,12 +26,11 @@ export default function Login() {
       phone: data.phone || "",
       address: data.address || "",
       city: data.city || "",
-      zip: data.zip || "",
     }));
 
     setTimeout(() => {
       window.dispatchEvent(new Event("auth-changed"));
-      if (data.role === "admin") {
+      if (data.role && data.role !== "user") {
         navigate("/admin");
       } else {
         navigate("/");
@@ -74,12 +73,11 @@ export default function Login() {
           phone: data.phone || "",
           address: data.address || "",
           city: data.city || "",
-          zip: data.zip || "",
         }));
 
         setTimeout(() => {
           window.dispatchEvent(new Event("auth-changed"));
-          if (data.role === "admin") {
+          if (data.role && data.role !== "user") {
             navigate("/admin");
           } else {
             navigate("/");

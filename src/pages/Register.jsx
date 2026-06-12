@@ -28,12 +28,11 @@ export default function Register() {
       phone: data.phone || "",
       address: data.address || "",
       city: data.city || "",
-      zip: data.zip || "",
     }));
 
     setTimeout(() => {
       window.dispatchEvent(new Event("auth-changed"));
-      navigate(data.role === "admin" ? "/admin" : "/");
+      navigate(data.role && data.role !== "user" ? "/admin" : "/");
     }, 1000);
   };
 

@@ -319,7 +319,7 @@ function Navbar() {
                       </span>
                     </div>
 
-                    {user.role === 'admin' && (
+                    {user.role && user.role !== 'user' && (
                       <Link
                         to="/admin"
                         onClick={() => setDropdownOpen(false)}

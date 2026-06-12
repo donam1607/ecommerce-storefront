@@ -16,7 +16,6 @@ export default function Profile() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
-  const [zip, setZip] = useState("");
   
   // Password states
   const [password, setPassword] = useState("");
@@ -54,7 +53,6 @@ export default function Profile() {
           setPhone(data.phone || "");
           setAddress(data.address || "");
           setCity(data.city || "");
-          setZip(data.zip || "");
         } else {
           const localUser = JSON.parse(savedUser);
           setUser(localUser);
@@ -63,7 +61,6 @@ export default function Profile() {
           setPhone(localUser.phone || "");
           setAddress(localUser.address || "");
           setCity(localUser.city || "");
-          setZip(localUser.zip || "");
         }
       } catch (err) {
         console.error("Lỗi lấy thông tin cá nhân:", err);
@@ -74,7 +71,6 @@ export default function Profile() {
         setPhone(localUser.phone || "");
         setAddress(localUser.address || "");
         setCity(localUser.city || "");
-        setZip(localUser.zip || "");
       } finally {
         setLoading(false);
       }
@@ -101,8 +97,7 @@ export default function Profile() {
       email,
       phone,
       address,
-      city,
-      zip
+      city
     };
 
     if (password) {
@@ -130,8 +125,7 @@ export default function Profile() {
           email: data.email,
           phone: data.phone,
           address: data.address,
-          city: data.city,
-          zip: data.zip
+          city: data.city
         };
         localStorage.setItem("user", JSON.stringify(updatedLocalUser));
         setUser(data);
@@ -268,16 +262,6 @@ export default function Profile() {
                 />
               </div>
 
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 block">Mã bưu điện (Zip Code)</label>
-                <input
-                  type="text"
-                  value={zip}
-                  onChange={(e) => setZip(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
-                  placeholder="Ví dụ: 70000"
-                />
-              </div>
             </div>
           </div>
 

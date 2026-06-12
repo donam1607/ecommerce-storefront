@@ -67,7 +67,7 @@ export default function Admin() {
     return linkedProduct?.badge || "";
   };
 
-  const [activeTab, setActiveTab] = useState("stats"); // stats | products | categories | users | orders
+  const [activeTab, setActiveTab] = useState("stats");
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
   const [categoriesList, setCategoriesList] = useState(DEFAULT_CATEGORIES);
@@ -145,8 +145,13 @@ export default function Admin() {
   const [formUserPhone, setFormUserPhone] = useState("");
   const [formUserAddress, setFormUserAddress] = useState("");
   const [formUserCity, setFormUserCity] = useState("");
-  const [formUserZip, setFormUserZip] = useState("");
   const [submittingUser, setSubmittingUser] = useState(false);
+  const [roles, setRoles] = useState([]);
+  const [permissionGroups, setPermissionGroups] = useState([]);
+  const [roleForm, setRoleForm] = useState({ id: "", name: "", description: "", permissions: [] });
+  const [editingRoleId, setEditingRoleId] = useState(null);
+  const [savingRole, setSavingRole] = useState(false);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
 
   // Coupon management states
   const [coupons, setCoupons] = useState([]);
@@ -196,26 +201,54 @@ export default function Admin() {
 
   // Check auth
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userStr = localStorage.getItem("user");
-    if (!token || !userStr) {
-      setIsAdmin(false);
-      setCheckingAuth(false);
-      return;
-    }
+    let isMounted = true;
 
-    try {
-      const user = JSON.parse(userStr);
-      setCurrentUser(user);
-      if (user.role === "admin") {
-        setIsAdmin(true);
-      } else {
+    const checkAccess = async () => {
+      const token = localStorage.getItem("token");
+      const userStr = localStorage.getItem("user");
+      if (!token || !userStr) {
         setIsAdmin(false);
+        setCheckingAuth(false);
+        return;
       }
-    } catch (e) {
-      setIsAdmin(false);
-    }
-    setCheckingAuth(false);
+
+      try {
+        const user = JSON.parse(userStr);
+        if (!isMounted) return;
+        setCurrentUser(user);
+
+        if (user.role === "admin") {
+          setIsAdmin(true);
+          setCheckingAuth(false);
+          return;
+        }
+
+        const response = await fetch(`${API_URL}/api/roles`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = response.ok ? await response.json() : { roles: [], permissionGroups: [] };
+        if (!isMounted) return;
+
+        const loadedRoles = data.roles || [];
+        setRoles(loadedRoles);
+        setPermissionGroups(data.permissionGroups || []);
+
+        const role = loadedRoles.find((item) => item.id === user.role);
+        const firstScreen = role?.permissions?.find((permission) => permission.startsWith("screen."));
+        setIsAdmin(Boolean(firstScreen));
+        if (firstScreen) setActiveTab(firstScreen.replace("screen.", ""));
+      } catch (e) {
+        if (!isMounted) return;
+        setIsAdmin(false);
+      } finally {
+        if (isMounted) setCheckingAuth(false);
+      }
+    };
+
+    checkAccess();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Fetch coupons
@@ -287,6 +320,22 @@ export default function Admin() {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_URL}/api/roles`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setRoles(data.roles || []);
+        setPermissionGroups(data.permissionGroups || []);
+      }
+    } catch (err) {
+      console.error("Load roles failed:", err);
+    }
+  };
+
   // Fetch orders
   const fetchOrders = async () => {
     setLoadingOrders(true);
@@ -327,6 +376,10 @@ export default function Admin() {
 
   const handleSaveOrderDetail = async (e) => {
     e.preventDefault();
+    if (!canWriteOrders) {
+      alert("Bạn không có quyền cập nhật hóa đơn.");
+      return;
+    }
     setSavingOrderDetail(true);
     const token = localStorage.getItem("token");
     const lockedCustomerInfo = ['shipping', 'delivered', 'cancelled', 'returned'].includes(selectedOrder?.orderStatus);
@@ -546,6 +599,7 @@ export default function Admin() {
       fetchUsers();
       fetchOrders();
       fetchCoupons();
+      fetchRoles();
     }
   }, [isAdmin]);
 
@@ -1027,6 +1081,10 @@ export default function Admin() {
   // Handle Product CRUD
   const handleProductSubmit = async (e) => {
     e.preventDefault();
+    if (!canWriteProducts) {
+      alert("Bạn không có quyền cập nhật sản phẩm.");
+      return;
+    }
     setSubmittingProduct(true);
     
     const badgeVal = formBadgePreset === "Custom" ? formBadgeCustom : formBadgePreset;
@@ -1251,6 +1309,10 @@ export default function Admin() {
 
   const handleCategorySubmit = async (e) => {
     e.preventDefault();
+    if (!canWriteCategories) {
+      alert("Bạn không có quyền cập nhật danh mục.");
+      return;
+    }
     const cName = formCatName.trim();
     if (!cName) return;
 
@@ -1385,7 +1447,6 @@ export default function Admin() {
       setFormUserPhone(userObj.phone || "");
       setFormUserAddress(userObj.address || "");
       setFormUserCity(userObj.city || "");
-      setFormUserZip(userObj.zip || "");
     } else {
       setEditingUserId(null);
       setFormUserName("");
@@ -1395,13 +1456,16 @@ export default function Admin() {
       setFormUserPhone("");
       setFormUserAddress("");
       setFormUserCity("");
-      setFormUserZip("");
     }
     setIsUserModalOpen(true);
   };
 
   const handleUserSubmit = async (e) => {
     e.preventDefault();
+    if (!canWriteUsers) {
+      alert("Bạn không có quyền cập nhật thành viên.");
+      return;
+    }
     setSubmittingUser(true);
 
     const token = localStorage.getItem("token");
@@ -1411,8 +1475,7 @@ export default function Admin() {
       role: formUserRole,
       phone: formUserPhone || null,
       address: formUserAddress || null,
-      city: formUserCity || null,
-      zip: formUserZip || null
+      city: formUserCity || null
     };
 
     if (formUserPassword) {
@@ -1455,6 +1518,142 @@ export default function Admin() {
     }
   };
 
+  const resetRoleForm = () => {
+    setEditingRoleId(null);
+    setRoleForm({ id: "", name: "", description: "", permissions: [] });
+  };
+
+  const openNewRoleModal = () => {
+    resetRoleForm();
+    setIsRoleModalOpen(true);
+  };
+
+  const openRoleEditor = (role) => {
+    setEditingRoleId(role.id);
+    setRoleForm({
+      id: role.id,
+      name: role.name || "",
+      description: role.description || "",
+      permissions: Array.isArray(role.permissions) ? role.permissions : []
+    });
+  };
+
+  useEffect(() => {
+    if (activeTab !== "roles" || roles.length === 0 || editingRoleId || isRoleModalOpen) return;
+    openRoleEditor(roles[0]);
+  }, [activeTab, roles, editingRoleId, isRoleModalOpen]);
+
+  const toggleRolePermission = (permissionId) => {
+    if (roleForm.id === "admin") return;
+    setRoleForm((prev) => {
+      const exists = prev.permissions.includes(permissionId);
+      return {
+        ...prev,
+        permissions: exists
+          ? prev.permissions.filter((item) => item !== permissionId)
+          : [...prev.permissions, permissionId]
+      };
+    });
+  };
+
+  const handleRoleSubmit = async (e) => {
+    e.preventDefault();
+    if (currentUser?.role !== "admin") {
+      alert("Chỉ Admin mới có quyền quản lý phân quyền.");
+      return;
+    }
+
+    setSavingRole(true);
+    const token = localStorage.getItem("token");
+    const isEdit = Boolean(editingRoleId);
+    const payload = {
+      id: roleForm.id,
+      name: roleForm.name,
+      description: roleForm.description,
+      permissions: roleForm.permissions
+    };
+
+    try {
+      const response = await fetch(isEdit ? `${API_URL}/api/roles/${editingRoleId}` : `${API_URL}/api/roles`, {
+        method: isEdit ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (response.ok) {
+        const updatedRoles = data.roles || [];
+        setRoles(updatedRoles);
+        if (isRoleModalOpen) {
+          setIsRoleModalOpen(false);
+          const nextRole = updatedRoles.find((role) => role.id === (isEdit ? editingRoleId : payload.id));
+          if (nextRole) {
+            setEditingRoleId(nextRole.id);
+            setRoleForm({
+              id: nextRole.id,
+              name: nextRole.name || "",
+              description: nextRole.description || "",
+              permissions: Array.isArray(nextRole.permissions) ? nextRole.permissions : []
+            });
+          } else {
+            resetRoleForm();
+          }
+        } else if (isEdit) {
+          const updatedRole = updatedRoles.find((role) => role.id === editingRoleId);
+          if (updatedRole) {
+            setRoleForm({
+              id: updatedRole.id,
+              name: updatedRole.name || "",
+              description: updatedRole.description || "",
+              permissions: Array.isArray(updatedRole.permissions) ? updatedRole.permissions : []
+            });
+          }
+        }
+        alert(isEdit ? "Cập nhật quyền thành công!" : "Tạo quyền mới thành công!");
+      } else {
+        alert(data.message || "Không thể lưu quyền.");
+      }
+    } catch (err) {
+      alert("Không thể kết nối đến server.");
+    } finally {
+      setSavingRole(false);
+    }
+  };
+
+  const handleDeleteRole = async () => {
+    if (!editingRoleId) return;
+    const selectedRole = roles.find((role) => role.id === editingRoleId);
+    if (selectedRole?.locked) {
+      alert("Không thể xóa quyền hệ thống.");
+      return;
+    }
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa quyền "${selectedRole?.name || editingRoleId}"?`)) return;
+
+    setSavingRole(true);
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${API_URL}/api/roles/${editingRoleId}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setRoles(data.roles || []);
+        resetRoleForm();
+        setIsRoleModalOpen(false);
+        alert("Xóa quyền thành công!");
+      } else {
+        alert(data.message || "Không thể xóa quyền.");
+      }
+    } catch (err) {
+      alert("Không thể kết nối đến server.");
+    } finally {
+      setSavingRole(false);
+    }
+  };
+
   // Coupon CRUD helpers
   const openCouponModal = (type, coupon = null) => {
     setCouponModalType(type);
@@ -1490,6 +1689,10 @@ export default function Admin() {
 
   const handleCouponSubmit = async (e) => {
     e.preventDefault();
+    if (!canWriteCoupons) {
+      alert("Bạn không có quyền cập nhật mã giảm giá.");
+      return;
+    }
     setSubmittingCoupon(true);
 
     const token = localStorage.getItem("token");
@@ -1610,6 +1813,32 @@ export default function Admin() {
     : "";
   const statusChartMax = Math.max(...orderStatusStats.map((item) => item.count), 1);
   const categoryChartMax = Math.max(...categoryRevenueStats.map((item) => item.revenue), 1);
+  const currentRoleConfig = roles.find((role) => role.id === currentUser?.role);
+  const isSuperAdmin = currentUser?.role === "admin";
+  const hasUiPermission = (permissionId) => isSuperAdmin || Boolean(currentRoleConfig?.permissions?.includes(permissionId));
+  const canWriteProducts = hasUiPermission("products.write");
+  const canWriteCategories = hasUiPermission("categories.write");
+  const canWriteOrders = hasUiPermission("orders.write");
+  const canWriteCoupons = hasUiPermission("coupons.write");
+  const canWriteUsers = hasUiPermission("users.write");
+  const canWriteRoles = isSuperAdmin && hasUiPermission("roles.write");
+  const adminTabs = [
+    { id: "stats", permission: "screen.stats", label: "Báo Cáo Thống Kê", icon: BarChart3 },
+    { id: "products", permission: "screen.products", label: "Quản Lý Sản Phẩm", icon: ShoppingBag },
+    { id: "categories", permission: "screen.categories", label: "Quản Lý Danh Mục", icon: Boxes },
+    { id: "orders", permission: "screen.orders", label: "Quản Lý Hóa Đơn", icon: FileText },
+    { id: "coupons", permission: "screen.coupons", label: "Quản Lý Khuyến Mãi", icon: Wallet },
+    { id: "users", permission: "screen.users", label: "Quản Lý Thành Viên", icon: Users },
+    { id: "roles", permission: "screen.roles", label: "Quản Lý Phân Quyền", icon: UserCog }
+  ];
+  const visibleAdminTabs = adminTabs.filter((tab) => hasUiPermission(tab.permission));
+
+  useEffect(() => {
+    if (!isAdmin || visibleAdminTabs.length === 0) return;
+    if (!visibleAdminTabs.some((tab) => tab.id === activeTab)) {
+      setActiveTab(visibleAdminTabs[0].id);
+    }
+  }, [isAdmin, activeTab, visibleAdminTabs.map((tab) => tab.id).join("|")]);
 
   if (checkingAuth) {
     return (
@@ -1704,15 +1933,7 @@ export default function Admin() {
                   {!isCollapsed && <span className="animate-fade-in hidden lg:block">{isCollapsed ? "Mở rộng" : "Thu gọn menu"}</span>}
                 </button>
 
-                {[
-                  { id: "stats", label: "Báo Cáo Thống Kê", icon: BarChart3 },
-                  { id: "products", label: "Quản Lý Sản Phẩm", icon: ShoppingBag },
-                  { id: "categories", label: "Quản Lý Danh Mục", icon: Boxes },
-                  { id: "orders", label: "Quản Lý Hóa Đơn", icon: FileText },
-                  { id: "coupons", label: "Quản Lý Khuyến Mãi", icon: Wallet },
-                  { id: "users", label: "Quản Lý Thành Viên", icon: Users }
-
-                ].map((tab) => {
+                {visibleAdminTabs.map((tab) => {
                   const Icon = tab.icon;
                   const active = activeTab === tab.id;
                   return (
@@ -1740,7 +1961,7 @@ export default function Admin() {
           <main className="flex-1 min-w-0 space-y-6">
             
             {/* Tab 1: stats (Statistics Panel) */}
-            {activeTab === "stats" && (
+            {activeTab === "stats" && hasUiPermission("screen.stats") && (
               <div className="space-y-6 animate-fade-in-up">
                 {/* KPIs Dashboard Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -2073,7 +2294,7 @@ export default function Admin() {
             )}
 
             {/* Tab 2: products (Product CRUD with Search & Multiple Filters) */}
-            {activeTab === "products" && (
+            {activeTab === "products" && hasUiPermission("screen.products") && (
               <div className="space-y-4 animate-fade-in-up">
                 
                 {/* Advanced Search & Filtering Block */}
@@ -2082,6 +2303,7 @@ export default function Admin() {
                     <h2 className="text-base font-black text-slate-900 dark:text-white">Kho Hàng Sản Phẩm ({filteredProducts.length})</h2>
                     <RippleButton
                       onClick={() => openModal("add")}
+                      disabled={!canWriteProducts}
                       className="flex items-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-blue-600/20 transition-all active:scale-95 flex-shrink-0 hover:shadow-lg hover:shadow-blue-600/30 hover:-translate-y-0.5"
                     >
                       <Plus className="h-4.5 w-4.5" />
@@ -2186,7 +2408,7 @@ export default function Admin() {
                             <tr
                               key={prod.id}
                               style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
-                              onClick={() => openModal("edit", prod)}
+                              onClick={() => canWriteProducts && openModal("edit", prod)}
                               className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer"
                             >
                               <td className="px-6 py-4">
@@ -2259,15 +2481,17 @@ export default function Admin() {
                               <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex justify-end gap-1.5">
                                   <button
+                                    disabled={!canWriteProducts}
                                     onClick={() => openModal("edit", prod)}
-                                    className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all"
+                                    className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all disabled:opacity-40"
                                     title="Sửa"
                                   >
                                     <Edit className="h-4 w-4" />
                                   </button>
                                   <button
+                                    disabled={!canWriteProducts}
                                     onClick={() => handleDeleteProduct(prod.id, prod.name)}
-                                    className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all"
+                                    className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all disabled:opacity-40"
                                     title="Xóa"
                                   >
                                     <Trash2 className="h-4 w-4" />
@@ -2285,7 +2509,7 @@ export default function Admin() {
             )}
 
             {/* Tab 3: categories (Dynamic Category Management Panel) */}
-            {activeTab === "categories" && (
+            {activeTab === "categories" && hasUiPermission("screen.categories") && (
               <div className="space-y-4 animate-fade-in-up">
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 transition-colors">
                   <div>
@@ -2294,6 +2518,7 @@ export default function Admin() {
                   </div>
                   <RippleButton
                     onClick={() => openCatModal("add")}
+                    disabled={!canWriteCategories}
                     className="flex items-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-blue-600/20 transition-all active:scale-95 flex-shrink-0 hover:shadow-lg hover:shadow-blue-600/30 hover:-translate-y-0.5"
                   >
                     <Plus className="h-4.5 w-4.5" />
@@ -2329,15 +2554,17 @@ export default function Admin() {
                           </div>
                           <div className="flex gap-1.5">
                             <button
+                              disabled={!canWriteCategories}
                               onClick={() => openCatModal("edit", catName)}
-                              className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all"
+                              className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all disabled:opacity-40"
                               title="Sửa tên danh mục"
                             >
                               <Edit className="h-4 w-4" />
                             </button>
                             <button
+                              disabled={!canWriteCategories}
                               onClick={() => handleDeleteCategory(catName)}
-                              className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all"
+                              className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all disabled:opacity-40"
                               title="Xóa danh mục"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -2448,7 +2675,7 @@ export default function Admin() {
             )}
 
             {/* Tab 4: users (User Panel with password creation and toggles) */}
-            {activeTab === "users" && (
+            {activeTab === "users" && hasUiPermission("screen.users") && (
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors animate-fade-in-up">
                 <div className="p-6 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
@@ -2457,6 +2684,7 @@ export default function Admin() {
                   </div>
                   <RippleButton
                     onClick={() => openUserModal("add")}
+                    disabled={!canWriteUsers}
                     className="flex items-center justify-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-blue-600/20 transition-all active:scale-95 hover:shadow-lg hover:shadow-blue-600/30 hover:-translate-y-0.5"
                   >
                     <Plus className="h-4.5 w-4.5" />
@@ -2499,26 +2727,28 @@ export default function Admin() {
                             <td className="px-6 py-4 opacity-80">{new Date(u.createdAt).toLocaleDateString("vi-VN")}</td>
                             <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                               <select
-                                disabled={currentUser?.id === u.id}
+                                disabled={!canWriteUsers || currentUser?.id === u.id}
                                 value={u.role}
                                 onChange={(e) => handleRoleChange(u.id, e.target.value)}
                                 className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 transition-colors"
                               >
-                                <option value="user">User (Thường)</option>
-                                <option value="admin">Admin (Quản trị)</option>
+                                {roles.map((role) => (
+                                  <option key={role.id} value={role.id}>{role.name}</option>
+                                ))}
                               </select>
                             </td>
                             <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                               <div className="flex justify-end gap-1.5">
                                 <button
+                                  disabled={!canWriteUsers}
                                   onClick={() => openUserModal("edit", u)}
-                                  className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all"
+                                  className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all disabled:opacity-40"
                                   title="Sửa & Cập nhật mật khẩu"
                                 >
                                   <Edit className="h-4 w-4" />
                                 </button>
                                 <button
-                                  disabled={currentUser?.id === u.id}
+                                  disabled={!canWriteUsers || currentUser?.id === u.id}
                                   onClick={() => handleDeleteUser(u.id, u.name)}
                                   className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all disabled:opacity-40"
                                   title="Xóa người dùng"
@@ -2536,8 +2766,411 @@ export default function Admin() {
               </div>
             )}
 
+            {activeTab === "roles" && hasUiPermission("screen.roles") && (() => {
+              const selectedRole = roles.find((role) => role.id === editingRoleId);
+              const allPermissionIds = permissionGroups.flatMap((group) => group.items.map((item) => item.id));
+              const grantedCount = roleForm.id === "admin" ? allPermissionIds.length : roleForm.permissions.length;
+              const setGroupPermissions = (groupItems, shouldGrant) => {
+                if (!canWriteRoles || roleForm.id === "admin") return;
+                const ids = groupItems.map((item) => item.id);
+                setRoleForm((prev) => ({
+                  ...prev,
+                  permissions: shouldGrant
+                    ? Array.from(new Set([...prev.permissions, ...ids]))
+                    : prev.permissions.filter((permission) => !ids.includes(permission))
+                }));
+              };
+
+              return (
+                <div className="space-y-5">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+                    <div className="p-5 border-b border-slate-100 dark:border-slate-850 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                      <div>
+                        <h2 className="text-base font-black text-slate-900 dark:text-white">Quản lý phân quyền</h2>
+                        <p className="text-xs text-slate-500 mt-1">Chọn role ở hàng dưới, toàn bộ quyền được xem và thao tác sẽ hiện ngay bên cạnh.</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="px-3 py-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-500 dark:text-slate-300">
+                          {roles.length} role
+                        </span>
+                        <span className="px-3 py-1.5 rounded-2xl bg-blue-50 dark:bg-blue-950/30 text-[10px] font-black text-blue-600 dark:text-blue-300">
+                          {grantedCount}/{allPermissionIds.length} quyền
+                        </span>
+                        <button
+                          type="button"
+                          onClick={openNewRoleModal}
+                          disabled={!canWriteRoles}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-blue-600 text-white hover:bg-blue-500 text-xs font-black transition-all disabled:opacity-40"
+                        >
+                          <Plus className="h-4 w-4" />
+                          <span>Tạo quyền</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-4 overflow-x-auto">
+                      <div className="flex gap-3 min-w-max lg:min-w-0 lg:grid lg:grid-cols-4 xl:grid-cols-6">
+                        {roles.map((role) => {
+                          const selected = editingRoleId === role.id;
+                          const count = role.id === "admin" ? allPermissionIds.length : role.permissions?.length || 0;
+                          return (
+                            <button
+                              key={role.id}
+                              type="button"
+                              onClick={() => openRoleEditor(role)}
+                              className={`w-56 lg:w-auto text-left p-4 rounded-2xl border transition-all ${
+                                selected
+                                  ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/15"
+                                  : "bg-slate-50 border-slate-200 text-slate-700 hover:border-blue-200 hover:bg-blue-50/50 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300 dark:hover:border-blue-800 dark:hover:bg-blue-950/20"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-black truncate">{role.name}</p>
+                                  <p className={`text-[10px] font-bold mt-0.5 truncate ${selected ? "text-blue-100" : "text-slate-400"}`}>{role.id}</p>
+                                </div>
+                                {role.locked && (
+                                  <ShieldAlert className={`h-4 w-4 flex-shrink-0 ${selected ? "text-blue-100" : "text-slate-400"}`} />
+                                )}
+                              </div>
+                              <div className={`mt-3 h-1.5 rounded-full overflow-hidden ${selected ? "bg-blue-500" : "bg-slate-200 dark:bg-slate-800"}`}>
+                                <div
+                                  className={`h-full rounded-full ${selected ? "bg-white" : "bg-blue-500"}`}
+                                  style={{ width: `${allPermissionIds.length ? Math.min((count / allPermissionIds.length) * 100, 100) : 0}%` }}
+                                />
+                              </div>
+                              <p className={`mt-2 text-[10px] font-black uppercase ${selected ? "text-blue-50" : "text-slate-400"}`}>
+                                {count} quyền được cấp
+                              </p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleRoleSubmit} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+                    <div className="p-5 border-b border-slate-100 dark:border-slate-850 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                          Ma trận quyền {selectedRole ? `- ${selectedRole.name}` : ""}
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Bấm từng quyền hoặc chọn nhanh cả nhóm. Thông tin quyền nằm ngay trong vùng này.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {roleForm.id === "admin" && (
+                          <span className="text-[10px] font-black text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/30 px-3 py-1.5 rounded-2xl">
+                            Admin luôn có toàn quyền
+                          </span>
+                        )}
+                        {selectedRole && !selectedRole.locked && (
+                          <button
+                            type="button"
+                            onClick={handleDeleteRole}
+                            disabled={!canWriteRoles || savingRole}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-red-50 dark:bg-red-950/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-950/40 text-xs font-black transition-all disabled:opacity-40"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span>Xóa</span>
+                          </button>
+                        )}
+                        <RippleButton
+                          type="submit"
+                          disabled={!canWriteRoles || !editingRoleId || savingRole}
+                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-blue-600/20 transition-all active:scale-95 disabled:opacity-50"
+                        >
+                          {savingRole ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          <span>Lưu quyền</span>
+                        </RippleButton>
+                      </div>
+                    </div>
+
+                    {selectedRole ? (
+                      <div className="p-5 space-y-5">
+                        <div className="grid grid-cols-1 lg:grid-cols-[1fr,1fr,2fr] gap-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 p-4">
+                          <div>
+                            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Mã quyền</label>
+                            <input
+                              value={roleForm.id}
+                              disabled
+                              className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-500 dark:text-slate-400 text-xs outline-none font-semibold"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Tên quyền</label>
+                            <input
+                              value={roleForm.name}
+                              onChange={(e) => setRoleForm((prev) => ({ ...prev, name: e.target.value }))}
+                              disabled={!canWriteRoles || selectedRole.locked}
+                              className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold disabled:opacity-60"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Mô tả</label>
+                            <input
+                              value={roleForm.description}
+                              onChange={(e) => setRoleForm((prev) => ({ ...prev, description: e.target.value }))}
+                              disabled={!canWriteRoles || selectedRole.locked}
+                              placeholder="Mô tả ngắn quyền này..."
+                              className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold disabled:opacity-60"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {permissionGroups.map((group) => {
+                          const groupIds = group.items.map((item) => item.id);
+                          const checkedCount = roleForm.id === "admin"
+                            ? group.items.length
+                            : groupIds.filter((id) => roleForm.permissions.includes(id)).length;
+                          return (
+                            <div key={group.id} className="border border-slate-200 dark:border-slate-800 rounded-3xl bg-slate-50/70 dark:bg-slate-950/40 overflow-hidden">
+                              <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+                                <div>
+                                  <h4 className="text-xs font-black uppercase tracking-wide text-slate-700 dark:text-slate-200">{group.label}</h4>
+                                  <p className="text-[10px] font-bold text-slate-400 mt-0.5">{checkedCount}/{group.items.length} quyền</p>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => setGroupPermissions(group.items, true)}
+                                    disabled={!canWriteRoles || roleForm.id === "admin"}
+                                    className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] font-black text-blue-600 dark:text-blue-300 disabled:opacity-40"
+                                  >
+                                    Chọn hết
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setGroupPermissions(group.items, false)}
+                                    disabled={!canWriteRoles || roleForm.id === "admin"}
+                                    className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] font-black text-slate-500 dark:text-slate-300 disabled:opacity-40"
+                                  >
+                                    Bỏ
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {group.items.map((permission) => {
+                                  const checked = roleForm.id === "admin" || roleForm.permissions.includes(permission.id);
+                                  return (
+                                    <button
+                                      type="button"
+                                      key={permission.id}
+                                      disabled={!canWriteRoles || roleForm.id === "admin"}
+                                      onClick={() => toggleRolePermission(permission.id)}
+                                      className={`min-h-12 flex items-center gap-3 text-left p-3 rounded-2xl border transition-all disabled:cursor-not-allowed ${
+                                        checked
+                                          ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/25 dark:border-blue-800 dark:text-blue-300"
+                                          : "bg-white/80 border-slate-200 text-slate-600 hover:border-blue-200 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:border-blue-800"
+                                      }`}
+                                    >
+                                      <span className={`h-5 w-5 rounded-lg flex items-center justify-center flex-shrink-0 border ${
+                                        checked
+                                          ? "bg-blue-600 border-blue-600 text-white"
+                                          : "bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700"
+                                      }`}>
+                                        {checked && <Check className="h-3.5 w-3.5" />}
+                                      </span>
+                                      <span className="text-xs font-bold leading-snug">{permission.label}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-12 text-center text-xs font-bold text-slate-400">
+                        Chọn một quyền ở danh sách phía trên để xem ma trận quyền.
+                      </div>
+                    )}
+                  </form>
+
+                  {isRoleModalOpen && (
+                    <div
+                      onClick={() => setIsRoleModalOpen(false)}
+                      className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 animate-fade-in-overlay"
+                    >
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-5xl rounded-3xl shadow-2xl max-h-[92vh] overflow-hidden transition-all animate-scale-in"
+                      >
+                        <form onSubmit={handleRoleSubmit} className="flex max-h-[92vh] flex-col">
+                          <div className="p-5 border-b border-slate-100 dark:border-slate-850 flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              <h3 className="text-base font-black text-slate-900 dark:text-white">
+                                {editingRoleId ? "Chi tiết phân quyền" : "Tạo quyền mới"}
+                              </h3>
+                              <p className="text-xs text-slate-500 mt-1">
+                                {selectedRole?.locked ? "Role hệ thống, không thể xóa." : "Chỉnh thông tin role và chọn các quyền cần cấp."}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setIsRoleModalOpen(false)}
+                              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl text-slate-500 transition-colors"
+                            >
+                              <X className="h-5 w-5" />
+                            </button>
+                          </div>
+
+                          <div className="overflow-y-auto p-5 space-y-5">
+                            <div className="grid grid-cols-1 lg:grid-cols-[1fr,1fr,2fr] gap-3">
+                              <div>
+                                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Mã quyền *</label>
+                                <input
+                                  value={roleForm.id}
+                                  onChange={(e) => setRoleForm((prev) => ({ ...prev, id: e.target.value }))}
+                                  disabled={Boolean(editingRoleId)}
+                                  required
+                                  placeholder="manager, staff..."
+                                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold disabled:opacity-60"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Tên hiển thị *</label>
+                                <input
+                                  value={roleForm.name}
+                                  onChange={(e) => setRoleForm((prev) => ({ ...prev, name: e.target.value }))}
+                                  required
+                                  placeholder="Quản lí, Nhân viên..."
+                                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Mô tả</label>
+                                <input
+                                  value={roleForm.description}
+                                  onChange={(e) => setRoleForm((prev) => ({ ...prev, description: e.target.value }))}
+                                  placeholder="Mô tả ngắn quyền này dùng cho nhóm nào..."
+                                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden">
+                              <div className="p-4 border-b border-slate-100 dark:border-slate-850 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                <div>
+                                  <h4 className="text-sm font-black text-slate-900 dark:text-white">Ma trận quyền</h4>
+                                  <p className="text-xs text-slate-500 mt-1">Bấm từng quyền hoặc chọn nhanh cả nhóm.</p>
+                                </div>
+                                {roleForm.id === "admin" && (
+                                  <span className="text-[10px] font-black text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/30 px-3 py-1.5 rounded-2xl">
+                                    Admin luôn có toàn quyền
+                                  </span>
+                                )}
+                              </div>
+                              <div className="p-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                {permissionGroups.map((group) => {
+                                  const groupIds = group.items.map((item) => item.id);
+                                  const checkedCount = roleForm.id === "admin"
+                                    ? group.items.length
+                                    : groupIds.filter((id) => roleForm.permissions.includes(id)).length;
+                                  return (
+                                    <div key={group.id} className="border border-slate-200 dark:border-slate-800 rounded-3xl bg-slate-50/70 dark:bg-slate-950/40 overflow-hidden">
+                                      <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+                                        <div>
+                                          <h5 className="text-xs font-black uppercase tracking-wide text-slate-700 dark:text-slate-200">{group.label}</h5>
+                                          <p className="text-[10px] font-bold text-slate-400 mt-0.5">{checkedCount}/{group.items.length} quyền</p>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                          <button
+                                            type="button"
+                                            onClick={() => setGroupPermissions(group.items, true)}
+                                            disabled={!canWriteRoles || roleForm.id === "admin"}
+                                            className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] font-black text-blue-600 dark:text-blue-300 disabled:opacity-40"
+                                          >
+                                            Chọn hết
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => setGroupPermissions(group.items, false)}
+                                            disabled={!canWriteRoles || roleForm.id === "admin"}
+                                            className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] font-black text-slate-500 dark:text-slate-300 disabled:opacity-40"
+                                          >
+                                            Bỏ
+                                          </button>
+                                        </div>
+                                      </div>
+                                      <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {group.items.map((permission) => {
+                                          const checked = roleForm.id === "admin" || roleForm.permissions.includes(permission.id);
+                                          return (
+                                            <button
+                                              type="button"
+                                              key={permission.id}
+                                              disabled={!canWriteRoles || roleForm.id === "admin"}
+                                              onClick={() => toggleRolePermission(permission.id)}
+                                              className={`min-h-12 flex items-center gap-3 text-left p-3 rounded-2xl border transition-all disabled:cursor-not-allowed ${
+                                                checked
+                                                  ? "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/25 dark:border-blue-800 dark:text-blue-300"
+                                                  : "bg-white/80 border-slate-200 text-slate-600 hover:border-blue-200 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 dark:hover:border-blue-800"
+                                              }`}
+                                            >
+                                              <span className={`h-5 w-5 rounded-lg flex items-center justify-center flex-shrink-0 border ${
+                                                checked
+                                                  ? "bg-blue-600 border-blue-600 text-white"
+                                                  : "bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700"
+                                              }`}>
+                                                {checked && <Check className="h-3.5 w-3.5" />}
+                                              </span>
+                                              <span className="text-xs font-bold leading-snug">{permission.label}</span>
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="p-4 border-t border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-slate-900">
+                            <div className="text-[10px] font-black text-slate-400 uppercase">
+                              {grantedCount}/{allPermissionIds.length} quyền được cấp
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              {editingRoleId && (
+                                <button
+                                  type="button"
+                                  onClick={handleDeleteRole}
+                                  disabled={!canWriteRoles || selectedRole?.locked || savingRole}
+                                  className="h-10 px-4 rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-xs font-black transition-all disabled:opacity-40"
+                                >
+                                  Xóa
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setIsRoleModalOpen(false)}
+                                className="h-10 px-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-black"
+                              >
+                                Đóng
+                              </button>
+                              <RippleButton
+                                type="submit"
+                                disabled={!canWriteRoles || savingRole}
+                                className="h-10 min-w-32 flex items-center justify-center gap-1.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-blue-600/20 transition-all active:scale-95 disabled:opacity-50"
+                              >
+                                {savingRole ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                                <span>{editingRoleId ? "Lưu thay đổi" : "Tạo quyền"}</span>
+                              </RippleButton>
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Tab 5: orders (Invoices / Orders Management) */}
-            {activeTab === "orders" && (() => {
+            {activeTab === "orders" && hasUiPermission("screen.orders") && (() => {
               // Thực hiện lọc đơn hàng ở local dựa trên các tiêu chí bộ lọc thông minh
               const filteredOrders = orders.filter((o) => {
                 const matchesKeyword = !orderSearchKeyword.trim() || 
@@ -2895,7 +3528,7 @@ export default function Admin() {
 
 
             {/* Tab 6: coupons (Marketing & Coupons Management) */}
-            {activeTab === "coupons" && (
+            {activeTab === "coupons" && hasUiPermission("screen.coupons") && (
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors animate-fade-in-up">
                 <div className="p-6 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
@@ -2906,6 +3539,7 @@ export default function Admin() {
                   </div>
                   <RippleButton
                     onClick={() => openCouponModal("add")}
+                    disabled={!canWriteCoupons}
                     className="flex items-center justify-center gap-1.5 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-md shadow-blue-600/20 transition-all active:scale-95 hover:shadow-lg hover:shadow-blue-600/30 hover:-translate-y-0.5"
                   >
                     <Plus className="h-4.5 w-4.5" />
@@ -2937,7 +3571,7 @@ export default function Admin() {
                           <tr
                             key={c.id}
                             style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
-                            onClick={() => openCouponModal("edit", c)}
+                            onClick={() => canWriteCoupons && openCouponModal("edit", c)}
                             className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer"
                           >
                             <td className="px-6 py-4 font-black whitespace-nowrap">
@@ -2990,15 +3624,17 @@ export default function Admin() {
                             <td className="px-6 py-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                               <div className="flex justify-end gap-1.5">
                                 <button
+                                  disabled={!canWriteCoupons}
                                   onClick={() => openCouponModal("edit", c)}
-                                  className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all"
+                                  className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 rounded-xl transition-all disabled:opacity-40"
                                   title="Chỉnh sửa mã"
                                 >
                                   <Edit className="h-4 w-4" />
                                 </button>
                                 <button
+                                  disabled={!canWriteCoupons}
                                   onClick={() => handleDeleteCoupon(c.id)}
-                                  className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all"
+                                  className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all disabled:opacity-40"
                                   title="Xóa mã"
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -3298,7 +3934,7 @@ export default function Admin() {
                 </button>
                 <RippleButton
                   type="submit"
-                  disabled={submittingProduct}
+                  disabled={!canWriteProducts || submittingProduct}
                   className="flex items-center gap-1.5 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-75 hover:-translate-y-0.5"
                 >
                   {submittingProduct ? (
@@ -3356,6 +3992,7 @@ export default function Admin() {
                 </button>
                 <RippleButton
                   type="submit"
+                  disabled={!canWriteCategories}
                   className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95 hover:-translate-y-0.5"
                 >
                   <span>{catModalType === "add" ? "Tạo danh mục" : "Lưu thay đổi"}</span>
@@ -3449,11 +4086,12 @@ export default function Admin() {
                   <select
                     value={formUserRole}
                     onChange={(e) => setFormUserRole(e.target.value)}
-                    disabled={editingUserId === currentUser?.id}
+                    disabled={!canWriteUsers || editingUserId === currentUser?.id}
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
                   >
-                    <option value="user">User (Thường)</option>
-                    <option value="admin">Admin (Quản trị)</option>
+                    {roles.map((role) => (
+                      <option key={role.id} value={role.id}>{role.name}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -3493,17 +4131,6 @@ export default function Admin() {
                   />
                 </div>
 
-                {/* Zip */}
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Mã bưu điện (Zip)</label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: 100000"
-                    value={formUserZip}
-                    onChange={(e) => setFormUserZip(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
-                  />
-                </div>
               </div>
 
               {/* Actions */}
@@ -3517,7 +4144,7 @@ export default function Admin() {
                 </button>
                 <RippleButton
                   type="submit"
-                  disabled={submittingUser}
+                  disabled={!canWriteUsers || submittingUser}
                   className="flex items-center gap-1.5 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-75 hover:-translate-y-0.5"
                 >
                   {submittingUser ? (
@@ -3748,7 +4375,7 @@ export default function Admin() {
                 </button>
                 <RippleButton
                   type="submit"
-                  disabled={submittingCoupon}
+                  disabled={!canWriteCoupons || submittingCoupon}
                   className="flex items-center gap-1.5 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-75 hover:-translate-y-0.5"
                 >
                   {submittingCoupon ? (
@@ -3955,7 +4582,7 @@ export default function Admin() {
                     </button>
                     <RippleButton
                       type="submit"
-                      disabled={savingOrderDetail}
+                      disabled={!canWriteOrders || savingOrderDetail}
                       className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-400 text-white font-extrabold text-xs rounded-xl transition-all cursor-pointer shadow-sm shadow-blue-500/20 hover:-translate-y-0.5"
                     >
                       {savingOrderDetail ? "Đang cập nhật..." : "Cập nhật đơn hàng"}
