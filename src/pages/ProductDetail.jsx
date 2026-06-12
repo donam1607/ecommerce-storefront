@@ -96,7 +96,6 @@ export default function ProductDetail() {
 
   const handleBuyNow = () => {
     for (let i = 0; i < qty; i++) addToCart(product);
-    showToast(`Đã thêm "${product.name}" vào giỏ hàng! Đang chuyển hướng thanh toán...`, "info");
     navigate("/checkout");
   };
 
