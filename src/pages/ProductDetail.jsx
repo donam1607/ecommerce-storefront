@@ -182,18 +182,25 @@ export default function ProductDetail() {
 
             {/* Thumbnails */}
             {images.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              <div className="flex gap-3 overflow-x-auto px-1 py-2 scrollbar-hide">
                 {images.map((img, i) => (
                   <button
                     key={i}
                     onClick={() => openLightbox(i)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all duration-200 ${
+                    className={`group/thumb flex-shrink-0 w-20 h-20 rounded-2xl border-2 p-1 transition-all duration-200 ${
                       activeImage === i
-                        ? "border-blue-500 ring-2 ring-blue-500/30 scale-105"
-                        : "border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 opacity-70 hover:opacity-100"
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-md shadow-blue-600/15"
+                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 opacity-75 hover:opacity-100 hover:border-blue-300 dark:hover:border-blue-800 hover:shadow-sm"
                     }`}
+                    aria-label={`Chọn ảnh ${i + 1}`}
                   >
-                    <img src={img} alt={`Thumbnail ${i + 1}`} className="w-full h-full object-cover" />
+                    <span className="block h-full w-full overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
+                      <img
+                        src={img}
+                        alt={`Thumbnail ${i + 1}`}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-[1.03]"
+                      />
+                    </span>
                   </button>
                 ))}
               </div>
