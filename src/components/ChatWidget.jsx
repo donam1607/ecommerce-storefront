@@ -477,6 +477,7 @@ export default function ChatWidget() {
     { label: '🔧 Tư vấn nâng cấp RAM', text: 'Muốn nâng cấp RAM laptop lên 16GB, em tư vấn giúp tôi với' },
   ];
   const activeAction = isOpen ? CONTACT_ACTIONS[0] : CONTACT_ACTIONS[activeActionIndex];
+  const secondaryContactActions = CONTACT_ACTIONS.filter((action) => action.id !== activeAction.id);
 
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] font-sans antialiased">
@@ -522,7 +523,7 @@ export default function ChatWidget() {
             className={'absolute bottom-[44px] sm:bottom-[52px] right-0 flex flex-col items-end gap-2 pb-5 transition-all duration-300 ' + (contactHubOpen ? 'pointer-events-auto opacity-100 translate-y-0' : 'pointer-events-none opacity-0 translate-y-3')}
             onMouseEnter={openContactHub}
           >
-            {CONTACT_ACTIONS.map((action, index) => (
+            {secondaryContactActions.map((action, index) => (
               <button
                 key={action.id}
                 type="button"
@@ -546,12 +547,7 @@ export default function ChatWidget() {
             if (isOpen) {
               handleToggleChat();
             } else {
-              if (contactHubOpen) {
-                closeContactHub();
-              } else {
-                openContactHub();
-              }
-              setShowWelcomeBubble(false);
+              handleContactAction(activeAction);
             }
           }}
           className={'relative w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ' + (isOpen ? 'rounded-full bg-gradient-to-br from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white shadow-lg' : 'rounded-none ' + activeAction.className) + ' hover:scale-105 active:scale-95 transition-all duration-300 z-50 cursor-pointer overflow-visible'}
