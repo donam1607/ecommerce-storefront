@@ -2187,6 +2187,11 @@ export default function Admin() {
     }
   }, [isAdmin, activeTab, visibleAdminTabs.map((tab) => tab.id).join("|")]);
 
+  useEffect(() => {
+    if (!isAdmin) return;
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [activeTab, isAdmin]);
+
   if (checkingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
