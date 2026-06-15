@@ -261,6 +261,18 @@ const isPromotionalProduct = (product) => {
   return hasDiscountPercent || hasLowerDiscountedPrice || hasPromoBadge;
 };
 
+const getProductFinalPrice = (product) => {
+  const originalPrice = toVndInt(product.price);
+  const discountedPrice = product.discountedPrice !== null && product.discountedPrice !== undefined
+    ? toVndInt(product.discountedPrice)
+    : 0;
+  if (discountedPrice > 0 && discountedPrice < originalPrice) return discountedPrice;
+  if (Number(product.discount) > 0) {
+    return Math.floor(originalPrice * (1 - Number(product.discount) / 100));
+  }
+  return originalPrice;
+};
+
 const PAGE_SIZE_OPTIONS = [8, 12, 20, 40];
 
 function PaginationControls({ page, totalPages, totalItems, pageSize, onPageChange, onPageSizeChange }) {
@@ -528,6 +540,21 @@ export default function Home() {
       .map((p) => p.subCategory)
       .filter(Boolean)
   )).sort();
+  const maxProductPrice = Math.max(5000000, Math.ceil(Math.max(...products.map(getProductFinalPrice), 0) / 1000000) * 1000000);
+  const sliderStep = 500000;
+  const selectedMinPrice = priceRange === "custom" && customMin !== "" ? Number(customMin) : 0;
+  const selectedMaxPrice = priceRange === "custom" && customMax !== "" ? Number(customMax) : maxProductPrice;
+  const priceFilterActive = priceRange !== "all" && (priceRange !== "custom" || selectedMinPrice > 0 || selectedMaxPrice < maxProductPrice);
+
+  const updatePriceSlider = (type, value) => {
+    const numericValue = Number(value);
+    setPriceRange("custom");
+    if (type === "min") {
+      setCustomMin(String(Math.min(numericValue, selectedMaxPrice)));
+    } else {
+      setCustomMax(String(Math.max(numericValue, selectedMinPrice)));
+    }
+  };
 
   useEffect(() => {
     if (activeBrand !== "All" && !brands.includes(activeBrand)) {
@@ -622,7 +649,7 @@ export default function Home() {
 
     // Price range filtering
     let matchPrice = true;
-    const priceVal = toVndInt(p.price);
+    const priceVal = getProductFinalPrice(p);
     if (priceRange === "under_5m") {
       matchPrice = priceVal < 5000000;
     } else if (priceRange === "5m_15m") {
@@ -633,7 +660,7 @@ export default function Home() {
       matchPrice = priceVal > 30000000;
     } else if (priceRange === "custom") {
       const min = customMin ? Number(customMin) : 0;
-      const max = customMax ? Number(customMax) : Infinity;
+      const max = customMax ? Number(customMax) : maxProductPrice;
       matchPrice = priceVal >= min && priceVal <= max;
     }
 
@@ -647,10 +674,10 @@ export default function Home() {
       return (b.reviews || 0) - (a.reviews || 0);
     }
     if (sortBy === "price_asc") {
-      return toVndInt(a.price) - toVndInt(b.price);
+      return getProductFinalPrice(a) - getProductFinalPrice(b);
     }
     if (sortBy === "price_desc") {
-      return toVndInt(b.price) - toVndInt(a.price);
+      return getProductFinalPrice(b) - getProductFinalPrice(a);
     }
     if (sortBy === "newest") {
       return new Date(b.createdAt) - new Date(a.createdAt);
@@ -1416,12 +1443,15 @@ export default function Home() {
                   type="button"
                   onClick={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
                   className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border rounded-full transition-all ${
-                    priceRange !== "all"
+                    priceFilterActive
                       ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-500 border-blue-200"
                       : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                   }`}
                 >
                   <span>
+                    Giá: {priceFilterActive ? `${formatVND(selectedMinPrice)} - ${formatVND(selectedMaxPrice)}` : "Mọi mức giá"}
+                  </span>
+                  <span className="hidden">
                     Giá: {priceRange === "all" ? "Mọi mức giá" : 
                     priceRange === "under_5m" ? "Dưới 5tr" :
                     priceRange === "5m_15m" ? "5tr - 15tr" :
@@ -1431,7 +1461,70 @@ export default function Home() {
                   <ChevronDown className={`h-3.5 w-3.5 transition-transform ${openDropdown === "price" ? "rotate-180" : ""}`} />
                 </button>
                 {openDropdown === "price" && (
-                  <div className="absolute left-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-2 z-[10000] animate-fade-in space-y-0.5">
+                  <div className="absolute left-0 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-3 z-[10000] animate-fade-in space-y-2">
+                    <div className="rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800 p-3">
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Khoảng giá</p>
+                          <p className="text-xs font-black text-slate-900 dark:text-white mt-1">
+                            {formatVND(selectedMinPrice)} - {formatVND(selectedMaxPrice)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPriceRange("all");
+                            setCustomMin("");
+                            setCustomMax("");
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-[10px] font-black text-slate-600 dark:text-slate-300 transition-all"
+                        >
+                          Tất cả
+                        </button>
+                      </div>
+                      <div className="relative h-8">
+                        <input
+                          type="range"
+                          min="0"
+                          max={maxProductPrice}
+                          step={sliderStep}
+                          value={selectedMinPrice}
+                          onChange={(e) => updatePriceSlider("min", e.target.value)}
+                          className="absolute inset-x-0 top-2 w-full accent-blue-600 bg-transparent"
+                        />
+                        <input
+                          type="range"
+                          min="0"
+                          max={maxProductPrice}
+                          step={sliderStep}
+                          value={selectedMaxPrice}
+                          onChange={(e) => updatePriceSlider("max", e.target.value)}
+                          className="absolute inset-x-0 top-2 w-full accent-blue-600 bg-transparent"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <input
+                          type="number"
+                          min="0"
+                          max={maxProductPrice}
+                          step={sliderStep}
+                          value={selectedMinPrice}
+                          onChange={(e) => updatePriceSlider("min", e.target.value)}
+                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-xs font-bold rounded-xl px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="Từ"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          max={maxProductPrice}
+                          step={sliderStep}
+                          value={selectedMaxPrice}
+                          onChange={(e) => updatePriceSlider("max", e.target.value)}
+                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white text-xs font-bold rounded-xl px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="Đến"
+                        />
+                      </div>
+                    </div>
                     {[
                       { id: "all", label: "Mọi mức giá" },
                       { id: "under_5m", label: "Dưới 5 triệu" },
