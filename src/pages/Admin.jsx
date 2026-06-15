@@ -93,6 +93,53 @@ const getBadgeClass = (badge) => {
   return "bg-blue-600 text-white border border-blue-400";
 };
 
+const getCouponRuntimeStatus = (coupon) => {
+  if (coupon.runtimeStatus) return coupon.runtimeStatus;
+  const now = new Date();
+  if (!coupon.isActive) return "paused";
+  if (coupon.startDate && new Date(coupon.startDate) > now) return "scheduled";
+  if (coupon.endDate) {
+    const endDate = new Date(coupon.endDate);
+    endDate.setHours(23, 59, 59, 999);
+    if (endDate < now) return "expired";
+  }
+  if (
+    coupon.maxUses !== null &&
+    coupon.maxUses !== undefined &&
+    Number(coupon.usedCount || 0) >= Number(coupon.maxUses)
+  ) {
+    return "used_up";
+  }
+  return "active";
+};
+
+const getCouponStatusMeta = (coupon) => {
+  const status = getCouponRuntimeStatus(coupon);
+  const statusMap = {
+    active: {
+      label: "Đang chạy",
+      className: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 border-emerald-200",
+    },
+    scheduled: {
+      label: "Chưa bắt đầu",
+      className: "bg-sky-50 dark:bg-sky-950/30 text-sky-600 border-sky-200",
+    },
+    expired: {
+      label: "Hết hạn",
+      className: "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-700",
+    },
+    used_up: {
+      label: "Hết lượt",
+      className: "bg-amber-50 dark:bg-amber-950/30 text-amber-600 border-amber-200",
+    },
+    paused: {
+      label: "Tạm dừng",
+      className: "bg-rose-50 dark:bg-rose-950/30 text-rose-600 border-rose-200",
+    },
+  };
+  return statusMap[status] || statusMap.paused;
+};
+
 export default function Admin() {
   const { showToast } = useToast();
   const alert = (msg) => {
@@ -3937,13 +3984,14 @@ export default function Admin() {
                               <p className="text-[10px]">T2: {c.endDate ? new Date(c.endDate).toLocaleDateString("vi-VN") : "Vô hạn"}</p>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wide border ${
-                                c.isActive 
-                                  ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 border-emerald-200" 
-                                  : "bg-rose-50 dark:bg-rose-950/30 text-rose-600 border-rose-200"
-                              }`}>
-                                {c.isActive ? "Đang chạy" : "Tạm dừng"}
-                              </span>
+                              {(() => {
+                                const statusMeta = getCouponStatusMeta(c);
+                                return (
+                                  <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wide border ${statusMeta.className}`}>
+                                    {statusMeta.label}
+                                  </span>
+                                );
+                              })()}
                             </td>
                             <td className="px-6 py-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                               <div className="flex justify-end gap-1.5">
