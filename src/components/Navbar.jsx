@@ -176,14 +176,14 @@ function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300 animate-slide-down">
+    <header className="sticky top-0 z-50 bg-white/70 dark:bg-slate-950/75 backdrop-blur-lg border-b border-slate-200/50 dark:border-slate-800/50 transition-colors duration-350 animate-slide-down">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="bg-blue-600 p-2 rounded-xl text-white shadow-md shadow-blue-600/30">
-            <ShoppingBag className="h-6 w-6" />
+        <Link to="/" className="flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-all">
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-blue-500/20">
+            <ShoppingBag className="h-5.5 w-5.5" />
           </div>
-          <span className="font-extrabold text-xl text-slate-800 dark:text-white">
-            Shop<span className="text-blue-600">Tech</span>
+          <span className="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white">
+            Shop<span className="text-blue-600 dark:text-blue-400">Tech</span>
           </span>
         </Link>
 
@@ -197,17 +197,17 @@ function Navbar() {
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               onKeyDown={handleSearchSubmit}
-              className="w-full pl-10 pr-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-950 focus:outline-none text-slate-900 dark:text-white text-sm transition-all shadow-sm"
+              className="w-full pl-10 pr-4 py-2.5 rounded-full bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200/30 dark:border-slate-800/30 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-950 focus:outline-none text-slate-900 dark:text-white text-sm transition-all shadow-inner input-premium-focus"
             />
-            <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
           </div>
 
           {/* Instant Search Results Dropdown */}
           {searchFocused && searchQuery.trim() && (
-            <div className="absolute left-0 right-0 top-full mt-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-[99999] transition-all animate-fade-in-up">
-              <div className="p-3 border-b border-slate-100 dark:border-slate-850 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+            <div className="absolute left-0 right-0 top-full mt-3 glass-premium-card rounded-2xl shadow-2xl overflow-hidden z-[99999] animate-scale-in">
+              <div className="p-3.5 border-b border-slate-200/40 dark:border-slate-800/40 flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
                 <span>Kết quả tìm kiếm ({searchResults.length})</span>
-                {searchResults.length > 0 && <span className="text-[9px] text-blue-500 font-normal normal-case">Nhấp để xem nhanh</span>}
+                {searchResults.length > 0 && <span className="text-[9px] text-blue-500 dark:text-blue-500 font-normal normal-case">Nhấp để xem nhanh</span>}
               </div>
               
               {searchResults.length === 0 ? (
@@ -215,7 +215,7 @@ function Navbar() {
                   Không tìm thấy sản phẩm nào phù hợp.
                 </div>
               ) : (
-                <div className="max-h-[320px] overflow-y-auto divide-y divide-slate-50 dark:divide-slate-850 scrollbar-thin">
+                <div className="max-h-[320px] overflow-y-auto divide-y divide-slate-100/50 dark:divide-slate-800/45 scrollbar-thin">
                   {searchResults.map(p => (
                     <div
                       key={p.id}
@@ -224,10 +224,10 @@ function Navbar() {
                         setSearchQuery("");
                         setSearchFocused(false);
                       }}
-                      className="flex items-center gap-3 p-2.5 hover:bg-slate-50 dark:hover:bg-slate-850 cursor-pointer transition-colors"
+                      className="flex items-center gap-3 p-3 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 cursor-pointer transition-colors"
                     >
                       {/* Thumbnail */}
-                      <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200/60 dark:border-slate-700/60 flex-shrink-0">
+                      <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden border border-slate-200/40 dark:border-slate-700/40 flex-shrink-0">
                         <img
                           src={p.images && p.images[0] ? p.images[0] : ""}
                           alt={p.name}
@@ -237,9 +237,9 @@ function Navbar() {
                       </div>
                       
                       {/* Details */}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-grow min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-blue-600 dark:text-blue-400 uppercase tracking-wide text-[9px] font-bold">{p.category}</span>
+                          <span className="text-blue-600 dark:text-blue-400 uppercase tracking-wide text-[9px] font-black">{p.category}</span>
                           {p.badge && (
                             <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${getBadgeClass(p.badge)}`}>
                               {p.badge}
@@ -266,7 +266,7 @@ function Navbar() {
                       navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
                       setSearchFocused(false);
                     }}
-                    className="p-3 text-center bg-slate-50 hover:bg-slate-100 dark:bg-slate-850/40 dark:hover:bg-slate-850 text-xs font-bold text-blue-600 dark:text-blue-400 cursor-pointer transition-colors border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-1.5"
+                    className="p-3 text-center bg-slate-50/50 hover:bg-slate-100/50 dark:bg-slate-900/30 dark:hover:bg-slate-900/80 text-xs font-bold text-blue-600 dark:text-blue-400 cursor-pointer transition-colors border-t border-slate-100/50 dark:border-slate-800/50 flex items-center justify-center gap-1.5"
                   >
                     <span>Xem tất cả sản phẩm tìm thấy</span>
                     <span className="text-[10px] opacity-75">➔</span>
@@ -279,14 +279,20 @@ function Navbar() {
 
         {/* Right Nav */}
         <div className="flex items-center gap-3">
-          <button onClick={toggleDark} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-350 transition-colors">
-            {dark ? <Sun className="h-5 w-5 text-yellow-450" /> : <Moon className="h-5 w-5" />}
+          <button 
+            onClick={toggleDark} 
+            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+          >
+            {dark ? <Sun className="h-5 w-5 text-amber-400 fill-amber-400/20" /> : <Moon className="h-5 w-5" />}
           </button>
           
-          <button onClick={() => navigate('/cart')} className="relative p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-350 transition-colors">
-            <ShoppingCart className="h-6 w-6" />
+          <button 
+            onClick={() => navigate('/cart')} 
+            className="relative p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+          >
+            <ShoppingCart className="h-5.5 w-5.5" />
             {totalItems > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+              <span className="absolute top-0 right-0 bg-gradient-to-r from-red-500 to-rose-600 text-white text-[9px] font-black rounded-full h-4.5 w-4.5 flex items-center justify-center shadow-md shadow-red-500/15">
                 {totalItems}
               </span>
             )}
@@ -298,9 +304,9 @@ function Navbar() {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors text-sm font-bold border border-slate-200 dark:border-slate-700 flex-shrink-0"
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-200 transition-all text-sm font-bold border border-slate-200 dark:border-slate-800 flex-shrink-0 cursor-pointer active:scale-97"
                 >
-                  <div className="h-6 w-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs uppercase shadow-sm">
+                  <div className="h-5.5 w-5.5 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-black text-xs uppercase shadow-sm">
                     {user.name.charAt(0)}
                   </div>
                   <span className="hidden sm:inline max-w-[100px] truncate">{user.name}</span>
@@ -309,12 +315,12 @@ function Navbar() {
 
                 {/* Dropdown Menu (Guaranteed Not Cut Off) */}
                 {dropdownOpen && (
-                  <div className="absolute right-0 top-full mt-2.5 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-3 z-[99999] transition-colors duration-300 animate-fade-in-up">
-                    <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-850">
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-extrabold">Tài khoản</p>
-                      <p className="text-sm font-bold text-slate-850 dark:text-white truncate">{user.name}</p>
+                  <div className="absolute right-0 top-full mt-3 w-60 glass-premium-card rounded-2xl shadow-2xl py-3.5 z-[99999] animate-scale-in">
+                    <div className="px-4.5 py-3 border-b border-slate-200/40 dark:border-slate-800/40">
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-black">Tài khoản</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate mt-0.5">{user.name}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">{user.email}</p>
-                      <span className="inline-block mt-2 text-[9px] uppercase font-black tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-600 dark:bg-blue-900/25 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40">
+                      <span className="inline-block mt-2 text.5 uppercase font-black tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-600 dark:bg-blue-900/25 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 text-[9px]">
                         {user.role === 'admin' ? '👑 Quản trị viên' : '👤 Thành viên'}
                       </span>
                     </div>
@@ -323,7 +329,7 @@ function Navbar() {
                       <Link
                         to="/admin"
                         onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors font-semibold"
+                        className="flex items-center gap-2.5 px-4.5 py-2.5 text-sm text-slate-700 dark:text-slate-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-colors font-semibold"
                       >
                         <LayoutDashboard className="h-4.5 w-4.5 text-blue-500 flex-shrink-0" />
                         Trang quản trị
@@ -333,7 +339,7 @@ function Navbar() {
                     <Link
                       to="/orders"
                       onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors font-semibold"
+                      className="flex items-center gap-2.5 px-4.5 py-2.5 text-sm text-slate-700 dark:text-slate-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-colors font-semibold"
                     >
                       <ClipboardList className="h-4.5 w-4.5 text-blue-500 flex-shrink-0" />
                       Lịch sử đơn hàng
@@ -342,7 +348,7 @@ function Navbar() {
                     <Link
                       to="/profile"
                       onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors font-semibold"
+                      className="flex items-center gap-2.5 px-4.5 py-2.5 text-sm text-slate-700 dark:text-slate-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-colors font-semibold"
                     >
                       <User className="h-4.5 w-4.5 text-emerald-500 flex-shrink-0" />
                       Trang cá nhân
@@ -350,7 +356,7 @@ function Navbar() {
 
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors font-semibold text-left border-t border-slate-100 dark:border-slate-850 mt-1"
+                      className="w-full flex items-center gap-2.5 px-4.5 py-2.5 text-sm text-red-600 hover:bg-red-50/50 dark:hover:bg-red-950/25 transition-colors font-semibold text-left border-t border-slate-200/40 dark:border-slate-800/40 mt-1 cursor-pointer"
                     >
                       <LogOut className="h-4.5 w-4.5 flex-shrink-0" />
                       Đăng xuất
@@ -361,7 +367,7 @@ function Navbar() {
             ) : (
               <button
                 onClick={() => navigate('/login')}
-                className="flex items-center gap-1.5 px-4.5 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-md shadow-blue-600/10 active:scale-95"
+                className="flex items-center gap-1.5 px-5 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-md shadow-blue-600/10 active:scale-95 cursor-pointer hover:scale-[1.03]"
               >
                 <User className="h-4 w-4" />
                 <span>Đăng nhập</span>

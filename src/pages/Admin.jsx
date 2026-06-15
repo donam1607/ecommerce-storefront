@@ -18,7 +18,7 @@ function PaginationControls({ page, totalPages, totalItems, pageSize, onPageChan
   const end = Math.min(page * pageSize, totalItems);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-t border-slate-100 dark:border-slate-850">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-t border-slate-100 dark:border-slate-800">
       <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
         Hiển thị {start}-{end} / {totalItems}
       </p>
@@ -962,7 +962,7 @@ export default function Admin() {
 
     return (
       <div className="relative" data-product-picker>
-        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">{label}</label>
+        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">{label}</label>
         <button
           type="button"
           onClick={() => {
@@ -2046,7 +2046,7 @@ export default function Admin() {
             </button>
             <button
               onClick={() => navigate("/")}
-              className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-705 dark:text-slate-205 font-bold rounded-xl transition-all active:scale-95"
+              className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl transition-all active:scale-95"
             >
               Về Trang Chủ
             </button>
@@ -2057,7 +2057,7 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-850 dark:text-slate-100 transition-colors duration-300 admin-panel">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 admin-panel">
       <div className="w-full pl-1 pr-2 py-8 sm:pl-2 sm:pr-4 lg:pl-4 lg:pr-6">
         
         {/* Main Administrative Layout Grid */}
@@ -2074,18 +2074,18 @@ export default function Admin() {
                 {!isCollapsed && <h2 className="text-lg font-black text-slate-900 dark:text-white mt-0.5 animate-fade-in hidden lg:block">ShopTech Admin</h2>}
                 <h2 className="text-lg font-black text-slate-900 dark:text-white mt-0.5 lg:hidden">ShopTech Admin</h2>
 
-                <div className={`flex items-center gap-2 mt-3 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-850 transition-all ${isCollapsed ? "lg:justify-center lg:p-2" : ""}`}>
+                <div className={`flex items-center gap-2 mt-3 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800 transition-all ${isCollapsed ? "lg:justify-center lg:p-2" : ""}`}>
                   <div className="h-8 w-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm uppercase flex-shrink-0">
                     {currentUser?.name.charAt(0)}
                   </div>
                   {!isCollapsed && (
                     <div className="min-w-0 animate-fade-in hidden lg:block">
-                      <p className="text-xs font-black truncate text-slate-800 dark:text-slate-205">{currentUser?.name}</p>
+                      <p className="text-xs font-black truncate text-slate-800 dark:text-slate-300">{currentUser?.name}</p>
                       <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5">Administrator</p>
                     </div>
                   )}
                   <div className="min-w-0 lg:hidden">
-                    <p className="text-xs font-black truncate text-slate-800 dark:text-slate-205">{currentUser?.name}</p>
+                    <p className="text-xs font-black truncate text-slate-800 dark:text-slate-300">{currentUser?.name}</p>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5">Administrator</p>
                   </div>
                 </div>
@@ -2123,7 +2123,7 @@ export default function Admin() {
                       className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black transition-all flex-shrink-0 cursor-pointer ${
                         active
                           ? "bg-blue-600 text-white shadow-lg shadow-blue-600/15 scale-[1.02]"
-                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-855 hover:text-slate-900 dark:hover:text-white"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
                       } ${isCollapsed ? "lg:justify-center lg:px-3" : ""}`}
                       title={tab.label}
                     >
@@ -2248,7 +2248,7 @@ export default function Admin() {
                       </div>
                     </div>
 
-                    <div className="relative h-72 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-850 overflow-hidden">
+                    <div className="relative h-72 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 overflow-hidden">
                       {trendPoints.length > 0 ? (
                         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
                           <defs>
@@ -2359,7 +2359,7 @@ export default function Admin() {
                           className={`text-left rounded-2xl border p-4 transition-all ${active ? "border-blue-300 dark:border-blue-700 bg-blue-50/70 dark:bg-blue-950/25" : "border-slate-200 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-800"}`}
                         >
                           <div className="flex items-center justify-between gap-3 text-xs">
-                            <span className="font-black text-slate-850 dark:text-white truncate">{item.label}</span>
+                            <span className="font-black text-slate-900 dark:text-white truncate">{item.label}</span>
                             <span className="font-black text-blue-600 dark:text-blue-400">{formatVND(item.revenue)}</span>
                           </div>
                           <div className="mt-3 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
@@ -2378,11 +2378,11 @@ export default function Admin() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Top Sellers */}
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
-                    <h3 className="text-sm font-black text-slate-850 dark:text-white flex items-center gap-2">
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                       <span className="flex h-2 w-2 rounded-full bg-blue-500" />
                       Sản phẩm bán chạy nhất
                     </h3>
-                    <div className="divide-y divide-slate-100 dark:divide-slate-850">
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
                       {topSoldProducts.map((p, idx) => (
                         <div key={p.id} className="flex items-center gap-3 py-3 text-xs">
                           <span className="font-extrabold text-slate-400 text-sm w-4">#{idx+1}</span>
@@ -2404,11 +2404,11 @@ export default function Admin() {
 
                   {/* Top Customers (VIP) */}
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
-                    <h3 className="text-sm font-black text-slate-850 dark:text-white flex items-center gap-2">
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                       <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
                       Khách hàng VIP mua nhiều nhất
                     </h3>
-                    <div className="divide-y divide-slate-100 dark:divide-slate-850">
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
                       {topBuyers.map((b, idx) => (
                         <div key={b.email} className="flex items-center gap-3 py-3 text-xs">
                           <span className="font-extrabold text-slate-400 text-sm w-4">#{idx+1}</span>
@@ -2434,26 +2434,26 @@ export default function Admin() {
 
                 {/* Categories Distribution Table */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors">
-                  <div className="p-6 border-b border-slate-100 dark:border-slate-850 flex items-center justify-between">
+                  <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <h2 className="text-base font-black text-slate-900 dark:text-white">Thống kê theo danh mục</h2>
                     <span className="text-[10px] uppercase font-bold text-slate-400">Cập nhật thực tế</span>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-800">
                           <th className="px-6 py-4">Danh mục</th>
                           <th className="px-6 py-4">Số sản phẩm</th>
                           <th className="px-6 py-4">Tồn kho</th>
                           <th className="px-6 py-4">Giá trị kho</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {Object.entries(categoryStats)
                           .sort((a, b) => b[1].value - a[1].value)
                           .map(([cat, s]) => (
-                            <tr key={cat} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors text-xs text-slate-700 dark:text-slate-350">
-                              <td className="px-6 py-4 font-bold text-slate-850 dark:text-white">{cat}</td>
+                            <tr key={cat} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-colors text-xs text-slate-700 dark:text-slate-400">
+                              <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{cat}</td>
                               <td className="px-6 py-4">{s.count} sản phẩm</td>
                               <td className="px-6 py-4 font-semibold">{s.stock} cái</td>
                               <td className="px-6 py-4 font-black text-slate-900 dark:text-white">{formatVND(s.value)}</td>
@@ -2499,7 +2499,7 @@ export default function Admin() {
                         placeholder="Tìm theo tên, danh mục, nhãn..."
                         value={prodSearch}
                         onChange={(e) => setProdSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-850 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+                        className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all"
                       />
                       <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                     </div>
@@ -2508,7 +2508,7 @@ export default function Admin() {
                     <select
                       value={prodCatFilter}
                       onChange={(e) => setProdCatFilter(e.target.value)}
-                      className="px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-850 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
+                      className="px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
                     >
                       <option value="All">Tất cả danh mục</option>
                       {categoriesList.map(c => (
@@ -2520,7 +2520,7 @@ export default function Admin() {
                     <select
                       value={prodBrandFilter}
                       onChange={(e) => setProdBrandFilter(e.target.value)}
-                      className="px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-850 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
+                      className="px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
                     >
                       <option value="All">Tất cả hãng</option>
                       {brandsList.map(b => (
@@ -2532,7 +2532,7 @@ export default function Admin() {
                     <select
                       value={prodSubCatFilter}
                       onChange={(e) => setProdSubCatFilter(e.target.value)}
-                      className="px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-850 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
+                      className="px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
                     >
                       <option value="All">Tất cả phân loại</option>
                       {subCategoriesList.map(s => (
@@ -2544,7 +2544,7 @@ export default function Admin() {
                     <select
                       value={prodCondFilter}
                       onChange={(e) => setProdCondFilter(e.target.value)}
-                      className="px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-850 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
+                      className="px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
                     >
                       <option value="All">Tất cả tình trạng (Badge)</option>
                       <option value="New">Hàng mới (New)</option>
@@ -2556,7 +2556,7 @@ export default function Admin() {
 
                 {/* Products Table Card */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors">
-                  <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <p className="text-xs font-bold text-slate-500">
                       Đã chọn {selectedProductIds.length} sản phẩm
                     </p>
@@ -2584,7 +2584,7 @@ export default function Admin() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                          <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-800">
                             <th className="px-6 py-4">
                               <input
                                 type="checkbox"
@@ -2605,13 +2605,13 @@ export default function Admin() {
                             <th className="px-6 py-4 text-right">Hành động</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                           {pagedProducts.map((prod, index) => (
                             <tr
                               key={prod.id}
                               style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
                               onClick={() => canWriteProducts && openModal("edit", prod)}
-                              className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer"
+                              className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-400 animate-fade-in-up opacity-0 cursor-pointer"
                             >
                               <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                                 <input
@@ -2631,7 +2631,7 @@ export default function Admin() {
                                   />
                                 </div>
                               </td>
-                              <td className="px-6 py-4 font-bold text-slate-850 dark:text-white max-w-[200px] truncate">
+                              <td className="px-6 py-4 font-bold text-slate-900 dark:text-white max-w-[200px] truncate">
                                 <div className="flex flex-col gap-0.5">
                                   <span>{prod.name}</span>
                                   {prod.isHot && (
@@ -2761,7 +2761,7 @@ export default function Admin() {
                         style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
                         className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-all animate-fade-in-up opacity-0"
                       >
-                        <div className="p-5 border-b border-slate-100 dark:border-slate-850 flex items-start justify-between gap-4">
+                        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-4">
                           <div>
                             <h3 className="text-sm font-black text-slate-900 dark:text-white">{catName}</h3>
                             <div className="flex flex-wrap gap-2 mt-2 text-[10px] font-black text-slate-500">
@@ -2895,7 +2895,7 @@ export default function Admin() {
             {/* Tab 4: users (User Panel with password creation and toggles) */}
             {activeTab === "users" && hasUiPermission("screen.users") && (
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors animate-fade-in-up">
-                <div className="p-6 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
                     <h2 className="text-base font-black text-slate-900 dark:text-white">Danh sách quản lý thành viên</h2>
                     <p className="text-xs text-slate-500 mt-1">Admin có thể thêm thành viên mới, cấp vai trò, đổi mật khẩu và xem trực tiếp chuỗi mật khẩu gõ vào.</p>
@@ -2909,7 +2909,7 @@ export default function Admin() {
                     <span>Thêm thành viên mới</span>
                   </RippleButton>
                 </div>
-                <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <p className="text-xs font-bold text-slate-500">Đã chọn {selectedUserIds.length} thành viên</p>
                   <button
                     type="button"
@@ -2928,7 +2928,7 @@ export default function Admin() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-800">
                           <th className="px-6 py-4">
                             <input
                               type="checkbox"
@@ -2944,13 +2944,13 @@ export default function Admin() {
                           <th className="px-6 py-4 text-right">Hành động</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {pagedUsers.map((u, index) => (
                           <tr
                             key={u.id}
                             style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
                             onClick={() => openUserModal("edit", u)}
-                            className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer"
+                            className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-400 animate-fade-in-up opacity-0 cursor-pointer"
                           >
                             <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                               <input
@@ -2961,8 +2961,8 @@ export default function Admin() {
                                 className="h-4 w-4 accent-blue-600 disabled:opacity-40"
                               />
                             </td>
-                            <td className="px-6 py-4 font-bold text-slate-850 dark:text-white flex items-center gap-2">
-                              <div className="h-8 w-8 rounded-xl bg-slate-105 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-xs uppercase flex-shrink-0">
+                            <td className="px-6 py-4 font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                              <div className="h-8 w-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold text-xs uppercase flex-shrink-0">
                                 {u.name.charAt(0)}
                               </div>
                               <span className="truncate">{u.name}</span>
@@ -3039,7 +3039,7 @@ export default function Admin() {
               return (
                 <div className="space-y-5">
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
-                    <div className="p-5 border-b border-slate-100 dark:border-slate-850 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                       <div>
                         <h2 className="text-base font-black text-slate-900 dark:text-white">Quản lý phân quyền</h2>
                         <p className="text-xs text-slate-500 mt-1">Chọn role ở hàng dưới, toàn bộ quyền được xem và thao tác sẽ hiện ngay bên cạnh.</p>
@@ -3105,7 +3105,7 @@ export default function Admin() {
                   </div>
 
                   <form onSubmit={handleRoleSubmit} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
-                    <div className="p-5 border-b border-slate-100 dark:border-slate-850 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                       <div className="min-w-0">
                         <h3 className="text-sm font-black text-slate-900 dark:text-white">
                           Ma trận quyền {selectedRole ? `- ${selectedRole.name}` : ""}
@@ -3146,7 +3146,7 @@ export default function Admin() {
                       <div className="p-5 space-y-5">
                         <div className="grid grid-cols-1 lg:grid-cols-[1fr,1fr,2fr] gap-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 p-4">
                           <div>
-                            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Mã quyền</label>
+                            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Mã quyền</label>
                             <input
                               value={roleForm.id}
                               disabled
@@ -3154,7 +3154,7 @@ export default function Admin() {
                             />
                           </div>
                           <div>
-                            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Tên quyền</label>
+                            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Tên quyền</label>
                             <input
                               value={roleForm.name}
                               onChange={(e) => setRoleForm((prev) => ({ ...prev, name: e.target.value }))}
@@ -3163,7 +3163,7 @@ export default function Admin() {
                             />
                           </div>
                           <div>
-                            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Mô tả</label>
+                            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Mô tả</label>
                             <input
                               value={roleForm.description}
                               onChange={(e) => setRoleForm((prev) => ({ ...prev, description: e.target.value }))}
@@ -3254,7 +3254,7 @@ export default function Admin() {
                         className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-5xl rounded-3xl shadow-2xl max-h-[92vh] overflow-hidden transition-all animate-scale-in"
                       >
                         <form onSubmit={handleRoleSubmit} className="flex max-h-[92vh] flex-col">
-                          <div className="p-5 border-b border-slate-100 dark:border-slate-850 flex items-start justify-between gap-4">
+                          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-4">
                             <div className="min-w-0">
                               <h3 className="text-base font-black text-slate-900 dark:text-white">
                                 {editingRoleId ? "Chi tiết phân quyền" : "Tạo quyền mới"}
@@ -3275,7 +3275,7 @@ export default function Admin() {
                           <div className="overflow-y-auto p-5 space-y-5">
                             <div className="grid grid-cols-1 lg:grid-cols-[1fr,1fr,2fr] gap-3">
                               <div>
-                                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Mã quyền *</label>
+                                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Mã quyền *</label>
                                 <input
                                   value={roleForm.id}
                                   onChange={(e) => setRoleForm((prev) => ({ ...prev, id: e.target.value }))}
@@ -3286,7 +3286,7 @@ export default function Admin() {
                                 />
                               </div>
                               <div>
-                                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Tên hiển thị *</label>
+                                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Tên hiển thị *</label>
                                 <input
                                   value={roleForm.name}
                                   onChange={(e) => setRoleForm((prev) => ({ ...prev, name: e.target.value }))}
@@ -3296,7 +3296,7 @@ export default function Admin() {
                                 />
                               </div>
                               <div>
-                                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Mô tả</label>
+                                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Mô tả</label>
                                 <input
                                   value={roleForm.description}
                                   onChange={(e) => setRoleForm((prev) => ({ ...prev, description: e.target.value }))}
@@ -3307,7 +3307,7 @@ export default function Admin() {
                             </div>
 
                             <div className="border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden">
-                              <div className="p-4 border-b border-slate-100 dark:border-slate-850 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                                 <div>
                                   <h4 className="text-sm font-black text-slate-900 dark:text-white">Ma trận quyền</h4>
                                   <p className="text-xs text-slate-500 mt-1">Bấm từng quyền hoặc chọn nhanh cả nhóm.</p>
@@ -3384,7 +3384,7 @@ export default function Admin() {
                             </div>
                           </div>
 
-                          <div className="p-4 border-t border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-slate-900">
+                          <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-slate-900">
                             <div className="text-[10px] font-black text-slate-400 uppercase">
                               {grantedCount}/{allPermissionIds.length} quyền được cấp
                             </div>
@@ -3488,7 +3488,7 @@ export default function Admin() {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-slate-100 dark:border-slate-850">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                       {/* Tìm kiếm từ khóa */}
                       <div className="relative">
                         <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
@@ -3597,7 +3597,7 @@ export default function Admin() {
 
                   {/* BẢNG DANH SÁCH ĐƠN HÀNG */}
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
-                    <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <p className="text-xs font-bold text-slate-500">Đã chọn {selectedOrderIds.length} hóa đơn</p>
                       <button
                         type="button"
@@ -3617,7 +3617,7 @@ export default function Admin() {
                       <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                           <thead>
-                            <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                            <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-800">
                               <th className="px-6 py-4">
                                 <input
                                   type="checkbox"
@@ -3636,7 +3636,7 @@ export default function Admin() {
                               <th className="px-6 py-4 text-right">Thao tác</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                             {pagedOrders.map((o, index) => {
                               // Định nghĩa màu sắc cho Trạng thái Đơn hàng
                               const getOrderStatusBadge = (status) => {
@@ -3672,7 +3672,7 @@ export default function Admin() {
                                   key={o.id}
                                   style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
                                   onClick={() => openOrderDetailModal(o)}
-                                  className="hover:bg-blue-50/40 dark:hover:bg-blue-950/10 transition-all duration-200 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer group"
+                                  className="hover:bg-blue-50/40 dark:hover:bg-blue-950/10 transition-all duration-200 text-xs text-slate-700 dark:text-slate-400 animate-fade-in-up opacity-0 cursor-pointer group"
                                 >
                                   <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                                     <input
@@ -3696,7 +3696,7 @@ export default function Admin() {
                                   <td className="px-6 py-4 min-w-[160px]">
                                     <p className="font-bold text-slate-900 dark:text-white">{o.customerName}</p>
                                     <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{o.customerPhone}</p>
-                                    <p className="text-[10px] text-slate-450 dark:text-slate-500 truncate max-w-[160px] mt-0.5" title={o.customerAddress}>
+                                    <p className="text-[10px] text-slate-500 dark:text-slate-500 truncate max-w-[160px] mt-0.5" title={o.customerAddress}>
                                       {o.customerAddress}
                                     </p>
                                   </td>
@@ -3826,7 +3826,7 @@ export default function Admin() {
             {/* Tab 6: coupons (Marketing & Coupons Management) */}
             {activeTab === "coupons" && hasUiPermission("screen.coupons") && (
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-colors animate-fade-in-up">
-                <div className="p-6 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
                     <h2 className="text-base font-black text-slate-900 dark:text-white">Chiến dịch Khuyến mãi & Mã giảm giá</h2>
                     <p className="text-xs text-slate-500 mt-1">
@@ -3842,7 +3842,7 @@ export default function Admin() {
                     <span>Tạo mã giảm giá mới</span>
                   </RippleButton>
                 </div>
-                <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-850 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <p className="text-xs font-bold text-slate-500">Đã chọn {selectedCouponIds.length} mã giảm giá</p>
                   <button
                     type="button"
@@ -3863,7 +3863,7 @@ export default function Admin() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-850">
+                        <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-800">
                           <th className="px-6 py-4">
                             <input
                               type="checkbox"
@@ -3882,13 +3882,13 @@ export default function Admin() {
                           <th className="px-6 py-4 text-right">Hành động</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {pagedCoupons.map((c, index) => (
                           <tr
                             key={c.id}
                             style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
                             onClick={() => canWriteCoupons && openCouponModal("edit", c)}
-                            className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-350 animate-fade-in-up opacity-0 cursor-pointer"
+                            className="hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all duration-300 text-xs text-slate-700 dark:text-slate-400 animate-fade-in-up opacity-0 cursor-pointer"
                           >
                             <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                               <input
@@ -3915,7 +3915,7 @@ export default function Admin() {
                             <td className="px-6 py-4 min-w-[150px]">
                               <div className="flex flex-wrap gap-1">
                                 {(!c.applicableConditions || c.applicableConditions.length === 0) && (!c.applicableCategories || c.applicableCategories.length === 0) && (
-                                  <span className="text-[10px] bg-slate-105 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-lg font-bold">Mọi sản phẩm</span>
+                                  <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-lg font-bold">Mọi sản phẩm</span>
                                 )}
                                 {c.applicableConditions && c.applicableConditions.map(cond => (
                                   <span key={cond} className="text-[10px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/40 px-2 py-0.5 rounded-lg font-bold">
@@ -3997,7 +3997,7 @@ export default function Admin() {
             className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl max-h-[92vh] overflow-y-auto overflow-x-hidden transition-all scale-100 animate-scale-in"
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-850">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-base font-black text-slate-900 dark:text-white">
                 {modalType === "add" ? "Thêm sản phẩm mới vào Shop" : "Chỉnh sửa chi tiết sản phẩm"}
               </h3>
@@ -4015,7 +4015,7 @@ export default function Admin() {
                 
                 {/* Product Name */}
                 <div className="sm:col-span-2">
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Tên sản phẩm *</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Tên sản phẩm *</label>
                   <input
                     type="text"
                     required
@@ -4028,7 +4028,7 @@ export default function Admin() {
 
                 {/* Category Selector (Dynamic) */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Danh mục *</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Danh mục *</label>
                   <select
                     value={formCategory}
                     onChange={(e) => {
@@ -4076,7 +4076,7 @@ export default function Admin() {
 
                 {/* Price */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Giá bán (VND) *</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Giá bán (VND) *</label>
                   <input
                     type="number"
                     required
@@ -4094,7 +4094,7 @@ export default function Admin() {
 
                 {/* Stock Count */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Số lượng tồn kho *</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Số lượng tồn kho *</label>
                   <input
                     type="number"
                     required
@@ -4107,7 +4107,7 @@ export default function Admin() {
 
                 {/* Structured Condition Badge Selector */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Nhãn hiển thị (Badge/Trạng thái)</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Nhãn hiển thị (Badge/Trạng thái)</label>
                   <select
                     value={formBadgePreset}
                     onChange={(e) => setFormBadgePreset(e.target.value)}
@@ -4121,7 +4121,7 @@ export default function Admin() {
 
                 {/* Percentage Discount */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Giảm giá (%)</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Giảm giá (%)</label>
                   <input
                     type="number"
                     min="0"
@@ -4135,7 +4135,7 @@ export default function Admin() {
 
                 {/* Discounted Price */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Giá sau giảm (VND)</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Giá sau giảm (VND)</label>
                   <input
                     type="number"
                     placeholder="Ví dụ: 11691000"
@@ -4167,13 +4167,13 @@ export default function Admin() {
 
                 {/* Multiple Images Upload Handler */}
                 <div className="sm:col-span-2 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-t border-slate-100 dark:border-slate-850 pt-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
                     <div>
-                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500">Danh sách ảnh sản phẩm (Ngăn cách bằng dấu phẩy) *</label>
+                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500">Danh sách ảnh sản phẩm (Ngăn cách bằng dấu phẩy) *</label>
                       <p className="text-[9px] text-slate-400 mt-0.5">Chọn nhiều ảnh cùng lúc ở nút bên để tải lên hàng loạt tự động.</p>
                     </div>
                     
-                    <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-250 text-[10px] font-black rounded-xl cursor-pointer transition-all active:scale-95 border border-slate-200 dark:border-slate-700">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-black rounded-xl cursor-pointer transition-all active:scale-95 border border-slate-200 dark:border-slate-700">
                       {uploadingImage ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
                       ) : (
@@ -4201,8 +4201,8 @@ export default function Admin() {
 
                   {/* Thumbnail Previews with individual Delete buttons */}
                   {formImages && formImages.split(",").map(i => i.trim()).filter(Boolean).length > 0 && (
-                    <div className="space-y-1.5 bg-slate-50 dark:bg-slate-950/60 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-850">
-                      <span className="block text-[9px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500">Xem trước & Biên tập ({formImages.split(",").map(i => i.trim()).filter(Boolean).length} ảnh):</span>
+                    <div className="space-y-1.5 bg-slate-50 dark:bg-slate-950/60 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                      <span className="block text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500">Xem trước & Biên tập ({formImages.split(",").map(i => i.trim()).filter(Boolean).length} ảnh):</span>
                       <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                         {formImages.split(",").map(i => i.trim()).filter(Boolean).map((imgUrl, idx) => (
                           <div key={idx} className="relative group aspect-square bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 flex-shrink-0">
@@ -4231,7 +4231,7 @@ export default function Admin() {
 
                 {/* Short description */}
                 <div className="sm:col-span-2">
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Mô tả ngắn gọn *</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Mô tả ngắn gọn *</label>
                   <textarea
                     rows="2"
                     required
@@ -4244,7 +4244,7 @@ export default function Admin() {
 
                 {/* Product Specifications (each on a line) */}
                 <div className="sm:col-span-2">
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Thông số kỹ thuật quan trọng (Mỗi thông số đặt trên một dòng)</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Thông số kỹ thuật quan trọng (Mỗi thông số đặt trên một dòng)</label>
                   <textarea
                     rows="3"
                     placeholder="Intel Core i9 14900HX&#10;Nvidia RTX 4080 12GB&#10;32GB DDR5 RAM&#10;1TB NVMe Gen4 SSD"
@@ -4256,11 +4256,11 @@ export default function Admin() {
               </div>
 
               {/* Modal submit buttons */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-850">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-350 font-bold text-xs rounded-xl transition-all"
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-400 font-bold text-xs rounded-xl transition-all"
                 >
                   Hủy bỏ
                 </button>
@@ -4292,18 +4292,18 @@ export default function Admin() {
             onClick={(e) => e.stopPropagation()} 
             className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-3xl shadow-2xl transition-all animate-scale-in"
           >
-            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-850">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-base font-black text-slate-900 dark:text-white">
                 {catModalType === "add" ? "Thêm danh mục mới" : "Chỉnh sửa tên danh mục"}
               </h3>
-              <button onClick={() => setIsCatModalOpen(false)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-505">
+              <button onClick={() => setIsCatModalOpen(false)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <form onSubmit={handleCategorySubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1.5">Tên danh mục mới *</label>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Tên danh mục mới *</label>
                 <input
                   type="text"
                   required
@@ -4314,11 +4314,11 @@ export default function Admin() {
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-850">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsCatModalOpen(false)}
-                  className="px-4 py-2.5 bg-slate-105 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl"
                 >
                   Hủy bỏ
                 </button>
@@ -4346,7 +4346,7 @@ export default function Admin() {
             className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto transition-all animate-scale-in"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-850">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-base font-black text-slate-900 dark:text-white">
                 {userModalType === "add" ? "Tạo mới tài khoản thành viên" : "Cập nhật tài khoản thành viên"}
               </h3>
@@ -4364,7 +4364,7 @@ export default function Admin() {
                 
                 {/* Username */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Họ và tên *</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Họ và tên *</label>
                   <input
                     type="text"
                     required
@@ -4377,7 +4377,7 @@ export default function Admin() {
 
                 {/* Email */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Địa chỉ Email *</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Địa chỉ Email *</label>
                   <input
                     type="email"
                     required
@@ -4390,7 +4390,7 @@ export default function Admin() {
 
                 {/* Password field with Eye Toggle (Show/Hide) */}
                 <div className="relative">
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">
                     Mật khẩu {userModalType === "add" ? "*" : "(Để trống nếu không đổi)"}
                   </label>
                   <div className="relative">
@@ -4405,7 +4405,7 @@ export default function Admin() {
                     <button
                       type="button"
                       onClick={() => setShowUserPassword(!showUserPassword)}
-                      className="absolute right-3 top-3 text-slate-450 hover:text-slate-600 dark:hover:text-slate-300"
+                      className="absolute right-3 top-3 text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
                     >
                       {showUserPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -4414,7 +4414,7 @@ export default function Admin() {
 
                 {/* Role */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Vai trò (Role) *</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Vai trò (Role) *</label>
                   <select
                     value={formUserRole}
                     onChange={(e) => setFormUserRole(e.target.value)}
@@ -4429,7 +4429,7 @@ export default function Admin() {
 
                 {/* Phone */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Số điện thoại</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Số điện thoại</label>
                   <input
                     type="text"
                     placeholder="Ví dụ: 0912345678"
@@ -4441,7 +4441,7 @@ export default function Admin() {
 
                 {/* Address */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Địa chỉ giao hàng</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Địa chỉ giao hàng</label>
                   <input
                     type="text"
                     placeholder="Số nhà, ngõ/đường..."
@@ -4453,7 +4453,7 @@ export default function Admin() {
 
                 {/* City */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Thành phố</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Thành phố</label>
                   <input
                     type="text"
                     placeholder="Ví dụ: Hà Nội, TP. HCM..."
@@ -4466,7 +4466,7 @@ export default function Admin() {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-850">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsUserModalOpen(false)}
@@ -4504,13 +4504,13 @@ export default function Admin() {
             className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto transition-all animate-scale-in"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-850">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-base font-black text-slate-900 dark:text-white">
                 {couponModalType === "add" ? "Tạo mã giảm giá mới" : "Chỉnh sửa mã giảm giá"}
               </h3>
               <button
                 onClick={() => setIsCouponModalOpen(false)}
-                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-505"
+                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-600"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -4522,37 +4522,37 @@ export default function Admin() {
                 
                 {/* Coupon Code */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Mã Coupon *</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Mã Coupon *</label>
                   <input
                     type="text"
                     required
                     placeholder="Ví dụ: XAKHO50"
                     value={formCouponCode}
                     onChange={(e) => setFormCouponCode(e.target.value.toUpperCase())}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-805 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold uppercase font-mono"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold uppercase font-mono"
                   />
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Mô tả chương trình *</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Mô tả chương trình *</label>
                   <input
                     type="text"
                     required
                     placeholder="Ví dụ: Giảm giá xả kho hàng cũ Laptop"
                     value={formCouponDesc}
                     onChange={(e) => setFormCouponDesc(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
                   />
                 </div>
 
                 {/* Discount Type */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Loại giảm giá</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Loại giảm giá</label>
                   <select
                     value={formCouponType}
                     onChange={(e) => setFormCouponType(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
                   >
                     <option value="percentage">Phần trăm (%)</option>
                     <option value="fixed">Số tiền cố định (đ)</option>
@@ -4561,7 +4561,7 @@ export default function Admin() {
 
                 {/* Discount Value */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">
                     Giá trị giảm * ({formCouponType === "percentage" ? "%" : "đ"})
                   </label>
                   <input
@@ -4570,59 +4570,59 @@ export default function Admin() {
                     placeholder={formCouponType === "percentage" ? "Ví dụ: 10" : "Ví dụ: 50000"}
                     value={formCouponValue}
                     onChange={(e) => setFormCouponValue(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
                   />
                 </div>
 
                 {/* Min Order Value */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Giá trị đơn hàng tối thiểu (đ)</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Giá trị đơn hàng tối thiểu (đ)</label>
                   <input
                     type="number"
                     placeholder="Ví dụ: 200000"
                     value={formCouponMinOrder}
                     onChange={(e) => setFormCouponMinOrder(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
                   />
                 </div>
 
                 {/* Max Uses */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Giới hạn số lần sử dụng tối đa (Bỏ trống = Vô hạn)</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Giới hạn số lần sử dụng tối đa (Bỏ trống = Vô hạn)</label>
                   <input
                     type="number"
                     placeholder="Ví dụ: 100"
                     value={formCouponMaxUses}
                     onChange={(e) => setFormCouponMaxUses(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
                   />
                 </div>
 
                 {/* Start Date */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Ngày bắt đầu hiệu lực</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Ngày bắt đầu hiệu lực</label>
                   <input
                     type="date"
                     value={formCouponStartDate}
                     onChange={(e) => setFormCouponStartDate(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
                   />
                 </div>
 
                 {/* End Date */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Ngày kết thúc hiệu lực</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Ngày kết thúc hiệu lực</label>
                   <input
                     type="date"
                     value={formCouponEndDate}
                     onChange={(e) => setFormCouponEndDate(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
                   />
                 </div>
 
                 {/* Applicable Product Conditions (Badge check) */}
                 <div className="col-span-1">
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Áp dụng cho Tình trạng hàng (Để trống = Tất cả)</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Áp dụng cho Tình trạng hàng (Để trống = Tất cả)</label>
                   <div className="flex gap-2.5 flex-wrap mt-1">
                     {["New", "Like New", "Old"].map(cond => {
                       const selected = formCouponConds.includes(cond);
@@ -4652,7 +4652,7 @@ export default function Admin() {
 
                 {/* Applicable Categories */}
                 <div className="col-span-1">
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 dark:text-slate-500 mb-1.5">Áp dụng cho Danh mục (Để trống = Tất cả)</label>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Áp dụng cho Danh mục (Để trống = Tất cả)</label>
                   <div className="flex gap-2 flex-wrap mt-1 max-h-[100px] overflow-y-auto p-1 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20">
                     {categoriesList.map(cat => {
                       const selected = formCouponCats.includes(cat);
@@ -4687,7 +4687,7 @@ export default function Admin() {
                     id="isActive"
                     checked={formCouponActive}
                     onChange={(e) => setFormCouponActive(e.target.checked)}
-                    className="h-4 w-4 rounded text-blue-600 border-slate-350 focus:ring-blue-500"
+                    className="h-4 w-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"
                   />
                   <label htmlFor="isActive" className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Kích hoạt mã giảm giá
@@ -4697,11 +4697,11 @@ export default function Admin() {
               </div>
 
               {/* Modal footer submit buttons */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-850">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsCouponModalOpen(false)}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-305 font-bold text-xs rounded-xl"
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl"
                 >
                   Hủy bỏ
                 </button>
@@ -4746,7 +4746,7 @@ export default function Admin() {
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-4xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto transition-all animate-scale-in"
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-850 bg-slate-50 dark:bg-slate-950 rounded-t-3xl">
+              <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 rounded-t-3xl">
                 <div>
                   <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                     <span>CHI TIẾT ĐỚN HÀNG #{selectedOrder.id}</span>
@@ -4775,40 +4775,40 @@ export default function Admin() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* CỘT 1 */}
-                  <div className="bg-slate-50 dark:bg-slate-950/30 border border-slate-200/50 dark:border-slate-850 p-5 rounded-2xl space-y-4">
-                    <h4 className="text-xs font-black uppercase text-blue-600 dark:text-blue-400 border-b border-slate-100 dark:border-slate-850 pb-2 flex items-center gap-1.5">
+                  <div className="bg-slate-50 dark:bg-slate-950/30 border border-slate-200/50 dark:border-slate-800 p-5 rounded-2xl space-y-4">
+                    <h4 className="text-xs font-black uppercase text-blue-600 dark:text-blue-400 border-b border-slate-100 dark:border-slate-800 pb-2 flex items-center gap-1.5">
                       <Truck size={14} /><span>Khách hàng &amp; Vận chuyển</span>
                     </h4>
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Họ tên khách hàng</label>
+                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Họ tên khách hàng</label>
                         <input type="text" value={orderDetailCustomerName} onChange={(e) => setOrderDetailCustomerName(e.target.value)} disabled={isLocked}
                           className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all" />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Số điện thoại</label>
+                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Số điện thoại</label>
                         <input type="text" value={orderDetailCustomerPhone} onChange={(e) => setOrderDetailCustomerPhone(e.target.value)} disabled={isLocked}
                           className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all" />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Địa chỉ giao hàng</label>
+                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Địa chỉ giao hàng</label>
                         <input type="text" value={orderDetailCustomerAddress} onChange={(e) => setOrderDetailCustomerAddress(e.target.value)} disabled={isLocked}
                           className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all" />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Đơn vị VC</label>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Đơn vị VC</label>
                           <input type="text" value={orderDetailShippingUnit} onChange={(e) => setOrderDetailShippingUnit(e.target.value)} placeholder="GHN, GHTK, ViettelPost..."
                             className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all" />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Mã vận đơn</label>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Mã vận đơn</label>
                           <input type="text" value={orderDetailTrackingNumber} onChange={(e) => setOrderDetailTrackingNumber(e.target.value)} placeholder="Mã tracking..."
                             className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all" />
                         </div>
                       </div>
                       <div>
-                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Phí vận chuyển (VND)</label>
+                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Phí vận chuyển (VND)</label>
                         <input type="number" value={orderDetailShippingFee} onChange={(e) => setOrderDetailShippingFee(e.target.value)} min="0"
                           className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all" />
                       </div>
@@ -4817,13 +4817,13 @@ export default function Admin() {
 
                   {/* CỘT 2 */}
                   <div className="space-y-4">
-                    <div className="bg-slate-50 dark:bg-slate-950/30 border border-slate-200/50 dark:border-slate-850 p-4 rounded-2xl space-y-3">
-                      <h4 className="text-xs font-black uppercase text-blue-600 dark:text-blue-400 border-b border-slate-100 dark:border-slate-850 pb-2 flex items-center gap-1.5">
+                    <div className="bg-slate-50 dark:bg-slate-950/30 border border-slate-200/50 dark:border-slate-800 p-4 rounded-2xl space-y-3">
+                      <h4 className="text-xs font-black uppercase text-blue-600 dark:text-blue-400 border-b border-slate-100 dark:border-slate-800 pb-2 flex items-center gap-1.5">
                         <CreditCard size={14} /><span>Trạng thái đơn hàng</span>
                       </h4>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Trạng thái đơn</label>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Trạng thái đơn</label>
                           <select value={orderDetailOrderStatus} onChange={(e) => setOrderDetailOrderStatus(e.target.value)}
                             className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all">
                             <option value="pending">Chờ duyệt</option>
@@ -4835,7 +4835,7 @@ export default function Admin() {
                           </select>
                         </div>
                         <div>
-                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Thanh toán</label>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Thanh toán</label>
                           <select value={orderDetailPaymentStatus} onChange={(e) => setOrderDetailPaymentStatus(e.target.value)}
                             className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all">
                             <option value="pending">Chưa thanh toán</option>
@@ -4845,7 +4845,7 @@ export default function Admin() {
                       </div>
                       {orderDetailOrderStatus === 'cancelled' && (
                         <div>
-                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-450 mb-1">Lý do hủy đơn</label>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">Lý do hủy đơn</label>
                           <input type="text" value={orderDetailCancelReason} onChange={(e) => setOrderDetailCancelReason(e.target.value)} placeholder="Nhập lý do..."
                             className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all" />
                         </div>
@@ -4866,7 +4866,7 @@ export default function Admin() {
                 {/* Bảng sản phẩm & S/N */}
                 <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
                   <div className="px-5 py-3 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 font-bold uppercase text-slate-700 dark:text-slate-300 text-xs">Sản phẩm & Gán số Serial (S/N)</div>
-                  <div className="divide-y divide-slate-100 dark:divide-slate-850">
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800">
                     {getItemsArray(selectedOrder.orderItems).map((item, idx) => {
                       const snKey = item.productId || idx;
                       return (
@@ -4893,7 +4893,7 @@ export default function Admin() {
                 </div>
 
                 {/* Modal Footer */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-6 border-t border-slate-100 dark:border-slate-850">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-6 border-t border-slate-100 dark:border-slate-800">
                   <div>
                     <button
                       type="button"

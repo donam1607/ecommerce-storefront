@@ -14,6 +14,7 @@ import Admin from './pages/Admin';
 import Profile from './pages/Profile';
 import Orders from './pages/Orders';
 import ChatWidget from './components/ChatWidget';
+import CosmicBackground from './components/CosmicBackground';
 
 function App() {
   return (
@@ -21,7 +22,9 @@ function App() {
       <ToastProvider>
         <Router>
           <ScrollToTop />
-          <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
+          {/* Global cosmic starfield — fixed behind all pages, only visible in dark mode */}
+          <CosmicBackground />
+          <div className="flex flex-col min-h-screen relative z-10 bg-slate-50 dark:bg-transparent text-slate-800 dark:text-slate-100 transition-colors duration-300">
             <Navbar />
             <main className="flex-grow">
               <Routes>
@@ -46,3 +49,4 @@ function App() {
 }
 
 export default App;
+

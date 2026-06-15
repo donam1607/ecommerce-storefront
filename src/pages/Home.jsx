@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
@@ -12,6 +12,189 @@ import {
 
 import { formatVND, toVndInt } from "../utils/money";
 import { fetchWithRetry, API_BASE } from "../utils/api";
+
+// ─── Cosmic Starfield Hero Background ─────────────────────────────────────────
+function ParticleCanvas() {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let animId;
+    let w = 0, h = 0;
+
+    const setSize = () => {
+      const rect = canvas.getBoundingClientRect();
+      w = canvas.width  = rect.width  || window.innerWidth;
+      h = canvas.height = rect.height || 600;
+    };
+    setSize();
+
+    const ro = new ResizeObserver(setSize);
+    ro.observe(canvas);
+
+    /* ── STARS (300+ li ti lấp lánh) ── */
+    const STAR_COUNT = 340;
+    const stars = Array.from({ length: STAR_COUNT }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: Math.random() * 1.7 + 0.2,
+      baseAlpha: Math.random() * 0.75 + 0.3,
+      alpha: 0,
+      phase: Math.random() * Math.PI * 2,
+      speed: Math.random() * 0.022 + 0.006,
+      hue: Math.random() < 0.72 ? Math.floor(Math.random() * 55 + 195) : Math.floor(Math.random() * 35 + 38),
+      sat: Math.random() < 0.55 ? 80 : 5,
+    }));
+
+    /* ── PLEXUS NODES ── */
+    const NODE_COUNT = 55;
+    const MAX_DIST   = 145;
+    const nodes = Array.from({ length: NODE_COUNT }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.32,
+      vy: (Math.random() - 0.5) * 0.32,
+      r: Math.random() * 1.3 + 0.5,
+      alpha: Math.random() * 0.45 + 0.4,
+      hue: Math.floor(Math.random() * 50 + 200),
+    }));
+
+    /* ── SHOOTING STARS ── */
+    let shooters = [];
+    const spawnShooter = () => {
+      shooters.push({
+        x: Math.random() * w * 0.75,
+        y: Math.random() * h * 0.45,
+        len: Math.random() * 130 + 80,
+        speed: Math.random() * 14 + 9,
+        alpha: 1,
+        decay: Math.random() * 0.016 + 0.01,
+        angle: Math.PI / 6 + (Math.random() - 0.5) * 0.5,
+        bright: Math.random() * 0.35 + 0.65,
+      });
+    };
+    const shootTimer = setInterval(spawnShooter, 1500);
+    spawnShooter(); spawnShooter();
+
+    /* ── NEBULA (soft color clouds) ── */
+    const nebulae = [
+      { cx: 0.12, cy: 0.22, r: 0.32, h: 215, a: 0.09 },
+      { cx: 0.82, cy: 0.70, r: 0.28, h: 268, a: 0.07 },
+      { cx: 0.50, cy: 0.08, r: 0.22, h: 192, a: 0.06 },
+      { cx: 0.30, cy: 0.85, r: 0.18, h: 290, a: 0.05 },
+    ];
+
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+
+      /* nebula glows */
+      nebulae.forEach(n => {
+        const gx = n.cx * w, gy = n.cy * h, gr = n.r * Math.max(w, h) * 0.6;
+        const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
+        g.addColorStop(0,    `hsla(${n.h},75%,60%,${n.a})`);
+        g.addColorStop(0.45, `hsla(${n.h},70%,55%,${n.a * 0.35})`);
+        g.addColorStop(1,    `hsla(${n.h},60%,50%,0)`);
+        ctx.beginPath();
+        ctx.arc(gx, gy, gr, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+      });
+
+      /* twinkling stars */
+      stars.forEach(s => {
+        s.phase += s.speed;
+        const a = s.baseAlpha * (0.5 + 0.5 * Math.sin(s.phase));
+        if (s.r > 1.1) {
+          const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 5);
+          glow.addColorStop(0, `hsla(${s.hue},${s.sat}%,96%,${a * 0.55})`);
+          glow.addColorStop(1, `hsla(${s.hue},${s.sat}%,96%,0)`);
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r * 5, 0, Math.PI * 2);
+          ctx.fillStyle = glow;
+          ctx.fill();
+        }
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${s.hue},${s.sat}%,97%,${a})`;
+        ctx.fill();
+      });
+
+      /* plexus nodes + lines */
+      for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i];
+        a.x += a.vx; a.y += a.vy;
+        if (a.x < -10) a.x = w + 10;
+        if (a.x > w + 10) a.x = -10;
+        if (a.y < -10) a.y = h + 10;
+        if (a.y > h + 10) a.y = -10;
+        for (let j = i + 1; j < nodes.length; j++) {
+          const b = nodes[j];
+          const dx = a.x - b.x, dy = a.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < MAX_DIST) {
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = `rgba(130,210,255,${(1 - dist / MAX_DIST) * 0.24})`;
+            ctx.lineWidth = 0.7;
+            ctx.stroke();
+          }
+        }
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${a.hue},85%,78%,${a.alpha})`;
+        ctx.fill();
+      }
+
+      /* shooting stars */
+      shooters = shooters.filter(s => s.alpha > 0);
+      shooters.forEach(s => {
+        const tx = s.x + Math.cos(s.angle) * s.len;
+        const ty = s.y + Math.sin(s.angle) * s.len;
+        const g = ctx.createLinearGradient(s.x, s.y, tx, ty);
+        g.addColorStop(0,   `rgba(255,255,255,0)`);
+        g.addColorStop(0.2, `rgba(180,235,255,${s.alpha * s.bright * 0.55})`);
+        g.addColorStop(0.75,`rgba(225,248,255,${s.alpha * s.bright * 0.92})`);
+        g.addColorStop(1,   `rgba(255,255,255,${s.alpha * s.bright})`);
+        ctx.beginPath();
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(tx, ty);
+        ctx.strokeStyle = g;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(tx, ty, 2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${s.alpha * s.bright})`;
+        ctx.fill();
+        s.x += Math.cos(s.angle) * s.speed;
+        s.y += Math.sin(s.angle) * s.speed;
+        s.alpha -= s.decay;
+      });
+
+      animId = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      clearInterval(shootTimer);
+      ro.disconnect();
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: 'absolute', inset: 0,
+        width: '100%', height: '100%',
+        pointerEvents: 'none', zIndex: 1,
+      }}
+    />
+  );
+}
 
 const CATEGORIES_ICONS = {
   "laptop": Cpu,
@@ -148,6 +331,94 @@ export default function Home() {
   const { showToast } = useToast();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [scrollY, setScrollY] = useState(0);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    const handleMouseMove = (e) => {
+      setMousePos({
+        x: (e.clientX / window.innerWidth) - 0.5,
+        y: (e.clientY / window.innerHeight) - 0.5,
+      });
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, []);
+
+  // Category cards interactive tilt state
+  const [hoveredCat, setHoveredCat] = useState(null);
+  const [catTilt, setCatTilt] = useState({ x: 0, y: 0 });
+
+  const handleMouseMoveCat = (e, catName) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((centerY - y) / centerY) * 10;
+    const rotateY = ((x - centerX) / centerX) * 10;
+    setHoveredCat(catName);
+    setCatTilt({ x: rotateX, y: rotateY });
+  };
+
+  const handleMouseLeaveCat = () => {
+    setHoveredCat(null);
+    setCatTilt({ x: 0, y: 0 });
+  };
+
+  // Core values interactive tilt state
+  const [hoveredValue, setHoveredValue] = useState(null);
+  const [valueTilt, setValueTilt] = useState({ x: 0, y: 0 });
+
+  const handleMouseMoveValue = (e, index) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((centerY - y) / centerY) * 8;
+    const rotateY = ((x - centerX) / centerX) * 8;
+    setHoveredValue(index);
+    setValueTilt({ x: rotateX, y: rotateY });
+  };
+
+  const handleMouseLeaveValue = () => {
+    setHoveredValue(null);
+    setValueTilt({ x: 0, y: 0 });
+  };
+
+  // Showcase card interactive 3D tilt state
+  const [showcaseTilt, setShowcaseTilt] = useState({ x: 0, y: 0 });
+  const [showcaseGlint, setShowcaseGlint] = useState({ x: 0, y: 0 });
+  const [isHoveringShowcase, setIsHoveringShowcase] = useState(false);
+
+  const handleMouseMoveShowcase = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((centerY - y) / centerY) * 12; // Max 12 deg
+    const rotateY = ((x - centerX) / centerX) * 12; // Max 12 deg
+    setShowcaseTilt({ x: rotateX, y: rotateY });
+    setShowcaseGlint({ x, y });
+    setIsHoveringShowcase(true);
+  };
+
+  const handleMouseLeaveShowcase = () => {
+    setShowcaseTilt({ x: 0, y: 0 });
+    setIsHoveringShowcase(false);
+  };
+
+
+
   const [serverWaking, setServerWaking] = useState(false);
   const [fetchError, setFetchError] = useState(false);
   const [categories, setCategories] = useState(["Laptop", "Monitor", "Keyboard", "Headphones", "Smartphone", "Accessories"]);
@@ -446,7 +717,7 @@ export default function Home() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-transparent text-slate-800 dark:text-slate-100 transition-colors duration-300">
 
       {/* Server Cold-Start Warning Banner */}
       {serverWaking && (
@@ -471,48 +742,88 @@ export default function Home() {
       )}
       
       {/* 1. Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white py-28 px-4 border-b border-slate-900">
-        
-        {/* Glow Effects */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[120px] animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
+      <section className="relative overflow-hidden bg-slate-950 text-white py-28 px-4 border-b border-slate-900">
+
+        {/* Deep space radial background */}
+        <div className="absolute inset-0 z-0" style={{
+          background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(37,99,235,0.22) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(99,60,240,0.15) 0%, transparent 60%), #020617'
+        }} />
+
+        {/* Canvas Particle / Plexus / Shooting-star Animation */}
+        <ParticleCanvas />
+
+        {/* Subtle perspective grid floor */}
+        <div 
+          className="absolute inset-0 pointer-events-none z-0"
+          style={{ 
+            backgroundImage: 'linear-gradient(rgba(99,179,237,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(99,179,237,0.06) 1px, transparent 1px)',
+            backgroundSize: '48px 48px',
+            transform: `perspective(600px) rotateX(55deg) translateY(${30 + scrollY * 0.05}%) scaleX(2.5)`,
+            transformOrigin: 'center bottom',
+            maskImage: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 55%)',
+            WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 55%)'
+          }}
+        />
+
+        {/* Decorative Mouse-Interactive Floating Glow Effects */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+          <div 
+            className="absolute top-1/4 left-1/4 w-[450px] h-[450px] bg-blue-600/10 rounded-full blur-[140px] transition-transform duration-300 ease-out"
+            style={{ transform: `translate(${mousePos.x * 40}px, ${scrollY * 0.15 + mousePos.y * 40}px)` }}
+          ></div>
+          <div 
+            className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] bg-indigo-500/10 rounded-full blur-[140px] transition-transform duration-300 ease-out"
+            style={{ transform: `translate(${mousePos.x * -30}px, ${scrollY * 0.2 + mousePos.y * -30}px)` }}
+          ></div>
+          <div 
+            className="absolute top-10 left-10 w-28 h-28 rounded-full bg-blue-500/5 blur-xl transition-transform duration-550 ease-out"
+            style={{ transform: `translate(${mousePos.x * 20}px, ${scrollY * 0.25 + mousePos.y * 20}px)` }}
+          />
+          <div 
+            className="absolute bottom-10 right-10 w-36 h-36 rounded-full bg-purple-500/5 blur-xl transition-transform duration-555 ease-out"
+            style={{ transform: `translate(${mousePos.x * -20}px, ${scrollY * 0.1 + mousePos.y * -20}px)` }}
+          />
         </div>
 
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
           
-          {/* Left Column: Headline, Search, Call to action */}
-          <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-            <span className="inline-flex items-center gap-1.5 bg-blue-500/10 border border-blue-400/30 text-blue-300 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider animate-fade-in">
+          {/* Left Column: Headline, Search, Call to action (scroll parallax + fade) */}
+          <div 
+            className="lg:col-span-7 space-y-6 text-center lg:text-left transition-all duration-75 ease-out z-10"
+            style={{ 
+              transform: `translateY(${scrollY * 0.12}px)`, 
+              opacity: Math.max(0, 1 - scrollY / 550)
+            }}
+          >
+            <span className="inline-flex items-center gap-1.5 bg-blue-500/10 border border-blue-400/30 text-blue-300 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider animate-fade-in animate-glow-pulse">
               <Sparkles className="h-3.5 w-3.5 animate-spin text-blue-400" />
               Next-Gen Tech Shop 2026
             </span>
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-none">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.12]">
               Trải Nghiệm Công Nghệ<br />
-              <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-400 bg-clip-text text-transparent drop-shadow-sm">
                 Xứng Tầm Tương Lai.
               </span>
             </h1>
-            <p className="max-w-xl mx-auto lg:mx-0 text-slate-400 text-sm sm:text-base font-semibold leading-relaxed">
+            <p className="max-w-xl mx-auto lg:mx-0 text-slate-300 text-sm sm:text-base font-semibold leading-relaxed">
               Mua sắm các dòng máy Laptop Gaming, Smartphone và phụ kiện chính hãng chất lượng cao. Khám phá các ưu đãi độc quyền kèm chế độ bảo hành vàng 2 năm.
             </p>
 
             {/* Premium Search Box */}
-            <div className="max-w-xl mx-auto lg:mx-0 relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur-xs opacity-30 group-hover:opacity-60 transition duration-300"></div>
-              <div className="relative">
-                <input
+            <div className="max-w-md mx-auto lg:mx-0">
+              <div className="relative group">
+                <input 
                   type="text"
-                  placeholder="Tìm kiếm sản phẩm, thương hiệu, cấu hình..."
+                  placeholder="Tìm laptop gaming, màn hình 4k, phụ kiện..."
                   value={search}
                   onChange={handleSearchChange}
-                  className="w-full pl-12 pr-12 py-4 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-white/10 text-white placeholder-slate-400 focus:outline-none focus:bg-slate-900 focus:border-blue-400 transition-all text-xs sm:text-sm shadow-xl font-semibold"
+                  className="w-full px-6 py-4 pl-12 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-slate-900/90 transition-all font-semibold text-sm shadow-inner group-hover:border-white/30"
                 />
-                <Search className="absolute left-4 top-4 h-5 w-5 text-slate-400 group-hover:text-blue-400 transition-colors" />
+                <Search className="absolute left-4 top-4.5 h-5 w-5 text-slate-400 group-hover:text-blue-400 transition-colors" />
                 {search && (
                   <button 
                     onClick={handleClearSearch}
-                    className="absolute right-4 top-4 text-slate-400 hover:text-white"
+                    className="absolute right-4 top-4.5 text-slate-400 hover:text-white"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -524,28 +835,56 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4 pt-2">
               <RippleButton
                 onClick={() => document.getElementById('products').scrollIntoView({ behavior: 'smooth' })}
-                className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:opacity-95 text-white font-black px-8 py-4 rounded-2xl shadow-lg shadow-blue-500/20 transition-all hover:scale-[1.03] active:scale-95 cursor-pointer text-xs uppercase tracking-wider flex items-center justify-center gap-1.5"
+                className="bg-gradient-to-r from-blue-600 to-indigo-650 hover:from-blue-500 hover:to-indigo-600 text-white font-bold px-8 py-4 rounded-2xl shadow-lg shadow-blue-500/20 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/40 active:scale-98 cursor-pointer text-xs uppercase tracking-wider flex items-center justify-center gap-2"
               >
                 <span>Khám phá sản phẩm</span>
                 <ArrowRight className="h-4 w-4" />
               </RippleButton>
               <RippleButton
                 onClick={() => document.getElementById('categories-showcase').scrollIntoView({ behavior: 'smooth' })}
-                className="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black px-8 py-4 rounded-2xl transition-all hover:scale-[1.03] active:scale-95 cursor-pointer text-xs uppercase tracking-wider"
+                className="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold px-8 py-4 rounded-2xl transition-all hover:scale-[1.02] active:scale-98 cursor-pointer text-xs uppercase tracking-wider"
               >
                 Tìm theo danh mục
               </RippleButton>
             </div>
           </div>
 
-          {/* Right Column: Dynamic Featured Rotating Showcase Card */}
-          <div className="lg:col-span-5 flex justify-center lg:justify-end">
+          {/* Right Column: Dynamic Featured Rotating Showcase Card (scroll parallax + mouse 3D tilt) */}
+          <div 
+            className="lg:col-span-5 flex justify-center lg:justify-end transition-transform duration-75 ease-out z-10"
+            style={{ transform: `translateY(${scrollY * -0.06}px)` }}
+          >
             <div className="relative w-full max-w-[380px] group/showcase">
-              <div className="absolute -inset-1.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-[32px] blur-md opacity-25 group-hover/showcase:opacity-40 transition duration-500"></div>
+              <div className="absolute -inset-1.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-[32px] blur-md opacity-25 group-hover/showcase:opacity-45 transition duration-500"></div>
               
-              <div className="relative bg-slate-900/60 dark:bg-slate-900/40 backdrop-blur-xl border border-white/10 dark:border-slate-800/80 rounded-[28px] p-6 shadow-2xl transition-all duration-300">
+              <div 
+                onMouseMove={handleMouseMoveShowcase}
+                onMouseLeave={handleMouseLeaveShowcase}
+                className="relative bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-[28px] p-6 shadow-2xl transition-all duration-500 animate-float-slow overflow-hidden cursor-pointer"
+                style={
+                  isHoveringShowcase
+                    ? {
+                        transform: `perspective(1000px) rotateX(${showcaseTilt.x}deg) rotateY(${showcaseTilt.y}deg) scale3d(1.04, 1.04, 1.04)`,
+                        boxShadow: '0 25px 50px rgba(59, 130, 246, 0.25)',
+                        transition: 'transform 0.08s ease-out, box-shadow 0.08s ease-out',
+                      }
+                    : {
+                        transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
+                        transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                      }
+                }
+              >
+                {/* Glint/Shine hover reflection overlay */}
+                {isHoveringShowcase && (
+                  <div 
+                    className="absolute inset-0 pointer-events-none opacity-20 mix-blend-color-dodge rounded-[28px] z-30 transition-opacity duration-300"
+                    style={{
+                      background: `radial-gradient(circle at ${showcaseGlint.x}px ${showcaseGlint.y}px, rgba(255,255,255,0.6) 0%, transparent 50%)`
+                    }}
+                  />
+                )}
                 <div className="flex justify-between items-center mb-4">
-                  <span className="text-[9px] font-black tracking-widest uppercase text-blue-400 flex items-center gap-1">
+                  <span className="text-[9px] font-black tracking-widest uppercase text-blue-500 flex items-center gap-1">
                     <Award className="h-3 w-3" /> Nổi bật trong tháng
                   </span>
                   <div className="flex gap-1">
@@ -560,15 +899,15 @@ export default function Home() {
 
                 {featuredProduct ? (
                   <div className="space-y-4 animate-fade-in">
-                    <div className="aspect-[4/3] rounded-2xl bg-slate-950 overflow-hidden relative border border-white/5">
+                    <div className="aspect-[4/3] rounded-2xl bg-slate-950 overflow-hidden relative border border-white/5 group">
                       <img 
                         src={featuredProduct.images && featuredProduct.images[0] ? featuredProduct.images[0] : ""} 
                         alt={featuredProduct.name} 
-                        className="w-full h-full object-cover group-hover/showcase:scale-105 transition duration-500"
+                        className="w-full h-full object-cover group-hover:scale-[1.06] transition duration-700"
                         onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=300&auto=format&fit=crop" }}
                       />
                       {featuredProduct.badge && (
-                        <span className={`absolute top-2.5 left-2.5 text-white text-[8px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider ${getBadgeClass(featuredProduct.badge)}`}>
+                        <span className={`absolute top-2.5 left-2.5 text-white text-[8px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider shadow-lg ${getBadgeClass(featuredProduct.badge)}`}>
                           {featuredProduct.badge}
                         </span>
                       )}
@@ -578,17 +917,17 @@ export default function Home() {
                       <h3 className="font-extrabold text-white text-base truncate group-hover/showcase:text-blue-400 transition-colors">
                         {featuredProduct.name}
                       </h3>
-                      <p className="text-slate-400 text-xs line-clamp-1 mt-0.5 font-medium">{featuredProduct.description}</p>
+                      <p className="text-slate-400 text-xs line-clamp-1 mt-0.5 font-semibold">{featuredProduct.description}</p>
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t border-white/5">
                       <div>
-                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Giá ưu đãi</p>
+                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest font-sans">Giá ưu đãi</p>
                         <div className="mt-0.5">
                           <div className="flex items-baseline gap-2 flex-wrap">
                             <p className="font-black text-white text-base">{formatVND(featuredSalePrice)}</p>
                             {featuredHasDiscount && (
-                              <span className="text-[10px] text-red-300 font-extrabold bg-red-500/15 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] text-red-300 font-extrabold bg-red-500/20 px-1.5 py-0.5 rounded border border-red-500/30">
                                 -{featuredProduct.discount}%
                               </span>
                             )}
@@ -602,7 +941,7 @@ export default function Home() {
                       </div>
                       <Link 
                         to={`/product/${featuredProduct.id}`}
-                        className="flex items-center gap-1 text-[10px] font-black text-blue-400 hover:text-blue-300 uppercase tracking-wider bg-blue-500/10 hover:bg-blue-500/20 px-3.5 py-2 rounded-xl border border-blue-500/20 transition-all active:scale-95"
+                        className="flex items-center gap-1 text-[10px] font-black text-blue-500 hover:text-blue-400 uppercase tracking-wider bg-blue-500/10 hover:bg-blue-500/20 px-3.5 py-2.5 rounded-xl border border-blue-500/20 transition-all active:scale-95"
                       >
                         <span>Chi tiết</span>
                         <ArrowRight className="h-3 w-3" />
@@ -625,43 +964,43 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-white/70 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/60 shadow-xl rounded-3xl p-5 sm:p-6 py-6 sm:py-8 -mt-10 transition-colors duration-300">
           
-          <div className="flex items-start gap-4 p-2.5">
-            <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
+          <div className="flex items-start gap-4 p-2.5 hover:translate-y-[-2px] transition-transform duration-300">
+            <div className="h-10 w-10 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0 shadow-sm shadow-blue-500/5">
               <Truck className="h-5 w-5" />
             </div>
             <div>
               <h4 className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">Giao hàng siêu tốc</h4>
-              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold">Nhận hàng trong 2h tại nội thành HN/HCM</p>
+              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold leading-relaxed">Nhận hàng trong 2h tại nội thành HN/HCM</p>
             </div>
           </div>
 
-          <div className="flex items-start gap-4 p-2.5">
-            <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0">
+          <div className="flex items-start gap-4 p-2.5 hover:translate-y-[-2px] transition-transform duration-300">
+            <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 shadow-sm shadow-emerald-500/5">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
               <h4 className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">Bảo hành dài hạn 2 năm</h4>
-              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold">Bảo hành linh kiện & đổi mới linh hoạt</p>
+              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold leading-relaxed">Bảo hành linh kiện & đổi mới linh hoạt</p>
             </div>
           </div>
 
-          <div className="flex items-start gap-4 p-2.5">
-            <div className="h-10 w-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
+          <div className="flex items-start gap-4 p-2.5 hover:translate-y-[-2px] transition-transform duration-300">
+            <div className="h-10 w-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0 shadow-sm shadow-amber-500/5">
               <Award className="h-5 w-5" />
             </div>
             <div>
               <h4 className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">30 ngày đổi trả miễn phí</h4>
-              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold">Hoàn tiền 100% nếu có lỗi từ nhà sản xuất</p>
+              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold leading-relaxed">Hoàn tiền 100% nếu có lỗi từ nhà sản xuất</p>
             </div>
           </div>
 
-          <div className="flex items-start gap-4 p-2.5">
-            <div className="h-10 w-10 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-shrink-0">
+          <div className="flex items-start gap-4 p-2.5 hover:translate-y-[-2px] transition-transform duration-300">
+            <div className="h-10 w-10 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-shrink-0 shadow-sm shadow-purple-500/5">
               <HelpCircle className="h-5 w-5" />
             </div>
             <div>
               <h4 className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">Kỹ thuật viên 24/7</h4>
-              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold">Hỗ trợ cài đặt phần mềm & bảo dưỡng trọn đời</p>
+              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold leading-relaxed">Hỗ trợ cài đặt phần mềm & bảo dưỡng trọn đời</p>
             </div>
           </div>
 
@@ -672,9 +1011,9 @@ export default function Home() {
       <section id="categories-showcase" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 relative z-10">
         <ScrollReveal>
           <div className="text-center space-y-2 mb-10">
-            <span className="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest bg-blue-500/10 px-3 py-1 rounded-full">Danh mục nổi bật</span>
+            <span className="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest bg-blue-500/10 px-3.5 py-1.5 rounded-full border border-blue-500/10">Danh mục nổi bật</span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Khám Phá Vũ Trụ Công Nghệ</h2>
-            <p className="max-w-md mx-auto text-xs text-slate-500 font-semibold">Lựa chọn các thiết bị phù hợp với nhu cầu từ hệ sinh thái công nghệ đa dạng của chúng tôi.</p>
+            <p className="max-w-md mx-auto text-xs text-slate-600 dark:text-slate-400 font-semibold leading-relaxed">Lựa chọn các thiết bị phù hợp với nhu cầu từ hệ sinh thái công nghệ đa dạng của chúng tôi.</p>
           </div>
         </ScrollReveal>
 
@@ -688,14 +1027,28 @@ export default function Home() {
               <ScrollReveal key={cat} delay={idx * 60} distance="15px">
                 <button
                   onClick={() => handleCategoryCardClick(cat)}
-                  className={`w-full group text-left bg-gradient-to-br ${gradientStyle} border border-slate-200/50 dark:border-slate-850/80 rounded-2xl p-5 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between aspect-square`}
+                  onMouseMove={(e) => handleMouseMoveCat(e, cat)}
+                  onMouseLeave={handleMouseLeaveCat}
+                  className={`w-full group text-left bg-gradient-to-br ${gradientStyle} border border-slate-200/40 dark:border-slate-800/80 rounded-2xl p-5 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between aspect-square`}
+                  style={
+                    hoveredCat === cat
+                      ? {
+                          transform: `perspective(1000px) rotateX(${catTilt.x}deg) rotateY(${catTilt.y}deg) scale3d(1.05, 1.05, 1.05)`,
+                          boxShadow: '0 20px 40px rgba(59, 130, 246, 0.12)',
+                          transition: 'transform 0.08s ease-out, box-shadow 0.08s ease-out',
+                        }
+                      : {
+                          transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
+                          transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                        }
+                  }
                 >
-                  <div className="h-10 w-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                  <div className="h-10 w-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
                     <IconComponent className="h-5 w-5" />
                   </div>
                   <div className="space-y-1">
                     <h3 className="font-extrabold text-slate-900 dark:text-white text-sm tracking-tight">{cat}</h3>
-                    <p className="text-[9px] font-black text-slate-550 dark:text-slate-400 uppercase tracking-wider">{associatedCount || 6} thiết bị</p>
+                    <p className="text-[9px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-wider">{associatedCount || 6} thiết bị</p>
                   </div>
                 </button>
               </ScrollReveal>
@@ -708,7 +1061,10 @@ export default function Home() {
       {flashSaleProducts.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
           <ScrollReveal>
-            <div className="bg-gradient-to-r from-red-600 via-rose-650 to-orange-600 rounded-[32px] p-6 sm:p-8 text-white relative overflow-hidden shadow-xl mb-6">
+            <div 
+              className="bg-gradient-to-r from-red-600 via-rose-600 to-orange-600 rounded-[32px] p-6 sm:p-8 text-white relative overflow-hidden shadow-xl mb-6 animate-glow-pulse-red border border-red-500/20"
+              style={{ transform: `translateY(${scrollY * 0.015}px)` }}
+            >
               {/* Decorative glows */}
               <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
               
@@ -775,7 +1131,7 @@ export default function Home() {
             </button>
             <div
               ref={flashTrackRef}
-              className="flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none pb-2 px-1"
+              className="flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none pt-4 pb-4 px-2"
             >
             {flashSaleProducts.map((product, idx) => {
               const hasDiscountPercent = product.discount > 0;
@@ -792,19 +1148,29 @@ export default function Home() {
                   key={`flash-${product.id}`}
                   delay={idx * 80}
                   distance="25px"
-                  className="snap-start flex-shrink-0 w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(25%-1.125rem)]"
+                  className="snap-start flex-shrink-0 w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(25%-1.125rem)] overflow-visible"
                 >
-                  <div className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-md transition-all duration-300 flex flex-col relative">
+                  <div
+                    className="group bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 rounded-2xl overflow-hidden card-shadow-premium hover:border-red-500/30 flex flex-col relative h-full"
+                    style={{ willChange: 'transform', transform: 'translateY(0)', transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease, border-color 0.3s ease' }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.boxShadow = '0 18px 36px -10px rgba(239,68,68,0.15)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
+                  >
                     
+                    {/* Glint/Shine hover effect overlay */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-20">
+                      <div className="absolute top-0 -left-[150%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/10 dark:via-white/5 to-transparent skew-x-[-25deg] transition-all duration-1000 ease-out group-hover:left-[150%]" />
+                    </div>
+
                     {/* Discount Tag */}
                     {hasDiscountPercent && (
-                      <span className="absolute top-3 right-3 z-30 bg-red-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md">
+                      <span className="absolute top-3 right-3 z-30 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md animate-pulse">
                         -{discountPercent}%
                       </span>
                     )}
 
                     {/* Image */}
-                    <Link to={`/product/${product.id}`} className="block relative overflow-hidden bg-slate-100 dark:bg-slate-800 aspect-[4/3]">
+                    <Link to={`/product/${product.id}`} className="block relative overflow-hidden bg-slate-50 dark:bg-slate-950 aspect-[4/3]">
                       <img
                         src={product.images && product.images[0] ? product.images[0] : ""}
                         alt={product.name}
@@ -816,18 +1182,18 @@ export default function Home() {
                     {/* Info */}
                     <div className="p-4 flex-grow flex flex-col justify-between space-y-4">
                       <div className="space-y-1">
-                        <span className="text-[9px] text-red-500 font-extrabold uppercase tracking-widest flex items-center gap-0.5">
+                        <span className="text-[9px] text-red-500 font-extrabold uppercase tracking-widest flex items-center gap-0.5 animate-pulse">
                           <Flame className="h-3 w-3 fill-red-500" /> Giá Sập Sàn
                         </span>
                         <Link to={`/product/${product.id}`}>
-                          <h3 className="font-extrabold text-slate-850 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1 text-sm">
+                          <h3 className="font-extrabold text-slate-900 dark:text-slate-100 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-1 text-sm">
                             {product.name}
                           </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-405 mt-0.5 line-clamp-1">{product.description}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 font-semibold">{product.description}</p>
                         </Link>
                         
                         <div className="flex items-center gap-2 mt-2">
-                          <span className="font-black text-slate-900 dark:text-white text-base">
+                          <span className="font-black text-red-600 dark:text-red-400 text-base">
                             {formatVND(salePrice)}
                           </span>
                           {hasDiscountPercent && (
@@ -840,7 +1206,7 @@ export default function Home() {
 
                       {/* Stock Claims Tracker */}
                       <div className="space-y-1.5">
-                        <div className="flex justify-between items-center text-[10px] font-bold text-slate-450 dark:text-slate-500">
+                        <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 dark:text-slate-500">
                           <span>Đã bán: {Math.floor((soldPercentage / 100) * 15)}/15 cái</span>
                           <span>{soldPercentage}%</span>
                         </div>
@@ -861,7 +1227,7 @@ export default function Home() {
                         </RippleButton>
                         <RippleButton
                           onClick={() => handleBuyNow(product)}
-                          className="bg-red-600 hover:bg-red-500 text-white font-bold text-[10px] sm:text-[11px] py-2 rounded-xl transition-all hover:shadow-md hover:shadow-red-600/20 active:scale-95 cursor-pointer flex items-center justify-center"
+                          className="bg-gradient-to-r from-red-600 to-rose-600 hover:opacity-95 text-white font-bold text-[10px] sm:text-[11px] py-2 rounded-xl transition-all hover:shadow-md hover:shadow-red-600/20 active:scale-95 cursor-pointer flex items-center justify-center"
                         >
                           Mua ngay
                         </RippleButton>
@@ -899,7 +1265,7 @@ export default function Home() {
             className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-xs font-bold transition-all duration-200 ${
               activeCategory === "All"
                 ? "bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-500/20"
-                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-355 hover:bg-slate-100 dark:hover:bg-slate-800"
+                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
             <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -920,7 +1286,7 @@ export default function Home() {
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-xs font-bold transition-all duration-200 ${
                   isActive
                     ? "bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-500/20"
-                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-355 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
                 <IconComponent className="h-3.5 w-3.5" />
@@ -932,7 +1298,7 @@ export default function Home() {
 
         {/* Filter Selection Bar */}
         <ScrollReveal className="relative z-[1000]">
-          <div data-home-filter-dropdown className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3 px-4 rounded-2xl shadow-sm transition-all duration-300">
+          <div data-home-filter-dropdown className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-800/50 p-3 px-4 rounded-2xl shadow-sm transition-all duration-300">
             
             {/* Dropdown Filters */}
             <div className="flex flex-wrap items-center gap-2">
@@ -943,7 +1309,7 @@ export default function Home() {
                   onClick={() => setOpenDropdown(openDropdown === "brand" ? null : "brand")}
                   className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border rounded-full transition-all ${
                     activeBrand !== "All"
-                      ? "bg-blue-55 dark:bg-blue-950/40 text-blue-600 dark:text-blue-450 border-blue-200"
+                      ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-500 border-blue-200"
                       : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                   }`}
                 >
@@ -973,7 +1339,7 @@ export default function Home() {
                   onClick={() => setOpenDropdown(openDropdown === "subCategory" ? null : "subCategory")}
                   className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border rounded-full transition-all ${
                     activeSubCategory !== "All"
-                      ? "bg-blue-55 dark:bg-blue-950/40 text-blue-600 dark:text-blue-450 border-blue-200"
+                      ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-500 border-blue-200"
                       : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                   }`}
                 >
@@ -1003,7 +1369,7 @@ export default function Home() {
                   onClick={() => setOpenDropdown(openDropdown === "condition" ? null : "condition")}
                   className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border rounded-full transition-all ${
                     activeCondition !== "All"
-                      ? "bg-blue-55 dark:bg-blue-950/40 text-blue-600 dark:text-blue-450 border-blue-200"
+                      ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-500 border-blue-200"
                       : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                   }`}
                 >
@@ -1051,7 +1417,7 @@ export default function Home() {
                   onClick={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
                   className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border rounded-full transition-all ${
                     priceRange !== "all"
-                      ? "bg-blue-55 dark:bg-blue-950/40 text-blue-600 dark:text-blue-450 border-blue-200"
+                      ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-500 border-blue-200"
                       : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                   }`}
                 >
@@ -1123,7 +1489,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setOpenDropdown(openDropdown === "sort" ? null : "sort")}
-                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-305 border-slate-200 dark:border-slate-700 rounded-full transition-all"
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 rounded-full transition-all"
                 >
                   <span>
                     Sắp xếp: {
@@ -1192,7 +1558,7 @@ export default function Home() {
         </ScrollReveal>
 
         {search && (
-          <div className="text-xs text-slate-400 dark:text-slate-500 mb-6 flex items-center gap-1.5 bg-slate-100/50 dark:bg-slate-900/40 p-2 py-3 rounded-xl border border-slate-200/50 dark:border-slate-850/60 w-fit">
+          <div className="text-xs text-slate-400 dark:text-slate-500 mb-6 flex items-center gap-1.5 bg-slate-100/50 dark:bg-slate-900/40 p-2 py-3 rounded-xl border border-slate-200/50 dark:border-slate-800/60 w-fit">
             <span>Từ khóa tìm kiếm:</span>
             <span className="font-extrabold text-blue-600 dark:text-blue-400">"{search}"</span>
             <button
@@ -1208,7 +1574,7 @@ export default function Home() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(8)].map((_, idx) => (
-              <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-4 shadow-sm">
+              <div key={idx} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/40 dark:border-slate-800/40 rounded-2xl p-4 space-y-4 shadow-sm">
                 <div className="animate-shimmer aspect-[4/3] rounded-xl w-full"></div>
                 <div className="space-y-2">
                   <div className="h-3 animate-shimmer rounded w-1/3"></div>
@@ -1232,107 +1598,108 @@ export default function Home() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-2 pb-2" style={{ overflowY: 'visible' }}>
               {paginatedProducts.map((product, idx) => (
                 <ScrollReveal 
                   key={product.id} 
                   delay={(idx % 4) * 80} 
                   distance="30px"
                   duration={600}
+                  className="overflow-visible"
                 >
-                  <div className="group/card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-blue-500/5 hover:-translate-y-2 hover:border-blue-300 dark:hover:border-blue-900/60 transition-all duration-300 flex flex-col relative h-full">
-                  
-                  {/* Glint/Shine hover effect overlay */}
-                  <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-20">
-                    <div className="absolute top-0 -left-[150%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/20 dark:via-white/10 to-transparent skew-x-[-25deg] transition-all duration-1000 ease-out group-hover/card:left-[150%]" />
-                  </div>
-
-                  {/* Image */}
-                  <Link to={`/product/${product.id}`} className="block relative overflow-hidden bg-slate-100 dark:bg-slate-800 aspect-[4/3]">
-                    <img
-                      src={product.images && product.images[0] ? product.images[0] : ""}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=100&auto=format&fit=crop" }}
-                    />
-                    {product.badge && (
-                      <span className={`absolute top-3 left-3 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md ${getBadgeClass(product.badge)}`}>
-                        {product.badge}
-                      </span>
-                    )}
-                    {product.discount > 0 && (
-                      <span className="absolute top-3 right-3 z-30 bg-red-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md">
-                        -{product.discount}%
-                      </span>
-                    )}
-                  </Link>
-
-                  {/* Info */}
-                  <div className="p-4 flex-grow flex flex-col justify-between space-y-4">
-                    <div className="space-y-1">
-                      <Link to={`/product/${product.id}`}>
-                        <h3 className="font-extrabold text-slate-850 dark:text-slate-100 group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400 transition-colors line-clamp-1 text-sm">
-                          {product.name}
-                        </h3>
-                      </Link>
-                      <p className="text-xs text-slate-500 dark:text-slate-405 mt-0.5 line-clamp-1">{product.description}</p>
-
-                      <div className="flex items-center gap-1 mt-2">
-                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{product.rating || 0}</span>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500">({product.reviews || 0})</span>
-                      </div>
+                  <div className="group/card bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col relative h-full" style={{ willChange: 'transform', transform: 'translateY(0)', transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease, border-color 0.3s ease' }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(59,130,246,0.18)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}>
+                    
+                    {/* Glint/Shine hover effect overlay */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-20">
+                      <div className="absolute top-0 -left-[150%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/10 dark:via-white/5 to-transparent skew-x-[-25deg] transition-all duration-1000 ease-out group-hover/card:left-[150%]" />
                     </div>
 
-                    <div className="flex flex-col gap-2 pt-1">
-                      {(product.discount > 0 || (product.discountedPrice !== null && product.discountedPrice !== undefined)) ? (
-                        <div className="flex flex-col gap-0.5">
-                          <div className="flex items-baseline gap-1.5 flex-wrap">
-                            <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-                              {formatVND(
-                                product.discountedPrice !== null && product.discountedPrice !== undefined
-                                  ? toVndInt(product.discountedPrice)
-                                  : Math.floor(product.price * (1 - product.discount / 100))
+                    {/* Image */}
+                    <Link to={`/product/${product.id}`} className="block relative overflow-hidden bg-slate-50 dark:bg-slate-950 aspect-[4/3]">
+                      <img
+                        src={product.images && product.images[0] ? product.images[0] : ""}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=100&auto=format&fit=crop" }}
+                      />
+                      {product.badge && (
+                        <span className={`absolute top-3 left-3 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md ${getBadgeClass(product.badge)}`}>
+                          {product.badge}
+                        </span>
+                      )}
+                      {product.discount > 0 && (
+                        <span className="absolute top-3 right-3 z-30 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md">
+                          -{product.discount}%
+                        </span>
+                      )}
+                    </Link>
+
+                    {/* Info */}
+                    <div className="p-4 flex-grow flex flex-col justify-between space-y-4">
+                      <div className="space-y-1">
+                        <Link to={`/product/${product.id}`}>
+                          <h3 className="font-extrabold text-slate-900 dark:text-slate-100 group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400 transition-colors line-clamp-1 text-sm">
+                            {product.name}
+                          </h3>
+                        </Link>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 line-clamp-1 font-semibold">{product.description}</p>
+
+                        <div className="flex items-center gap-1 mt-2">
+                          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 animate-pulse" />
+                          <span className="text-xs font-black text-slate-700 dark:text-slate-300">{product.rating || 0}</span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-500">({product.reviews || 0})</span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2 pt-1">
+                        {(product.discount > 0 || (product.discountedPrice !== null && product.discountedPrice !== undefined)) ? (
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-baseline gap-1.5 flex-wrap">
+                              <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                                {formatVND(
+                                  product.discountedPrice !== null && product.discountedPrice !== undefined
+                                    ? toVndInt(product.discountedPrice)
+                                    : Math.floor(product.price * (1 - product.discount / 100))
+                                )}
+                              </span>
+                              {product.discount > 0 && (
+                                <span className="text-[10px] text-red-500 font-extrabold bg-red-50 dark:bg-red-950/30 px-1.5 py-0.2 rounded border border-red-100 dark:border-red-950/20">
+                                  -{product.discount}%
+                                </span>
                               )}
-                            </span>
+                            </div>
                             {product.discount > 0 && (
-                              <span className="text-[10px] text-red-500 font-extrabold bg-red-50 dark:bg-red-950/30 px-1.5 py-0.2 rounded">
-                                -{product.discount}%
+                              <span className="text-xs text-slate-400 line-through">
+                                {formatVND(product.price)}
                               </span>
                             )}
                           </div>
-                          {product.discount > 0 && (
-                            <span className="text-xs text-slate-400 line-through">
-                              {formatVND(product.price)}
-                            </span>
-                          )}
+                        ) : (
+                          <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                            {formatVND(product.price)}
+                          </span>
+                        )}
+                        <div className="grid grid-cols-2 gap-2">
+                          <RippleButton
+                            onClick={() => handleAddToCart(product)}
+                            className={`flex items-center justify-center gap-1 px-2 py-2 rounded-xl font-bold text-[10px] sm:text-[11px] transition-all duration-200 cursor-pointer ${
+                              addedId === product.id
+                                ? "bg-emerald-500 text-white"
+                                : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 active:scale-95"
+                            }`}
+                          >
+                            <ShoppingCart className="h-3.5 w-3.5" />
+                            {addedId === product.id ? "Đã thêm!" : "Thêm giỏ"}
+                          </RippleButton>
+                          <RippleButton
+                            onClick={() => handleBuyNow(product)}
+                            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-[10px] sm:text-[11px] py-2 rounded-xl transition-all hover:shadow-md hover:shadow-blue-500/25 active:scale-95 text-center flex items-center justify-center cursor-pointer"
+                          >
+                            Mua ngay
+                          </RippleButton>
                         </div>
-                      ) : (
-                        <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-                          {formatVND(product.price)}
-                        </span>
-                      )}
-                      <div className="grid grid-cols-2 gap-2">
-                        <RippleButton
-                          onClick={() => handleAddToCart(product)}
-                          className={`flex items-center justify-center gap-1 px-2 py-2 rounded-xl font-bold text-[10px] sm:text-[11px] transition-all duration-200 cursor-pointer ${
-                            addedId === product.id
-                              ? "bg-emerald-500 text-white"
-                              : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 active:scale-95"
-                          }`}
-                        >
-                          <ShoppingCart className="h-3.5 w-3.5" />
-                          {addedId === product.id ? "Đã thêm!" : "Thêm giỏ"}
-                        </RippleButton>
-                        <RippleButton
-                          onClick={() => handleBuyNow(product)}
-                          className="bg-blue-600 hover:bg-blue-500 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold text-[10px] sm:text-[11px] py-2 rounded-xl transition-all hover:shadow-md hover:shadow-blue-600/20 active:scale-95 text-center flex items-center justify-center cursor-pointer"
-                        >
-                          Mua ngay
-                        </RippleButton>
                       </div>
                     </div>
-                  </div>
                   </div>
                 </ScrollReveal>
               ))}
@@ -1350,7 +1717,7 @@ export default function Home() {
       </section>
 
       {/* 6. Why Choose Us / Value Proposition Showcase */}
-      <section className="bg-slate-100 dark:bg-slate-900/30 py-20 px-4 border-y border-slate-200/50 dark:border-slate-850/60 relative z-10 transition-colors duration-300">
+      <section className="bg-slate-100 dark:bg-slate-900/30 py-20 px-4 border-y border-slate-200/50 dark:border-slate-800/60 relative z-10 transition-colors duration-300">
         <div className="max-w-7xl mx-auto space-y-12">
           
           <ScrollReveal>
@@ -1363,7 +1730,23 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <ScrollReveal delay={0} distance="20px">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-8 rounded-3xl space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div 
+                onMouseMove={(e) => handleMouseMoveValue(e, 0)}
+                onMouseLeave={handleMouseLeaveValue}
+                className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-8 rounded-3xl space-y-4 shadow-sm hover:shadow-xl transition-all duration-300"
+                style={
+                  hoveredValue === 0
+                    ? {
+                        transform: `perspective(1000px) rotateX(${valueTilt.x}deg) rotateY(${valueTilt.y}deg) scale3d(1.03, 1.03, 1.03) translateY(${scrollY * 0.012}px)`,
+                        boxShadow: '0 20px 40px rgba(59, 130, 246, 0.08)',
+                        transition: 'transform 0.08s ease-out, box-shadow 0.08s ease-out',
+                      }
+                    : {
+                        transform: `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1) translateY(${scrollY * 0.012}px)`,
+                        transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                      }
+                }
+              >
                 <div className="h-12 w-12 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-extrabold text-xl">
                   💳
                 </div>
@@ -1375,7 +1758,23 @@ export default function Home() {
             </ScrollReveal>
 
             <ScrollReveal delay={100} distance="20px">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-8 rounded-3xl space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div 
+                onMouseMove={(e) => handleMouseMoveValue(e, 1)}
+                onMouseLeave={handleMouseLeaveValue}
+                className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-8 rounded-3xl space-y-4 shadow-sm hover:shadow-xl transition-all duration-300"
+                style={
+                  hoveredValue === 1
+                    ? {
+                        transform: `perspective(1000px) rotateX(${valueTilt.x}deg) rotateY(${valueTilt.y}deg) scale3d(1.03, 1.03, 1.03) translateY(${scrollY * 0.022}px)`,
+                        boxShadow: '0 20px 40px rgba(59, 130, 246, 0.08)',
+                        transition: 'transform 0.08s ease-out, box-shadow 0.08s ease-out',
+                      }
+                    : {
+                        transform: `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1) translateY(${scrollY * 0.022}px)`,
+                        transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                      }
+                }
+              >
                 <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-extrabold text-xl">
                   🔄
                 </div>
@@ -1387,7 +1786,23 @@ export default function Home() {
             </ScrollReveal>
 
             <ScrollReveal delay={200} distance="20px">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-8 rounded-3xl space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div 
+                onMouseMove={(e) => handleMouseMoveValue(e, 2)}
+                onMouseLeave={handleMouseLeaveValue}
+                className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-8 rounded-3xl space-y-4 shadow-sm hover:shadow-xl transition-all duration-300"
+                style={
+                  hoveredValue === 2
+                    ? {
+                        transform: `perspective(1000px) rotateX(${valueTilt.x}deg) rotateY(${valueTilt.y}deg) scale3d(1.03, 1.03, 1.03) translateY(${scrollY * 0.032}px)`,
+                        boxShadow: '0 20px 40px rgba(59, 130, 246, 0.08)',
+                        transition: 'transform 0.08s ease-out, box-shadow 0.08s ease-out',
+                      }
+                    : {
+                        transform: `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1) translateY(${scrollY * 0.032}px)`,
+                        transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                      }
+                }
+              >
                 <div className="h-12 w-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-extrabold text-xl">
                   🔧
                 </div>
@@ -1404,7 +1819,10 @@ export default function Home() {
       {/* 7. Newsletter & Voucher CTA Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
         <ScrollReveal>
-          <div className="relative rounded-[40px] bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 text-white p-8 sm:p-12 md:p-16 overflow-hidden border border-white/10 shadow-2xl">
+          <div 
+            className="relative rounded-[40px] bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 text-white p-8 sm:p-12 md:p-16 overflow-hidden border border-white/10 shadow-2xl"
+            style={{ transform: `translateY(${scrollY * 0.012}px)` }}
+          >
             {/* Glowing blur */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
@@ -1435,7 +1853,7 @@ export default function Home() {
                 />
                 <button
                   type="submit"
-                  className="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-650 hover:opacity-95 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-blue-500/25 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+                  className="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 hover:opacity-95 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-blue-500/25 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
                 >
                   Đăng ký nhận quà
                 </button>

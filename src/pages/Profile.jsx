@@ -148,14 +148,17 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/10 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <p className="text-sm text-slate-400 dark:text-slate-500 font-medium">Đang tải thông tin...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/10 to-indigo-50/5 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950 py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="max-w-3xl mx-auto">
         <Link to="/" className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors mb-8 text-sm font-medium">
           <ArrowLeft className="h-4 w-4" />
@@ -172,10 +175,10 @@ export default function Profile() {
         </div>
 
         {result && (
-          <div className={`mb-6 p-4 rounded-2xl border transition-all ${
-            result.success 
-              ? "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-800/50 dark:text-emerald-400" 
-              : "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800/50 dark:text-red-400"
+          <div className={`mb-6 p-4 rounded-2xl border animate-fade-in ${
+            result.success
+              ? "bg-emerald-50/80 border-emerald-200/60 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-800/40 dark:text-emerald-400"
+              : "bg-red-50/80 border-red-200/60 text-red-800 dark:bg-red-900/20 dark:border-red-800/40 dark:text-red-400"
           }`}>
             <div className="flex items-center gap-2 mb-1 font-bold">
               {result.success ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
@@ -186,7 +189,7 @@ export default function Profile() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm transition-colors duration-300">
+          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-white/60 dark:border-slate-800/50 p-6 sm:p-8 shadow-xl shadow-slate-200/20 dark:shadow-slate-950/20 transition-colors duration-300">
             <h2 className="text-lg font-black text-slate-800 dark:text-white mb-6 flex items-center gap-2">
               <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               Thông tin liên hệ & Giao hàng
@@ -265,7 +268,7 @@ export default function Profile() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm transition-colors duration-300">
+          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-white/60 dark:border-slate-800/50 p-6 sm:p-8 shadow-xl shadow-slate-200/20 dark:shadow-slate-950/20 transition-colors duration-300">
             <h2 className="text-lg font-black text-slate-800 dark:text-white mb-6 flex items-center gap-2">
               <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               Đổi mật khẩu bảo mật
@@ -286,7 +289,7 @@ export default function Profile() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-350"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-400"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -307,7 +310,7 @@ export default function Profile() {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-350"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-400"
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -324,14 +327,14 @@ export default function Profile() {
             <button
               type="button"
               onClick={() => navigate("/")}
-              className="px-6 py-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-xl transition-all active:scale-[0.98]"
+              className="px-6 py-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-2xl transition-all active:scale-[0.98] border border-slate-200/50 dark:border-slate-700/50"
             >
               Hủy bỏ
             </button>
             <button
               type="submit"
               disabled={updating}
-              className="flex items-center gap-2 px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/20 hover:shadow-blue-600/35 transition-all active:scale-[0.98] disabled:opacity-75"
+              className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm rounded-2xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/35 transition-all active:scale-[0.98] hover:scale-[1.02] disabled:opacity-75 cursor-pointer"
             >
               {updating ? "Đang lưu..." : "Lưu thay đổi"}
             </button>

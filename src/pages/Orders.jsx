@@ -242,7 +242,7 @@ export default function Orders() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300 orders-panel">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/10 to-indigo-50/5 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950 py-8 px-4 sm:px-6 lg:px-8 transition-colors duration-300 orders-panel">
       <div className="max-w-4xl mx-auto animate-fade-in-up">
         
         {/* Quay lại trang chủ */}
@@ -263,7 +263,7 @@ export default function Orders() {
         </div>
 
         {/* Bộ lọc đơn hàng phía Client */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-xs flex flex-wrap gap-2 items-center justify-between mb-6">
+        <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-800/50 p-4 rounded-2xl shadow-sm flex flex-wrap gap-2 items-center justify-between mb-6">
           <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Lọc theo trạng thái:</span>
           <div className="flex flex-wrap gap-1.5">
             {[
@@ -291,9 +291,13 @@ export default function Orders() {
 
         {/* Danh sách các đơn hàng */}
         {loadingOrders ? (
-          <div className="p-12 text-center"><Loader2 className="h-6 w-6 animate-spin text-blue-600 mx-auto" /></div>
+          <div className="p-12 text-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-3xl border border-slate-200/40 dark:border-slate-800/40">
+            <Loader2 className="h-6 w-6 animate-spin text-blue-600 mx-auto mb-2" />
+            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">Đang tải đơn hàng...</p>
+          </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="p-16 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl text-slate-400 font-bold text-xs">
+          <div className="p-16 text-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/40 dark:border-slate-800/40 rounded-3xl text-slate-400 font-bold text-xs shadow-sm">
+            <div className="text-4xl mb-3">📦</div>
             Bạn chưa có đơn đặt hàng nào trong danh mục này!
           </div>
         ) : (
@@ -307,12 +311,12 @@ export default function Orders() {
                 <div 
                   key={o.id}
                   style={{ animationDelay: `${Math.min(index, 7) * 60}ms` }}
-                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs space-y-4 hover:border-blue-300 dark:hover:border-blue-700/60 hover:shadow-md hover:shadow-blue-500/5 transition-all duration-300 animate-fade-in-up opacity-0 hover:-translate-y-0.5"
+                  className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-800/50 p-5 rounded-2xl shadow-sm space-y-4 hover:border-blue-300 dark:hover:border-blue-700/50 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 animate-fade-in-up opacity-0 hover:-translate-y-1"
                 >
 
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-850 pb-3 gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 gap-2">
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-xs font-black text-slate-850 dark:text-white">Mã đơn: #${o.id}</span>
+                      <span className="font-mono text-xs font-black text-slate-900 dark:text-white">Mã đơn: #${o.id}</span>
                       <span className="text-[10px] text-slate-400 font-bold"><Calendar size={10} className="inline mr-1" />{new Date(o.createdAt).toLocaleDateString("vi-VN")}</span>
                     </div>
                     <div className="flex items-center gap-2.5">
@@ -333,7 +337,7 @@ export default function Orders() {
                         className="w-14 h-14 object-cover rounded-xl border border-slate-100 dark:border-slate-800 flex-shrink-0" 
                       />
                       <div className="min-w-0 flex-1">
-                        <h4 className="text-xs font-bold text-slate-850 dark:text-white line-clamp-1">{firstItem.name}</h4>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">{firstItem.name}</h4>
                         <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                           <span className={`px-1.5 py-0.2 rounded text-[8px] font-extrabold uppercase ${getBadgeClass(firstItem.badge)}`}>
                             {firstItem.badge || 'New'}
@@ -348,7 +352,7 @@ export default function Orders() {
                     </div>
                   )}
 
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-100 dark:border-slate-850 pt-3.5 gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3.5 gap-3">
                     <div className="text-xs">
                       <span className="text-slate-400">Tổng số tiền thanh toán: </span>
                       <span className="text-sm font-black text-slate-900 dark:text-white">{formatVND(toVndInt(o.totalAmount))}</span>
@@ -410,10 +414,10 @@ export default function Orders() {
 
               <div 
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-3xl rounded-3xl shadow-2xl max-h-[92vh] overflow-y-auto transition-all animate-scale-in"
+                className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-white/60 dark:border-slate-800/50 w-full max-w-3xl rounded-3xl shadow-2xl shadow-slate-200/40 dark:shadow-slate-950/40 max-h-[92vh] overflow-y-auto transition-all animate-scale-in"
               >
                 {/* Modal Header */}
-                <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-850">
+                <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
                   <div>
                     <h3 className="text-base font-black text-slate-900 dark:text-white">
                       Chi Tiết Đơn Hàng #{selectedOrder.id}
@@ -496,7 +500,7 @@ export default function Orders() {
                       </h4>
                       <p><span className="text-slate-400">Người nhận máy:</span> <strong>{selectedOrder.customerName}</strong></p>
                       <p><span className="text-slate-400">Số điện thoại:</span> <strong>{selectedOrder.customerPhone}</strong></p>
-                      <p><span className="text-slate-400">Địa chỉ giao:</span> <strong className="text-slate-600 dark:text-slate-350">{selectedOrder.customerAddress}</strong></p>
+                      <p><span className="text-slate-400">Địa chỉ giao:</span> <strong className="text-slate-600 dark:text-slate-400">{selectedOrder.customerAddress}</strong></p>
                       {selectedOrder.shippingUnit && (
                         <p>
                           <span className="text-slate-400">Đơn vị VC:</span> <strong>{selectedOrder.shippingUnit}</strong>
@@ -556,7 +560,7 @@ export default function Orders() {
                       {getItemsArray(selectedOrder.orderItems).map((item, index) => {
                         const serialNum = selectedOrder.serialNumbers?.[item.productId] || selectedOrder.serialNumbers?.[index];
                         return (
-                          <div key={index} className="p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-850/50 transition-colors">
+                          <div key={index} className="p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                             <img src={item.image} alt={item.name} className="w-11 h-11 object-cover rounded-lg border border-slate-200 flex-shrink-0" />
                             <div className="min-w-0 flex-1">
                               <h5 className="font-bold text-slate-900 dark:text-white leading-normal">{item.name}</h5>
@@ -565,7 +569,7 @@ export default function Orders() {
                                   {item.badge || 'New'}
                                 </span>
                                 <span className="text-slate-400 font-bold">SL: x{item.quantity}</span>
-                                <span className="text-slate-505 font-bold">Giá: {formatVND(toVndInt(item.price))}</span>
+                                <span className="text-slate-600 font-bold">Giá: {formatVND(toVndInt(item.price))}</span>
                               </div>
                               {serialNum && (
                                 <p className="text-[10px] text-blue-500 font-bold mt-2 font-mono">🎯 Số Serial Number: {serialNum} (Bảo hành tự động)</p>
@@ -649,19 +653,19 @@ export default function Orders() {
 
             <div 
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-scale-in"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-scale-in"
             >
-              <div className="p-5 border-b border-slate-100 dark:border-slate-850 flex items-center justify-between">
+              <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <h4 className="text-xs font-black uppercase text-slate-900 dark:text-white">Lý Do Hủy Đơn Hàng #{cancelingOrder?.id}</h4>
                 <button onClick={() => setIsCancelModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X size={16} /></button>
               </div>
               <form onSubmit={handleCancelOrderSubmit} className="p-5 space-y-4 text-xs">
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-450 mb-1.5">Vui lòng chọn lý do hủy đơn *</label>
+                  <label className="block text-[10px] font-black uppercase text-slate-500 mb-1.5">Vui lòng chọn lý do hủy đơn *</label>
                   <select
                     value={cancelReason}
                     onChange={(e) => setCancelReason(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-250 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-850 text-slate-800 dark:text-slate-100 font-semibold"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold"
                   >
                     <option value="Thay đổi ý định mua hàng">Thay đổi ý định mua hàng</option>
                     <option value="Tìm thấy sản phẩm giá rẻ hơn nơi khác">Tìm thấy sản phẩm giá rẻ hơn nơi khác</option>
@@ -674,19 +678,19 @@ export default function Orders() {
 
                 {cancelReason === "Khác" && (
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-450 mb-1.5">Lý do hủy cụ thể *</label>
+                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1.5">Lý do hủy cụ thể *</label>
                     <textarea
                       value={customCancelReason}
                       onChange={(e) => setCustomCancelReason(e.target.value)}
                       required
                       placeholder="Mô tả lý do hủy đơn hàng của bạn để shop rút kinh nghiệm dịch vụ..."
                       rows="3"
-                      className="w-full px-3.5 py-2 border border-slate-250 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-805 dark:text-slate-100 outline-none"
+                      className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none"
                     />
                   </div>
                 )}
 
-                <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-850">
+                <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                   <button
                     type="button"
                     onClick={() => setIsCancelModalOpen(false)}
@@ -718,9 +722,9 @@ export default function Orders() {
 
             <div 
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-scale-in"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-scale-in"
             >
-              <div className="p-5 border-b border-slate-100 dark:border-slate-850 flex items-center justify-between">
+              <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <h4 className="text-xs font-black uppercase text-slate-900 dark:text-white">Yêu Cầu Đổi Trả / Bảo Hành Đơn #{returningOrder?.id}</h4>
                 <button onClick={() => setIsReturnModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors"><X size={16} /></button>
               </div>
@@ -730,7 +734,7 @@ export default function Orders() {
                   <select
                     value={returnReason}
                     onChange={(e) => setReturnReason(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-250 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-850 text-slate-800 dark:text-slate-100 font-semibold"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold"
                   >
                     <option value="Sản phẩm lỗi kỹ thuật / Lỗi phần cứng">Sản phẩm lỗi kỹ thuật / Lỗi phần cứng</option>
                     <option value="Giao sai cấu hình / Sai sản phẩm đặt mua">Giao sai cấu hình / Sai sản phẩm đặt mua</option>
@@ -741,18 +745,18 @@ export default function Orders() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-450 mb-1.5">Mô tả chi tiết lỗi phần cứng *</label>
+                  <label className="block text-[10px] font-black uppercase text-slate-500 mb-1.5">Mô tả chi tiết lỗi phần cứng *</label>
                   <textarea
                     value={returnDesc}
                     onChange={(e) => setReturnDesc(e.target.value)}
                     required
                     placeholder="Vui lòng mô tả cụ thể tình trạng lỗi của thiết bị để kỹ thuật viên ShopTech chuẩn bị phương án bảo hành tốt nhất cho bạn..."
                     rows="4"
-                    className="w-full px-3.5 py-2 border border-slate-250 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-805 dark:text-slate-100 outline-none"
+                    className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none"
                   />
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-850">
+                <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                   <button
                     type="button"
                     onClick={() => setIsReturnModalOpen(false)}
