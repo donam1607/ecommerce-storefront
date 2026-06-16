@@ -6,8 +6,8 @@ import RippleButton from "../components/RippleButton";
 import GoogleLoginButton from "../components/GoogleLoginButton";
 
 export default function Login() {
-  const [email, setEmail] = useState("admin@example.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [shake, setShake] = useState(false);
