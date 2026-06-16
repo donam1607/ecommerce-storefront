@@ -2013,6 +2013,11 @@ export default function Admin() {
   };
 
   const handleBulkDelete = async (type, ids) => {
+    if (type === "activity" && !hasUiPermission("activity.delete")) {
+      alert("Bạn không có quyền xóa lịch sử hoạt động.");
+      return;
+    }
+
     const validIds = type === "users" ? ids.filter((id) => id !== currentUser?.id) : ids;
     if (validIds.length === 0) {
       alert("Chưa có mục hợp lệ để xóa.");
@@ -2171,9 +2176,6 @@ export default function Admin() {
   const hasUiPermission = (permissionId) => {
     if (isSuperAdmin) return true;
     const permissions = currentRoleConfig?.permissions || [];
-    if (permissionId === "screen.activity") {
-      return permissions.includes("screen.activity") || permissions.includes("activity.read");
-    }
     return permissions.includes(permissionId);
   };
   const canWriteProducts = hasUiPermission("products.write");
@@ -2182,6 +2184,7 @@ export default function Admin() {
   const canWriteCoupons = hasUiPermission("coupons.write");
   const canWriteUsers = hasUiPermission("users.write");
   const canWriteRoles = isSuperAdmin && hasUiPermission("roles.write");
+  const canDeleteActivity = hasUiPermission("activity.delete");
   const adminTabs = [
     { id: "stats", permission: "screen.stats", label: "Báo Cáo Thống Kê", icon: BarChart3 },
     { id: "products", permission: "screen.products", label: "Quản Lý Sản Phẩm", icon: ShoppingBag },
@@ -3670,18 +3673,20 @@ export default function Admin() {
                   </select>
                 </div>
 
-                <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <p className="text-xs font-bold text-slate-500">Đã chọn {selectedActivityLogIds.length} lịch sử</p>
-                  <button
-                    type="button"
-                    onClick={() => handleBulkDelete("activity", selectedActivityLogIds)}
-                    disabled={selectedActivityLogIds.length === 0}
-                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-xs font-black transition-all disabled:opacity-40"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span>Xóa đã chọn</span>
-                  </button>
-                </div>
+                {canDeleteActivity && (
+                  <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <p className="text-xs font-bold text-slate-500">Đã chọn {selectedActivityLogIds.length} lịch sử</p>
+                    <button
+                      type="button"
+                      onClick={() => handleBulkDelete("activity", selectedActivityLogIds)}
+                      disabled={selectedActivityLogIds.length === 0}
+                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-xs font-black transition-all disabled:opacity-40"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Xóa đã chọn</span>
+                    </button>
+                  </div>
+                )}
 
                 {loadingActivityLogs ? (
                   <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
@@ -3695,20 +3700,22 @@ export default function Admin() {
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-800">
-                          <th className="px-6 py-4">
-                            <input
-                              type="checkbox"
-                              checked={activityLogs.length > 0 && activityLogs.every((log) => selectedActivityLogIds.includes(log.id))}
-                              onChange={() => togglePageSelection(activityLogs, selectedActivityLogIds, setSelectedActivityLogIds)}
-                              className="h-4 w-4 accent-blue-600"
-                            />
-                          </th>
+                          {canDeleteActivity && (
+                            <th className="px-6 py-4">
+                              <input
+                                type="checkbox"
+                                checked={activityLogs.length > 0 && activityLogs.every((log) => selectedActivityLogIds.includes(log.id))}
+                                onChange={() => togglePageSelection(activityLogs, selectedActivityLogIds, setSelectedActivityLogIds)}
+                                className="h-4 w-4 accent-blue-600"
+                              />
+                            </th>
+                          )}
                           <th className="px-6 py-4">Thời gian</th>
                           <th className="px-6 py-4">Người thao tác</th>
                           <th className="px-6 py-4">Hành động</th>
                           <th className="px-6 py-4">Đối tượng</th>
                           <th className="px-6 py-4">Mô tả</th>
-                          <th className="px-6 py-4 text-right">Xóa</th>
+                          {canDeleteActivity && <th className="px-6 py-4 text-right">Xóa</th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -3720,14 +3727,16 @@ export default function Admin() {
                               style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
                               className="hover:bg-slate-50/70 dark:hover:bg-slate-900/60 transition-all duration-300 text-xs text-slate-700 dark:text-slate-400 animate-fade-in-up opacity-0"
                             >
-                              <td className="px-6 py-4">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedActivityLogIds.includes(log.id)}
-                                  onChange={() => toggleSelectedId(log.id, selectedActivityLogIds, setSelectedActivityLogIds)}
-                                  className="h-4 w-4 accent-blue-600"
-                                />
-                              </td>
+                              {canDeleteActivity && (
+                                <td className="px-6 py-4">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedActivityLogIds.includes(log.id)}
+                                    onChange={() => toggleSelectedId(log.id, selectedActivityLogIds, setSelectedActivityLogIds)}
+                                    className="h-4 w-4 accent-blue-600"
+                                  />
+                                </td>
+                              )}
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <p className="font-black text-slate-800 dark:text-slate-200">
                                   {new Date(log.createdAt).toLocaleDateString("vi-VN")}
@@ -3755,16 +3764,18 @@ export default function Admin() {
                                   <p className="text-[10px] text-slate-400 mt-0.5">IP: {log.ipAddress}</p>
                                 )}
                               </td>
-                              <td className="px-6 py-4 text-right">
-                                <button
-                                  type="button"
-                                  onClick={() => handleBulkDelete("activity", [log.id])}
-                                  className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all"
-                                  title="Xóa lịch sử"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </td>
+                              {canDeleteActivity && (
+                                <td className="px-6 py-4 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleBulkDelete("activity", [log.id])}
+                                    className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all"
+                                    title="Xóa lịch sử"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </td>
+                              )}
                             </tr>
                           );
                         })}
