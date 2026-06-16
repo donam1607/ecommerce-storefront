@@ -13,6 +13,7 @@ import Register from './pages/Register';
 import Admin from './pages/Admin';
 import Profile from './pages/Profile';
 import Orders from './pages/Orders';
+import InfoPage from './pages/InfoPage';
 import ChatWidget from './components/ChatWidget';
 import CosmicBackground from './components/CosmicBackground';
 
@@ -37,6 +38,11 @@ function App() {
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/orders" element={<Orders />} />
+                <Route path="/warranty-policy" element={<InfoPage type="warranty" />} />
+                <Route path="/buying-guide" element={<InfoPage type="buyingGuide" />} />
+                <Route path="/return-policy" element={<InfoPage type="returns" />} />
+                <Route path="/faq" element={<InfoPage type="faq" />} />
+                <Route path="/about" element={<InfoPage type="about" />} />
               </Routes>
             </main>
             <Footer />
