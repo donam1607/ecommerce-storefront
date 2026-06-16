@@ -2168,7 +2168,14 @@ export default function Admin() {
   const categoryChartMax = Math.max(...categoryRevenueStats.map((item) => item.revenue), 1);
   const currentRoleConfig = roles.find((role) => role.id === currentUser?.role);
   const isSuperAdmin = currentUser?.role === "admin";
-  const hasUiPermission = (permissionId) => isSuperAdmin || Boolean(currentRoleConfig?.permissions?.includes(permissionId));
+  const hasUiPermission = (permissionId) => {
+    if (isSuperAdmin) return true;
+    const permissions = currentRoleConfig?.permissions || [];
+    if (permissionId === "screen.activity") {
+      return permissions.includes("screen.activity") || permissions.includes("activity.read");
+    }
+    return permissions.includes(permissionId);
+  };
   const canWriteProducts = hasUiPermission("products.write");
   const canWriteCategories = hasUiPermission("categories.write");
   const canWriteOrders = hasUiPermission("orders.write");
