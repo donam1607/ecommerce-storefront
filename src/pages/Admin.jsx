@@ -239,6 +239,7 @@ export default function Admin() {
   const [activitySearch, setActivitySearch] = useState("");
   const [activityEntityFilter, setActivityEntityFilter] = useState("all");
   const [activityActionFilter, setActivityActionFilter] = useState("all");
+  const [selectedActivityLogIds, setSelectedActivityLogIds] = useState([]);
   const [statsRange, setStatsRange] = useState("30");
   const [trendMetric, setTrendMetric] = useState("revenue");
   const [selectedTrendIndex, setSelectedTrendIndex] = useState(null);
@@ -1741,6 +1742,7 @@ export default function Admin() {
         setActivityLogs(data.logs || []);
         setActivityTotalPages(data.totalPages || 1);
         setActivityTotalItems(data.total || 0);
+        setSelectedActivityLogIds([]);
       } else {
         const data = await response.json();
         setError(data.message || "Không thể tải lịch sử hoạt động.");
@@ -2021,6 +2023,7 @@ export default function Admin() {
       coupons: "mã giảm giá",
       orders: "hóa đơn",
       users: "thành viên",
+      activity: "lịch sử hoạt động",
     };
     if (!window.confirm(`Bạn có chắc chắn muốn xóa ${validIds.length} ${labels[type]} đã chọn?`)) return;
 
@@ -2030,6 +2033,7 @@ export default function Admin() {
       coupons: "/api/coupons",
       orders: "/api/orders",
       users: "/api/users",
+      activity: "/api/activity-logs",
     };
 
     try {
@@ -2051,6 +2055,9 @@ export default function Admin() {
       } else if (type === "users") {
         setSelectedUserIds([]);
         fetchUsers();
+      } else if (type === "activity") {
+        setSelectedActivityLogIds([]);
+        fetchActivityLogs();
       }
 
       alert(failed ? `Đã xóa xong nhưng có ${failed} mục bị lỗi.` : "Xóa các mục đã chọn thành công!");
@@ -3609,10 +3616,11 @@ export default function Admin() {
                   <button
                     type="button"
                     onClick={fetchActivityLogs}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-black transition-all"
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black transition-all shadow-md shadow-blue-600/20 disabled:opacity-50"
+                    disabled={loadingActivityLogs}
                   >
                     <Loader2 className={`h-4 w-4 ${loadingActivityLogs ? "animate-spin" : ""}`} />
-                    <span>Làm mới</span>
+                    <span>Đồng bộ lại</span>
                   </button>
                 </div>
 
@@ -3653,6 +3661,19 @@ export default function Admin() {
                   </select>
                 </div>
 
+                <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <p className="text-xs font-bold text-slate-500">Đã chọn {selectedActivityLogIds.length} lịch sử</p>
+                  <button
+                    type="button"
+                    onClick={() => handleBulkDelete("activity", selectedActivityLogIds)}
+                    disabled={selectedActivityLogIds.length === 0}
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-xs font-black transition-all disabled:opacity-40"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Xóa đã chọn</span>
+                  </button>
+                </div>
+
                 {loadingActivityLogs ? (
                   <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
                 ) : activityLogs.length === 0 ? (
@@ -3665,11 +3686,20 @@ export default function Admin() {
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase border-b border-slate-200 dark:border-slate-800">
+                          <th className="px-6 py-4">
+                            <input
+                              type="checkbox"
+                              checked={activityLogs.length > 0 && activityLogs.every((log) => selectedActivityLogIds.includes(log.id))}
+                              onChange={() => togglePageSelection(activityLogs, selectedActivityLogIds, setSelectedActivityLogIds)}
+                              className="h-4 w-4 accent-blue-600"
+                            />
+                          </th>
                           <th className="px-6 py-4">Thời gian</th>
                           <th className="px-6 py-4">Người thao tác</th>
                           <th className="px-6 py-4">Hành động</th>
                           <th className="px-6 py-4">Đối tượng</th>
                           <th className="px-6 py-4">Mô tả</th>
+                          <th className="px-6 py-4 text-right">Xóa</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -3681,6 +3711,14 @@ export default function Admin() {
                               style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
                               className="hover:bg-slate-50/70 dark:hover:bg-slate-900/60 transition-all duration-300 text-xs text-slate-700 dark:text-slate-400 animate-fade-in-up opacity-0"
                             >
+                              <td className="px-6 py-4">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedActivityLogIds.includes(log.id)}
+                                  onChange={() => toggleSelectedId(log.id, selectedActivityLogIds, setSelectedActivityLogIds)}
+                                  className="h-4 w-4 accent-blue-600"
+                                />
+                              </td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <p className="font-black text-slate-800 dark:text-slate-200">
                                   {new Date(log.createdAt).toLocaleDateString("vi-VN")}
@@ -3707,6 +3745,16 @@ export default function Admin() {
                                 {log.ipAddress && (
                                   <p className="text-[10px] text-slate-400 mt-0.5">IP: {log.ipAddress}</p>
                                 )}
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => handleBulkDelete("activity", [log.id])}
+                                  className="p-2 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all"
+                                  title="Xóa lịch sử"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
                               </td>
                             </tr>
                           );
