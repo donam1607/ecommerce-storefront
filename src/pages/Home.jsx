@@ -826,7 +826,7 @@ export default function Home() {
               <Sparkles className="h-3.5 w-3.5 animate-spin text-blue-400" />
               Next-Gen Tech Shop 2026
             </span>
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.12]">
+            <h1 className="text-4xl sm:text-6xl lg:text-6xl font-extrabold tracking-tight leading-[1.12]">
               Trải Nghiệm Công Nghệ<br />
               <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-400 bg-clip-text text-transparent drop-shadow-sm">
                 Xứng Tầm Tương Lai.
