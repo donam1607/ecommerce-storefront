@@ -4,11 +4,37 @@ import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
 import RippleButton from "../components/RippleButton";
 import {
-  ShoppingCart, Star, ArrowLeft, Shield, Truck, RefreshCw, Check,
+  ShoppingCart, Star, ArrowLeft, Shield, Truck, RefreshCw,
   ChevronLeft, ChevronRight, X, ZoomIn, Zap, Award
 } from "lucide-react";
 import { PRODUCTS } from "../data/products";
 import { formatVND, toVndInt } from "../utils/money";
+
+const getDisplaySpecs = (specs) => {
+  if (Array.isArray(specs?.fields)) {
+    return specs.fields
+      .map((field) => ({
+        key: field.key || field.label,
+        label: field.label || "Thông số",
+        value: field.value || "",
+        unit: field.unit || "",
+      }))
+      .filter((field) => String(field.value).trim());
+  }
+  if (Array.isArray(specs)) {
+    return specs
+      .map((value, index) => ({ key: `legacy-${index}`, label: `Thông số ${index + 1}`, value, unit: "", legacy: true }))
+      .filter((field) => String(field.value).trim());
+  }
+  return [];
+};
+
+const formatSpecValue = (spec) => {
+  const value = String(spec.value || '').trim();
+  const unit = String(spec.unit || '').trim();
+  if (!unit) return value;
+  return value.toLowerCase().includes(unit.toLowerCase()) ? value : `${value} ${unit}`;
+};
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -88,6 +114,7 @@ export default function ProductDetail() {
         ? toVndInt(product.discountedPrice)
         : Math.floor(product.price * (1 - product.discount / 100)))
     : product.price;
+  const displaySpecs = getDisplaySpecs(product.specs);
 
   const handleAddToCart = () => {
     for (let i = 0; i < qty; i++) addToCart(product);
@@ -213,14 +240,33 @@ export default function ProductDetail() {
             <p className="text-slate-600 dark:text-slate-400 mb-5 text-sm leading-relaxed">{product.description}</p>
 
             {/* Specs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6 bg-slate-50/80 dark:bg-slate-800/40 rounded-2xl p-4 border border-slate-100 dark:border-slate-700/40">
-              {product.specs.map((spec, i) => (
-                <div key={i} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
-                  <Check className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                  <span className="font-medium">{spec}</span>
+            {displaySpecs.length > 0 && (
+              <div className="mb-6 rounded-3xl border border-slate-100 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 overflow-hidden shadow-sm">
+                <div className="px-4 py-3 bg-slate-50/90 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-black text-slate-900 dark:text-white">Thông số kỹ thuật</h2>
+                    <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Các cấu hình chính của sản phẩm</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-300 text-[10px] font-black">
+                    {displaySpecs.length} mục
+                  </span>
                 </div>
-              ))}
-            </div>
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {displaySpecs.map((spec) => (
+                    <div key={spec.key} className="grid grid-cols-[40%_1fr] sm:grid-cols-[32%_1fr] hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors">
+                      <div className="min-w-0 px-4 py-3 bg-slate-50/70 dark:bg-slate-800/35 border-l-2 border-blue-500">
+                        <span className="text-xs font-extrabold text-slate-600 dark:text-slate-300">
+                          {spec.legacy ? "Nổi bật" : spec.label}
+                        </span>
+                      </div>
+                      <p className="px-4 py-3 text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-relaxed">
+                        {formatSpecValue(spec)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Price */}
             <div className="flex items-end gap-4 mb-6 p-4 bg-gradient-to-r from-slate-50 to-blue-50/30 dark:from-slate-800/40 dark:to-blue-950/20 rounded-2xl border border-slate-100 dark:border-slate-700/40">

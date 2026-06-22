@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search, FileText, Printer, Truck, Calendar, Clock, CreditCard, Tag, ChevronLeft, ChevronRight, ChevronDown, Menu, RefreshCw } from "lucide-react";
+import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search, FileText, Printer, Truck, Calendar, Clock, CreditCard, Tag, ChevronLeft, ChevronRight, ChevronDown, Menu, RefreshCw, GripVertical, ClipboardPaste, WandSparkles } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import { formatVND, toVndInt } from "../utils/money";
 import RippleButton from "../components/RippleButton";
@@ -72,6 +72,103 @@ const parseImageList = (value) => {
 };
 
 const serializeImageList = (images) => parseImageList(images).join(", ");
+
+const DEFAULT_SPEC_FIELDS_BY_CATEGORY = {
+  Laptop: [
+    { key: "cpu", label: "CPU", unit: "", type: "text" },
+    { key: "ram", label: "RAM", unit: "GB", type: "text" },
+    { key: "storage", label: "Ổ cứng", unit: "", type: "text" },
+    { key: "gpu", label: "Card đồ họa", unit: "", type: "text" },
+    { key: "screen", label: "Màn hình", unit: "", type: "text" },
+    { key: "battery", label: "Pin", unit: "", type: "text" },
+    { key: "warranty", label: "Bảo hành", unit: "", type: "text" },
+  ],
+  Monitor: [
+    { key: "size", label: "Kích thước", unit: "inch", type: "number" },
+    { key: "resolution", label: "Độ phân giải", unit: "", type: "text" },
+    { key: "refresh_rate", label: "Tần số quét", unit: "Hz", type: "number" },
+    { key: "panel", label: "Tấm nền", unit: "", type: "text" },
+    { key: "response_time", label: "Phản hồi", unit: "ms", type: "number" },
+    { key: "ports", label: "Cổng kết nối", unit: "", type: "text" },
+  ],
+  Keyboard: [
+    { key: "switch", label: "Switch", unit: "", type: "text" },
+    { key: "layout", label: "Layout", unit: "", type: "text" },
+    { key: "connection", label: "Kết nối", unit: "", type: "text" },
+    { key: "keycap", label: "Keycap", unit: "", type: "text" },
+    { key: "led", label: "Đèn LED", unit: "", type: "text" },
+  ],
+  Headphones: [
+    { key: "driver", label: "Driver", unit: "mm", type: "number" },
+    { key: "connection", label: "Kết nối", unit: "", type: "text" },
+    { key: "battery", label: "Pin", unit: "giờ", type: "number" },
+    { key: "noise_cancel", label: "Chống ồn", unit: "", type: "text" },
+  ],
+  Smartphone: [
+    { key: "chip", label: "Chip", unit: "", type: "text" },
+    { key: "ram", label: "RAM", unit: "GB", type: "number" },
+    { key: "storage", label: "Dung lượng", unit: "GB", type: "number" },
+    { key: "screen", label: "Màn hình", unit: "", type: "text" },
+    { key: "camera", label: "Camera", unit: "", type: "text" },
+    { key: "battery", label: "Pin", unit: "mAh", type: "number" },
+  ],
+};
+
+const normalizeSpecKey = (value = "") => String(value)
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/đ/g, "d")
+  .replace(/Đ/g, "D")
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, "_")
+  .replace(/^_+|_+$/g, "") || `spec_${Date.now()}`;
+
+const normalizeSpecFields = (fields = []) => {
+  const seen = new Set();
+  return (Array.isArray(fields) ? fields : [])
+    .map((field) => {
+      const label = String(field?.label || "").trim();
+      const key = normalizeSpecKey(field?.key || label);
+      if (!label || seen.has(key)) return null;
+      seen.add(key);
+      return {
+        key,
+        label,
+        unit: String(field?.unit || "").trim(),
+        type: ["text", "number"].includes(field?.type) ? field.type : "text",
+      };
+    })
+    .filter(Boolean);
+};
+
+const getDefaultSpecFields = (category) => normalizeSpecFields(DEFAULT_SPEC_FIELDS_BY_CATEGORY[category] || []);
+
+const getStructuredSpecFields = (specs) => {
+  if (Array.isArray(specs)) return [];
+  if (Array.isArray(specs?.fields)) return specs.fields;
+  return [];
+};
+
+const getLegacySpecsText = (specs) => {
+  if (Array.isArray(specs)) return specs.map((item) => String(item).trim()).filter(Boolean).join("\n");
+  if (typeof specs === "string") return specs;
+  return "";
+};
+
+const getSpecValues = (specs) => {
+  const values = {};
+  getStructuredSpecFields(specs).forEach((field) => {
+    if (field?.key) values[field.key] = field.value ?? "";
+  });
+  return values;
+};
+
+const getSpecSearchText = (specs) => {
+  if (Array.isArray(specs)) return specs.join(" ");
+  return getStructuredSpecFields(specs)
+    .map((field) => `${field.label || ""} ${field.value || ""} ${field.unit || ""}`)
+    .join(" ");
+};
 
 const getBadgeClass = (badge) => {
   if (!badge) return "";
@@ -268,6 +365,12 @@ export default function Admin() {
   const [formImages, setFormImages] = useState("");
   const [formDesc, setFormDesc] = useState("");
   const [formSpecs, setFormSpecs] = useState("");
+  const [formSpecValues, setFormSpecValues] = useState({});
+  const [isQuickSpecsOpen, setIsQuickSpecsOpen] = useState(false);
+  const [quickSpecsText, setQuickSpecsText] = useState("");
+  const [quickSpecsResults, setQuickSpecsResults] = useState([]);
+  const [quickSpecsMeta, setQuickSpecsMeta] = useState(null);
+  const [parsingQuickSpecs, setParsingQuickSpecs] = useState(false);
   const [formIsHot, setFormIsHot] = useState(false);
   const [formDiscount, setFormDiscount] = useState("0");
   const [formDiscountedPrice, setFormDiscountedPrice] = useState("");
@@ -283,6 +386,9 @@ export default function Admin() {
   const [formCatName, setFormCatName] = useState("");
   const [newSubCategoryByCat, setNewSubCategoryByCat] = useState({});
   const [newBrandBySubCategory, setNewBrandBySubCategory] = useState({});
+  const [newSpecFieldByCat, setNewSpecFieldByCat] = useState({});
+  const [expandedCategory, setExpandedCategory] = useState(null);
+  const [draggingSpecField, setDraggingSpecField] = useState(null);
 
   // Modal User states
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -950,12 +1056,13 @@ export default function Admin() {
 
     categoriesList.forEach((cat) => {
       if (!cat) return;
-      tree[cat] = { subCategories: {}, brands: [] };
+      tree[cat] = { subCategories: {}, brands: [], specFields: getDefaultSpecFields(cat) };
     });
 
     Object.entries(categoryMeta || {}).forEach(([cat, meta]) => {
       if (!cat) return;
-      if (!tree[cat]) tree[cat] = { subCategories: {}, brands: [] };
+      if (!tree[cat]) tree[cat] = { subCategories: {}, brands: [], specFields: getDefaultSpecFields(cat) };
+      tree[cat].specFields = normalizeSpecFields(meta.specFields || tree[cat].specFields);
 
       Object.entries(meta.subCategories || {}).forEach(([subCat, brands]) => {
         if (!subCat) return;
@@ -973,7 +1080,7 @@ export default function Admin() {
     products.forEach((p) => {
       const cat = String(p.category || "").trim();
       if (!cat) return;
-      if (!tree[cat]) tree[cat] = { subCategories: {}, brands: [] };
+      if (!tree[cat]) tree[cat] = { subCategories: {}, brands: [], specFields: getDefaultSpecFields(cat) };
 
       const subCat = String(p.subCategory || "").trim();
       const brand = String(p.brand || "").trim();
@@ -1030,6 +1137,7 @@ export default function Admin() {
     .sort((a, b) => a.localeCompare(b, "vi"));
   const formSubCategoryOptions = getSubCategoryOptions(formCategory);
   const formBrandOptions = getBrandOptions(formCategory, formSubCategory);
+  const formSpecFields = normalizeSpecFields(categoryTree[formCategory]?.specFields || []);
 
   const renderSmartPicker = ({
     id,
@@ -1190,6 +1298,10 @@ export default function Admin() {
   // Open Modal Product
   const openModal = (type, prod = null) => {
     setModalType(type);
+    setIsQuickSpecsOpen(false);
+    setQuickSpecsText("");
+    setQuickSpecsResults([]);
+    setQuickSpecsMeta(null);
     setProductPickerOpen(null);
     setSubCategorySearch("");
     setBrandSearch("");
@@ -1215,7 +1327,8 @@ export default function Admin() {
 
       setFormImages(serializeImageList(prod.images || []));
       setFormDesc(prod.description);
-      setFormSpecs(prod.specs ? prod.specs.join("\n") : "");
+      setFormSpecs(getLegacySpecsText(prod.specs));
+      setFormSpecValues(getSpecValues(prod.specs));
       setFormIsHot(prod.isHot || false);
       const discountNum = prod.discount || 0;
       setFormDiscount(discountNum.toString());
@@ -1237,6 +1350,7 @@ export default function Admin() {
       setFormImages("");
       setFormDesc("");
       setFormSpecs("");
+      setFormSpecValues({});
       setFormIsHot(false);
       setFormDiscount("0");
       setFormDiscountedPrice("");
@@ -1245,6 +1359,64 @@ export default function Admin() {
   };
 
   // Handle Product CRUD
+  const openQuickSpecsImporter = () => {
+    if (formSpecFields.length === 0) {
+      alert("Danh mục này chưa có bộ thông số kỹ thuật.");
+      return;
+    }
+    setQuickSpecsResults([]);
+    setQuickSpecsMeta(null);
+    setIsQuickSpecsOpen(true);
+  };
+
+  const handleParseQuickSpecs = async () => {
+    if (!quickSpecsText.trim()) {
+      alert("Vui lòng dán nội dung thông số kỹ thuật.");
+      return;
+    }
+
+    setParsingQuickSpecs(true);
+    try {
+      const response = await fetchWithRetry(`${API_URL}/api/products/parse-specs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders(),
+        },
+        body: JSON.stringify({
+          text: quickSpecsText,
+          fields: formSpecFields.map(({ key, label, unit, type }) => ({ key, label, unit, type })),
+        }),
+      }, 1, 1000);
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.message || "Không thể phân tích thông số kỹ thuật.");
+        return;
+      }
+      setQuickSpecsResults(Array.isArray(data.results) ? data.results : []);
+      setQuickSpecsMeta({
+        parser: data.parser,
+        warning: data.warning,
+        matchedCount: data.matchedCount || 0,
+        totalCount: data.totalCount || formSpecFields.length,
+      });
+    } catch (error) {
+      alert("Không thể kết nối đến máy chủ phân tích thông số.");
+    } finally {
+      setParsingQuickSpecs(false);
+    }
+  };
+
+  const handleApplyQuickSpecs = () => {
+    const nextValues = Object.fromEntries(formSpecFields.map((field) => {
+      const parsedField = quickSpecsResults.find((item) => item.key === field.key);
+      return [field.key, String(parsedField?.value || "").trim()];
+    }));
+    setFormSpecValues(nextValues);
+    setIsQuickSpecsOpen(false);
+    alert("Áp dụng thông số kỹ thuật thành công!");
+  };
+
   const handleProductSubmit = async (e) => {
     e.preventDefault();
     if (!canWriteProducts) {
@@ -1255,6 +1427,18 @@ export default function Admin() {
     
     const badgeVal = formBadgePreset === "Custom" ? formBadgeCustom : formBadgePreset;
     const token = localStorage.getItem("token");
+    const structuredSpecFields = formSpecFields
+      .map((field) => ({
+        key: field.key,
+        label: field.label,
+        unit: field.unit || "",
+        type: field.type || "text",
+        value: String(formSpecValues[field.key] || "").trim(),
+      }))
+      .filter((field) => field.value);
+    const specsPayload = formSpecFields.length > 0
+      ? { mode: "structured", fields: structuredSpecFields }
+      : formSpecs.split("\n").map(s => s.trim()).filter(Boolean);
     
     const payload = {
       name: formName,
@@ -1264,7 +1448,7 @@ export default function Admin() {
       price: parseFloat(formPrice) || 0,
       images: parseImageList(formImages),
       description: formDesc,
-      specs: formSpecs.split("\n").map(s => s.trim()).filter(Boolean),
+      specs: specsPayload,
       countInStock: parseInt(formStock),
       badge: badgeVal || null,
       isHot: formIsHot,
@@ -1421,7 +1605,7 @@ export default function Admin() {
     setCategoriesList((prev) => addUnique(prev, cleanCategory));
     setCategoryMeta((prev) => {
       const next = { ...prev };
-      const catNode = next[cleanCategory] || { subCategories: {}, brands: [] };
+      const catNode = next[cleanCategory] || { subCategories: {}, brands: [], specFields: getDefaultSpecFields(cleanCategory) };
       const subCategories = { ...(catNode.subCategories || {}) };
 
       if (cleanSubCategory) {
@@ -1434,9 +1618,73 @@ export default function Admin() {
         catNode.brands = addUnique(catNode.brands || [], cleanBrand);
       }
 
-      next[cleanCategory] = { ...catNode, subCategories };
+      next[cleanCategory] = {
+        ...catNode,
+        specFields: normalizeSpecFields(catNode.specFields || getDefaultSpecFields(cleanCategory)),
+        subCategories,
+      };
       return next;
     });
+  };
+
+  const updateCategorySpecFields = (catName, updater) => {
+    setCategoryMeta((prev) => {
+      const currentNode = prev[catName] || categoryTree[catName] || { subCategories: {}, brands: [], specFields: getDefaultSpecFields(catName) };
+      const currentFields = normalizeSpecFields(currentNode.specFields || getDefaultSpecFields(catName));
+      return {
+        ...prev,
+        [catName]: {
+          ...currentNode,
+          subCategories: currentNode.subCategories || {},
+          brands: currentNode.brands || [],
+          specFields: normalizeSpecFields(updater(currentFields)),
+        },
+      };
+    });
+  };
+
+  const handleAddSpecField = (catName) => {
+    const draft = newSpecFieldByCat[catName] || {};
+    const label = String(draft.label || "").trim();
+    if (!label) {
+      alert("Vui lòng nhập tên thông số.");
+      return;
+    }
+    const field = {
+      key: normalizeSpecKey(label),
+      label,
+      unit: String(draft.unit || "").trim(),
+      type: draft.type === "number" ? "number" : "text",
+    };
+    updateCategorySpecFields(catName, (fields) => {
+      if (fields.some((item) => item.key === field.key)) return fields;
+      return [...fields, field];
+    });
+    setNewSpecFieldByCat((prev) => ({ ...prev, [catName]: { label: "", unit: "", type: "text" } }));
+    alert("Thêm thông số thành công!");
+  };
+
+  const handleDeleteSpecField = (catName, fieldKey) => {
+    updateCategorySpecFields(catName, (fields) => fields.filter((field) => field.key !== fieldKey));
+  };
+
+  const handleSpecFieldDrop = (catName, targetKey) => {
+    if (!draggingSpecField || draggingSpecField.category !== catName || draggingSpecField.key === targetKey) {
+      setDraggingSpecField(null);
+      return;
+    }
+
+    updateCategorySpecFields(catName, (fields) => {
+      const sourceIndex = fields.findIndex((field) => field.key === draggingSpecField.key);
+      const targetIndex = fields.findIndex((field) => field.key === targetKey);
+      if (sourceIndex < 0 || targetIndex < 0) return fields;
+
+      const reordered = [...fields];
+      const [movedField] = reordered.splice(sourceIndex, 1);
+      reordered.splice(targetIndex, 0, movedField);
+      return reordered;
+    });
+    setDraggingSpecField(null);
   };
 
   const handleAddSubCategory = (catName) => {
@@ -1522,7 +1770,10 @@ export default function Admin() {
 
     if (catModalType === "add") {
       setCategoriesList(prev => Array.from(new Set([...prev, cName])));
-      setCategoryMeta((prev) => ({ ...prev, [cName]: prev[cName] || { subCategories: {}, brands: [] } }));
+      setCategoryMeta((prev) => ({
+        ...prev,
+        [cName]: prev[cName] || { subCategories: {}, brands: [], specFields: getDefaultSpecFields(cName) }
+      }));
       setIsCatModalOpen(false);
       alert("Thêm danh mục mới thành công!");
     } else {
@@ -1551,7 +1802,7 @@ export default function Admin() {
         setCategoryMeta((prev) => {
           const next = { ...prev };
           if (next[editingCatName]) {
-            next[cName] = { ...(next[cName] || { subCategories: {}, brands: [] }), ...next[editingCatName] };
+            next[cName] = { ...(next[cName] || { subCategories: {}, brands: [], specFields: getDefaultSpecFields(cName) }), ...next[editingCatName] };
             delete next[editingCatName];
           }
           return next;
@@ -2077,7 +2328,8 @@ export default function Admin() {
                         p.category.toLowerCase().includes(prodSearch.toLowerCase()) ||
                         (p.brand && p.brand.toLowerCase().includes(prodSearch.toLowerCase())) ||
                         (p.subCategory && p.subCategory.toLowerCase().includes(prodSearch.toLowerCase())) ||
-                        (p.badge && p.badge.toLowerCase().includes(prodSearch.toLowerCase()));
+                        (p.badge && p.badge.toLowerCase().includes(prodSearch.toLowerCase())) ||
+                        getSpecSearchText(p.specs).toLowerCase().includes(prodSearch.toLowerCase());
     const matchCat = prodCatFilter === "All" || p.category === prodCatFilter;
     const matchBrand = prodBrandFilter === "All" || p.brand === prodBrandFilter;
     const matchSubCat = prodSubCatFilter === "All" || p.subCategory === prodSubCatFilter;
@@ -2933,7 +3185,7 @@ export default function Admin() {
                   </RippleButton>
                 </div>
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <div className="space-y-3">
                   {categoriesList.map((catName, index) => {
                     const catNode = categoryTree[catName] || { subCategories: {}, brands: [] };
                     const subEntries = Object.entries(catNode.subCategories || {}).sort(([a], [b]) => a.localeCompare(b, "vi"));
@@ -2943,23 +3195,44 @@ export default function Admin() {
                       ...(catNode.brands || []),
                       ...subEntries.flatMap(([, sub]) => sub.brands || []),
                     ].filter(Boolean))).length;
+                    const specFields = normalizeSpecFields(catNode.specFields || []);
+                    const isExpanded = expandedCategory === catName;
 
                     return (
                       <div
                         key={catName}
                         style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
-                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden transition-all animate-fade-in-up opacity-0"
+                        className={`bg-white dark:bg-slate-900 border rounded-3xl overflow-hidden transition-all animate-fade-in-up opacity-0 ${
+                          isExpanded
+                            ? "border-blue-300 dark:border-blue-800 shadow-md"
+                            : "border-slate-200 dark:border-slate-800 shadow-sm hover:border-slate-300 dark:hover:border-slate-700"
+                        }`}
                       >
-                        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-4">
-                          <div>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          aria-expanded={isExpanded}
+                          onClick={() => setExpandedCategory(isExpanded ? null : catName)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setExpandedCategory(isExpanded ? null : catName);
+                            }
+                          }}
+                          className={`p-4 sm:p-5 flex items-center justify-between gap-4 cursor-pointer transition-colors ${
+                            isExpanded ? "bg-blue-50/50 dark:bg-blue-950/15" : "hover:bg-slate-50/70 dark:hover:bg-slate-800/30"
+                          }`}
+                        >
+                          <div className="min-w-0">
                             <h3 className="text-sm font-black text-slate-900 dark:text-white">{catName}</h3>
                             <div className="flex flex-wrap gap-2 mt-2 text-[10px] font-black text-slate-500">
                               <span className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800">{associatedCount} sản phẩm</span>
                               <span className="px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-300">{subCount} phân loại</span>
                               <span className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-300">{brandCount} hãng</span>
+                              <span className="px-2 py-1 rounded-lg bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-300">{specFields.length} thông số</span>
                             </div>
                           </div>
-                          <div className="flex gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                             <button
                               disabled={!canWriteCategories}
                               onClick={() => openCatModal("edit", catName)}
@@ -2976,10 +3249,23 @@ export default function Admin() {
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => setExpandedCategory(isExpanded ? null : catName)}
+                              className="p-2 text-slate-500 dark:text-slate-300 rounded-xl hover:bg-white dark:hover:bg-slate-800 transition-colors"
+                              title={isExpanded ? "Thu gọn" : "Mở chi tiết"}
+                            >
+                              <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
+                            </button>
                           </div>
                         </div>
 
-                        <div className="p-5 space-y-4">
+                        {isExpanded && (
+                        <div className="p-4 sm:p-5 space-y-5 border-t border-slate-100 dark:border-slate-800 animate-fade-in">
+                          <div>
+                            <h4 className="text-xs font-black text-slate-900 dark:text-white">Phân loại và hãng</h4>
+                            <p className="text-[10px] text-slate-400 mt-0.5">Quản lý các cấp con và danh sách hãng thuộc từng phân loại.</p>
+                          </div>
                           <div className="flex gap-2">
                             <input
                               type="text"
@@ -3073,7 +3359,116 @@ export default function Admin() {
                               })}
                             </div>
                           )}
+
+                          <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              <div>
+                                <h4 className="text-xs font-black text-slate-900 dark:text-white">Bộ thông số kỹ thuật</h4>
+                                <p className="text-[10px] text-slate-400 mt-0.5">Kéo thả các trường để sắp xếp thứ tự hiển thị trong form sản phẩm.</p>
+                              </div>
+                              <span className="px-2 py-1 rounded-lg bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-300 text-[10px] font-black">
+                                {specFields.length} trường
+                              </span>
+                            </div>
+
+                            <div className="flex flex-wrap gap-1.5 mb-3">
+                              {specFields.length > 0 ? specFields.map((field) => (
+                                <span
+                                  key={field.key}
+                                  draggable={canWriteCategories}
+                                  onDragStart={(e) => {
+                                    e.dataTransfer.effectAllowed = "move";
+                                    e.dataTransfer.setData("text/plain", field.key);
+                                    setDraggingSpecField({ category: catName, key: field.key });
+                                  }}
+                                  onDragOver={(e) => {
+                                    if (draggingSpecField?.category === catName) {
+                                      e.preventDefault();
+                                      e.dataTransfer.dropEffect = "move";
+                                    }
+                                  }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    handleSpecFieldDrop(catName, field.key);
+                                  }}
+                                  onDragEnd={() => setDraggingSpecField(null)}
+                                  className={`inline-flex items-center gap-1.5 px-2 py-1.5 bg-white dark:bg-slate-900 border rounded-xl text-[10px] font-bold text-slate-700 dark:text-slate-300 transition-all select-none ${
+                                    canWriteCategories ? "cursor-grab active:cursor-grabbing hover:border-violet-300 dark:hover:border-violet-700" : "cursor-default"
+                                  } ${
+                                    draggingSpecField?.category === catName && draggingSpecField?.key === field.key
+                                      ? "opacity-40 scale-95 border-violet-400"
+                                      : "border-slate-200 dark:border-slate-800"
+                                  }`}
+                                >
+                                  <GripVertical className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600 flex-shrink-0" aria-hidden="true" />
+                                  <span>{field.label}</span>
+                                  {field.unit && <span className="text-blue-500">({field.unit})</span>}
+                                  <button
+                                    type="button"
+                                    disabled={!canWriteCategories}
+                                    onClick={() => handleDeleteSpecField(catName, field.key)}
+                                    className="text-slate-300 hover:text-red-500 disabled:opacity-40"
+                                    title="Xóa thông số"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </span>
+                              )) : (
+                                <span className="text-[10px] font-bold text-slate-400">Chưa có bộ thông số cho danh mục này.</span>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-[1fr_90px_100px_36px] gap-2">
+                              <input
+                                type="text"
+                                placeholder="Tên thông số, ví dụ: CPU, RAM, Tần số quét"
+                                value={newSpecFieldByCat[catName]?.label || ""}
+                                onChange={(e) => setNewSpecFieldByCat((prev) => ({
+                                  ...prev,
+                                  [catName]: { ...(prev[catName] || { type: "text" }), label: e.target.value }
+                                }))}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleAddSpecField(catName);
+                                  }
+                                }}
+                                className="min-w-0 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                              />
+                              <input
+                                type="text"
+                                placeholder="Đơn vị"
+                                value={newSpecFieldByCat[catName]?.unit || ""}
+                                onChange={(e) => setNewSpecFieldByCat((prev) => ({
+                                  ...prev,
+                                  [catName]: { ...(prev[catName] || { type: "text" }), unit: e.target.value }
+                                }))}
+                                className="min-w-0 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                              />
+                              <select
+                                value={newSpecFieldByCat[catName]?.type || "text"}
+                                onChange={(e) => setNewSpecFieldByCat((prev) => ({
+                                  ...prev,
+                                  [catName]: { ...(prev[catName] || {}), type: e.target.value }
+                                }))}
+                                className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
+                              >
+                                <option value="text">Text</option>
+                                <option value="number">Số</option>
+                              </select>
+                              <button
+                                type="button"
+                                disabled={!canWriteCategories}
+                                onClick={() => handleAddSpecField(catName)}
+                                className="h-9 w-9 flex items-center justify-center bg-violet-600 hover:bg-violet-500 text-white rounded-xl transition-all disabled:opacity-40"
+                                title="Thêm thông số"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
                         </div>
+                        )}
                       </div>
                     );
                   })}
@@ -4409,6 +4804,7 @@ export default function Admin() {
                       setFormCategory(e.target.value);
                       setFormSubCategory("");
                       setFormBrand("");
+                      setFormSpecValues({});
                       setProductPickerOpen(null);
                     }}
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-bold"
@@ -4698,16 +5094,74 @@ export default function Admin() {
                   />
                 </div>
 
-                {/* Product Specifications (each on a line) */}
+                {/* Product Specifications */}
                 <div className="sm:col-span-2">
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Thông số kỹ thuật quan trọng (Mỗi thông số đặt trên một dòng)</label>
-                  <textarea
-                    rows="3"
-                    placeholder="Intel Core i9 14900HX&#10;Nvidia RTX 4080 12GB&#10;32GB DDR5 RAM&#10;1TB NVMe Gen4 SSD"
-                    value={formSpecs}
-                    onChange={(e) => setFormSpecs(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
-                  />
+                  <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 overflow-hidden">
+                    <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div>
+                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500">Thông số kỹ thuật theo danh mục</label>
+                        <p className="text-[9px] text-slate-400 mt-0.5">
+                          Đang dùng bộ thông số của danh mục {formCategory}. Có thể chỉnh bộ field trong tab Danh mục.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-fit px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 text-[10px] font-black">
+                          {formSpecFields.length} trường
+                        </span>
+                        <button
+                          type="button"
+                          onClick={openQuickSpecsImporter}
+                          disabled={formSpecFields.length === 0}
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-[10px] font-black transition-all disabled:opacity-40"
+                        >
+                          <ClipboardPaste className="h-3.5 w-3.5" />
+                          <span>Nhập nhanh</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {formSpecFields.length > 0 ? (
+                      <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {formSpecFields.map((field) => (
+                          <div key={field.key}>
+                            <label className="flex items-center justify-between gap-2 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">
+                              <span>{field.label}</span>
+                              {field.unit && <span className="normal-case tracking-normal text-blue-500">{field.unit}</span>}
+                            </label>
+                            <input
+                              type={field.type === "number" ? "number" : "text"}
+                              value={formSpecValues[field.key] || ""}
+                              onChange={(e) => setFormSpecValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                              placeholder={`Nhập ${field.label.toLowerCase()}`}
+                              className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 text-center text-xs font-bold text-slate-400">
+                        Danh mục này chưa có bộ thông số. Hãy thêm trong tab Danh mục hoặc nhập thông số nhanh bên dưới.
+                      </div>
+                    )}
+
+                    {(formSpecFields.length === 0 || formSpecs) && (
+                      <div className="p-3 border-t border-slate-200 dark:border-slate-800">
+                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-500 mb-1.5">Thông số nhanh / dữ liệu cũ</label>
+                        <textarea
+                          rows="3"
+                          placeholder="Intel Core i9 14900HX&#10;Nvidia RTX 4080 12GB&#10;32GB DDR5 RAM"
+                          value={formSpecs}
+                          onChange={(e) => setFormSpecs(e.target.value)}
+                          className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 transition-all font-semibold"
+                        />
+                        {formSpecFields.length > 0 && (
+                          <p className="mt-1 text-[9px] font-semibold text-slate-400">
+                            Khi lưu theo bộ thông số mới, phần này chỉ dùng để tham khảo dữ liệu cũ.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -4734,6 +5188,126 @@ export default function Admin() {
                 </RippleButton>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Quick technical specifications importer */}
+      {isQuickSpecsOpen && (
+        <div
+          onClick={() => setIsQuickSpecsOpen(false)}
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100001] flex items-center justify-center p-3 sm:p-5 animate-fade-in-overlay"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-3xl max-h-[92vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-scale-in"
+          >
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="text-base font-black text-slate-900 dark:text-white">Nhập thông số nhanh</h3>
+                <p className="text-[10px] font-semibold text-slate-400 mt-1 truncate">{formCategory} · {formSpecFields.length} trường cấu hình</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsQuickSpecsOpen(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label="Đóng"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1.5">Dữ liệu thông số</label>
+                <textarea
+                  value={quickSpecsText}
+                  onChange={(e) => setQuickSpecsText(e.target.value)}
+                  rows={quickSpecsResults.length > 0 ? 7 : 12}
+                  placeholder="Dán bảng hoặc nội dung thông số kỹ thuật vào đây..."
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs leading-relaxed text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-violet-500 resize-y font-semibold"
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleParseQuickSpecs}
+                  disabled={parsingQuickSpecs || !quickSpecsText.trim()}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-black transition-all shadow-sm shadow-violet-600/20 disabled:opacity-50"
+                >
+                  {parsingQuickSpecs ? <Loader2 className="h-4 w-4 animate-spin" /> : <WandSparkles className="h-4 w-4" />}
+                  <span>{parsingQuickSpecs ? "Đang phân tích..." : "Phân tích dữ liệu"}</span>
+                </button>
+              </div>
+
+              {quickSpecsMeta && (
+                <div className={`px-3.5 py-3 rounded-2xl border text-xs font-bold ${
+                  quickSpecsMeta.warning
+                    ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-700 dark:text-amber-300"
+                    : "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-300"
+                }`}>
+                  Đã nhận diện {quickSpecsMeta.matchedCount}/{quickSpecsMeta.totalCount} thông số
+                  {quickSpecsMeta.warning ? ` · ${quickSpecsMeta.warning}` : " · Gemini"}
+                </div>
+              )}
+
+              {quickSpecsResults.length > 0 && (
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                  <div className="grid grid-cols-[36%_1fr] bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase text-slate-400">
+                    <div className="px-3 py-2.5">Thông số</div>
+                    <div className="px-3 py-2.5">Giá trị nhận diện</div>
+                  </div>
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {quickSpecsResults.map((field, index) => (
+                      <div key={field.key} className="grid grid-cols-[36%_1fr] items-center hover:bg-slate-50/60 dark:hover:bg-slate-800/25 transition-colors">
+                        <div className="px-3 py-3 min-w-0">
+                          <p className="text-xs font-black text-slate-700 dark:text-slate-200 truncate">{field.label}</p>
+                          <p className={`text-[9px] font-bold mt-0.5 ${field.value ? "text-emerald-500" : "text-slate-400"}`}>
+                            {field.value ? "Đã khớp" : "Để trống"}
+                          </p>
+                        </div>
+                        <div className="px-3 py-2">
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={field.value || ""}
+                              onChange={(e) => setQuickSpecsResults((prev) => prev.map((item, itemIndex) => (
+                                itemIndex === index ? { ...item, value: e.target.value, matched: Boolean(e.target.value.trim()) } : item
+                              )))}
+                              placeholder="Không tìm thấy dữ liệu"
+                              className="w-full px-3 py-2 pr-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-violet-500"
+                            />
+                            {field.unit && (
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-400">{field.unit}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2 bg-white dark:bg-slate-900">
+              <button
+                type="button"
+                onClick={() => setIsQuickSpecsOpen(false)}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-black transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleApplyQuickSpecs}
+                disabled={quickSpecsResults.length === 0 || parsingQuickSpecs}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black transition-all disabled:opacity-40"
+              >
+                <Check className="h-4 w-4" />
+                <span>Áp dụng thông số</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

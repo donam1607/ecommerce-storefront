@@ -31,6 +31,14 @@ const getBadgeClass = (badge) => {
   return "bg-blue-600 text-white border border-blue-400";
 };
 
+const getSpecSearchText = (specs) => {
+  if (Array.isArray(specs)) return specs.join(" ");
+  if (Array.isArray(specs?.fields)) {
+    return specs.fields.map((field) => `${field.label || ""} ${field.value || ""} ${field.unit || ""}`).join(" ");
+  }
+  return "";
+};
+
 function Navbar() {
   const { cart } = useContext(CartContext);
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -150,7 +158,7 @@ function Navbar() {
       p.name.toLowerCase().includes(q) ||
       p.category.toLowerCase().includes(q) ||
       (p.description && p.description.toLowerCase().includes(q)) ||
-      (p.specs && p.specs.some(s => s.toLowerCase().includes(q)))
+      getSpecSearchText(p.specs).toLowerCase().includes(q)
     );
     setSearchResults(matches.slice(0, 6)); // Lấy tối đa 6 kết quả
   }, [searchQuery, allProducts]);

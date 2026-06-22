@@ -273,6 +273,14 @@ const getProductFinalPrice = (product) => {
   return originalPrice;
 };
 
+const getSpecSearchText = (specs) => {
+  if (Array.isArray(specs)) return specs.join(" ");
+  if (Array.isArray(specs?.fields)) {
+    return specs.fields.map((field) => `${field.label || ""} ${field.value || ""} ${field.unit || ""}`).join(" ");
+  }
+  return "";
+};
+
 const PAGE_SIZE_OPTIONS = [8, 12, 20, 40];
 
 function PaginationControls({ page, totalPages, totalItems, pageSize, onPageChange, onPageSizeChange }) {
@@ -624,7 +632,7 @@ export default function Home() {
       (p.brand && p.brand.toLowerCase().includes(search.toLowerCase())) ||
       (p.subCategory && p.subCategory.toLowerCase().includes(search.toLowerCase())) ||
       (p.badge && p.badge.toLowerCase().includes(search.toLowerCase())) ||
-      (p.specs && p.specs.some(s => s.toLowerCase().includes(search.toLowerCase())));
+      getSpecSearchText(p.specs).toLowerCase().includes(search.toLowerCase());
       
     const matchCat = activeCategory === "All" || p.category === activeCategory;
     const matchBrand = activeBrand === "All" || p.brand === activeBrand;
