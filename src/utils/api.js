@@ -3,7 +3,10 @@
  * Handles Render free-tier cold starts with retry + exponential backoff
  */
 
-export const API_BASE = "https://shoptech-backend.onrender.com";
+const configuredApiBase = String(import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\/$/, "");
+
+export const API_BASE = configuredApiBase
+  || "https://shoptech-backend.onrender.com";
 
 /**
  * Fetch with retry and exponential backoff.

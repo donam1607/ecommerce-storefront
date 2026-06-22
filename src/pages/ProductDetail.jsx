@@ -44,6 +44,7 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [magnifier, setMagnifier] = useState({ visible: false, x: 0, y: 0, sourceX: 0, sourceY: 0, width: 0, height: 0 });
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -128,9 +129,39 @@ export default function ProductDetail() {
     navigate("/checkout");
   };
 
-  const nextImage = () => setActiveImage((prev) => (prev + 1) % images.length);
-  const prevImage = () => setActiveImage((prev) => (prev - 1 + images.length) % images.length);
-  const openLightbox = (index = activeImage) => { setActiveImage(index); setIsLightboxOpen(true); };
+  const nextImage = () => {
+    setActiveImage((prev) => (prev + 1) % images.length);
+    setMagnifier((prev) => ({ ...prev, visible: false }));
+  };
+  const prevImage = () => {
+    setActiveImage((prev) => (prev - 1 + images.length) % images.length);
+    setMagnifier((prev) => ({ ...prev, visible: false }));
+  };
+  const openLightbox = (index = activeImage) => {
+    setActiveImage(index);
+    setMagnifier((prev) => ({ ...prev, visible: false }));
+    setIsLightboxOpen(true);
+  };
+  const handleMagnifierMove = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const sourceX = Math.max(0, Math.min(event.clientX - rect.left, rect.width));
+    const sourceY = Math.max(0, Math.min(event.clientY - rect.top, rect.height));
+    const lensRadius = 80;
+    setMagnifier({
+      visible: true,
+      x: Math.max(lensRadius, Math.min(sourceX, rect.width - lensRadius)),
+      y: Math.max(lensRadius, Math.min(sourceY, rect.height - lensRadius)),
+      sourceX,
+      sourceY,
+      width: rect.width,
+      height: rect.height,
+    });
+  };
+
+  const selectThumbnail = (index) => {
+    setActiveImage(index);
+    setMagnifier((prev) => ({ ...prev, visible: false }));
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/10 to-indigo-50/5 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950 py-8 px-4 transition-colors duration-300">
@@ -153,14 +184,37 @@ export default function ProductDetail() {
               role="button" tabIndex={0}
               onClick={() => openLightbox(activeImage)}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLightbox(activeImage); } }}
+              onMouseMove={handleMagnifierMove}
+              onMouseLeave={() => setMagnifier((prev) => ({ ...prev, visible: false }))}
               className="relative bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden aspect-square group w-full text-left cursor-zoom-in border border-slate-200/30 dark:border-slate-700/30"
               aria-label="Xem ảnh sản phẩm toàn màn hình"
             >
               <img
                 src={images[activeImage]}
                 alt={`${product.name} - Image ${activeImage + 1}`}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-full object-cover"
               />
+              {magnifier.visible && images[activeImage] && (
+                <div
+                  className="hidden sm:block absolute z-10 w-40 h-40 rounded-full overflow-hidden border-2 border-white/90 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl shadow-slate-950/35 pointer-events-none"
+                  style={{ left: magnifier.x - 80, top: magnifier.y - 80 }}
+                  aria-hidden="true"
+                >
+                  <img
+                    src={images[activeImage]}
+                    alt=""
+                    className="absolute max-w-none object-cover"
+                    style={{
+                      width: magnifier.width,
+                      height: magnifier.height,
+                      left: 80 - magnifier.sourceX * 2.5,
+                      top: 80 - magnifier.sourceY * 2.5,
+                      transform: "scale(2.5)",
+                      transformOrigin: "top left",
+                    }}
+                  />
+                </div>
+              )}
               {/* Zoom indicator */}
               <div className="absolute top-3 right-3 w-9 h-9 bg-black/40 backdrop-blur-sm rounded-xl flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all shadow-lg">
                 <ZoomIn className="h-4 w-4" />
@@ -195,7 +249,7 @@ export default function ProductDetail() {
             {images.length > 1 && (
               <div className="flex gap-2.5 overflow-x-auto px-1 py-1">
                 {images.map((img, i) => (
-                  <button key={i} onClick={() => openLightbox(i)}
+                  <button key={i} onClick={() => selectThumbnail(i)}
                     className={`group/thumb flex-shrink-0 w-18 h-18 rounded-xl border-2 p-1 transition-all duration-200 cursor-pointer ${
                       activeImage === i
                         ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 shadow-md shadow-blue-500/20"

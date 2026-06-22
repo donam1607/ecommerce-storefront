@@ -453,7 +453,7 @@ export default function ChatWidget() {
       console.error('Chat error:', error);
       setHistory(prev => [...prev, {
         sender: 'bot',
-        text: 'Dạ, hiện tại kết nối đến máy chủ AI của ShopTech đang bị gián đoạn. Anh/chị có thể thử lại sau giây lát hoặc nhắn trực tiếp cho hotline hỗ trợ nhé ạ! 🥺',
+        text: `Dạ, ${error.message || 'Gemini AI tạm thời không phản hồi. Anh/chị vui lòng thử lại sau.'}`,
         products: []
       }]);
     } finally {
