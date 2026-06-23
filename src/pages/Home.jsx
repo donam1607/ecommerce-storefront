@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
+import { useComparison } from "../context/ComparisonContext";
+import { GitCompare } from "lucide-react";
 import RippleButton from "../components/RippleButton";
 import ScrollReveal from "../components/ScrollReveal";
 import { 
@@ -349,6 +351,7 @@ function PaginationControls({ page, totalPages, totalItems, pageSize, onPageChan
 export default function Home() {
   const { addToCart } = useCart();
   const { showToast } = useToast();
+  const { addToComparison, isCompared } = useComparison();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scrollY, setScrollY] = useState(0);
@@ -1212,6 +1215,24 @@ export default function Home() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=100&auto=format&fit=crop" }}
                       />
+                      
+                      {/* Compare toggle button overlay */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          addToComparison(product);
+                        }}
+                        className={`compare-toggle-btn absolute bottom-3 right-3 z-30 w-8 h-8 flex items-center justify-center p-0 rounded-full backdrop-blur-md transition-all duration-300 shadow-lg border hover:scale-110 active:scale-95 cursor-pointer ${
+                          isCompared(product.id)
+                            ? 'bg-blue-600 border-blue-700 text-white shadow-blue-500/30 font-bold'
+                            : 'bg-white/70 dark:bg-slate-900/70 border-slate-200/50 dark:border-slate-800/50 text-slate-700 dark:text-slate-250 hover:bg-white dark:hover:bg-slate-800'
+                        }`}
+                        title={isCompared(product.id) ? "Xóa khỏi so sánh" : "Thêm vào so sánh"}
+                      >
+                        <GitCompare className="h-4 w-4" />
+                      </button>
                     </Link>
 
                     {/* Info */}
@@ -1733,6 +1754,24 @@ export default function Home() {
                           -{product.discount}%
                         </span>
                       )}
+                      
+                      {/* Compare toggle button overlay */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          addToComparison(product);
+                        }}
+                        className={`compare-toggle-btn absolute bottom-3 right-3 z-30 w-8 h-8 flex items-center justify-center p-0 rounded-full backdrop-blur-md transition-all duration-300 shadow-lg border hover:scale-110 active:scale-95 cursor-pointer ${
+                          isCompared(product.id)
+                            ? 'bg-blue-600 border-blue-700 text-white shadow-blue-500/30 font-bold'
+                            : 'bg-white/70 dark:bg-slate-900/70 border-slate-200/50 dark:border-slate-800/50 text-slate-700 dark:text-slate-250 hover:bg-white dark:hover:bg-slate-800'
+                        }`}
+                        title={isCompared(product.id) ? "Xóa khỏi so sánh" : "Thêm vào so sánh"}
+                      >
+                        <GitCompare className="h-4 w-4" />
+                      </button>
                     </Link>
 
                     {/* Info */}

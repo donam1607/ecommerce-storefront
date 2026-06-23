@@ -2,15 +2,19 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useToast } from "../context/ToastContext";
+import { useComparison } from "../context/ComparisonContext";
 import RippleButton from "../components/RippleButton";
 import {
   ShoppingCart, Star, ArrowLeft, Shield, Truck, RefreshCw,
-  ChevronLeft, ChevronRight, X, ZoomIn, Zap, Award
+  ChevronLeft, ChevronRight, X, ZoomIn, Zap, Award, GitCompare
 } from "lucide-react";
 import { PRODUCTS } from "../data/products";
 import { formatVND, toVndInt } from "../utils/money";
 
 const getDisplaySpecs = (specs) => {
+  if (!specs) return [];
+  
+  // 1. Structured spec mode (fields array)
   if (Array.isArray(specs?.fields)) {
     return specs.fields
       .map((field) => ({
@@ -21,11 +25,30 @@ const getDisplaySpecs = (specs) => {
       }))
       .filter((field) => String(field.value).trim());
   }
+  
+  // 2. Simple array mode
   if (Array.isArray(specs)) {
     return specs
       .map((value, index) => ({ key: `legacy-${index}`, label: `Thông số ${index + 1}`, value, unit: "", legacy: true }))
       .filter((field) => String(field.value).trim());
   }
+
+  // 3. Array-like object mode (e.g. { "0": "Intel i5", "1": "85GB" })
+  if (typeof specs === 'object') {
+    const values = [];
+    let index = 0;
+    while (specs[String(index)] !== undefined || specs[index] !== undefined) {
+      const val = specs[String(index)] !== undefined ? specs[String(index)] : specs[index];
+      values.push(val);
+      index++;
+    }
+    if (values.length > 0) {
+      return values
+        .map((value, idx) => ({ key: `legacy-${idx}`, label: `Thông số ${idx + 1}`, value, unit: "", legacy: true }))
+        .filter((field) => String(field.value).trim());
+    }
+  }
+
   return [];
 };
 
@@ -40,6 +63,7 @@ export default function ProductDetail() {
   const { id } = useParams();
   const { addToCart } = useCart();
   const { showToast } = useToast();
+  const { addToComparison, isCompared } = useComparison();
   const [added, setAdded] = useState(false);
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
@@ -376,6 +400,19 @@ export default function ProductDetail() {
                 Mua ngay
               </RippleButton>
             </div>
+
+            {/* Compare Button */}
+            <RippleButton
+              onClick={() => addToComparison(product)}
+              className={`compare-toggle-btn w-full mt-3 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer border ${
+                isCompared(product?.id)
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent shadow-lg shadow-blue-500/25 hover:scale-[1.01] active:scale-[0.98]'
+                  : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:scale-[1.01] active:scale-[0.98]'
+              }`}
+            >
+              <GitCompare className="h-4.5 w-4.5" />
+              <span>{isCompared(product?.id) ? "Đã chọn so sánh (Hủy)" : "Thêm vào danh sách so sánh"}</span>
+            </RippleButton>
 
             {/* Guarantees */}
             <div className="grid grid-cols-3 gap-3 mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
