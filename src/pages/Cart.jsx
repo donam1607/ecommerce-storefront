@@ -1,8 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Package, Tag } from "lucide-react";
+import { Trash2, ShoppingBag, ArrowRight, Package, Tag } from "lucide-react";
 import { formatVND, toVndInt } from "../utils/money";
+import QuantityControl from "../components/QuantityControl";
 
 export default function Cart() {
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
@@ -98,21 +99,11 @@ export default function Cart() {
 
                   <div className="flex items-center justify-between mt-3">
                     {/* Quantity */}
-                    <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 rounded-xl overflow-hidden border border-slate-200/50 dark:border-slate-700/50">
-                      <button
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                      >
-                        <Minus className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
-                      </button>
-                      <span className="px-3 py-1.5 font-black text-sm text-slate-800 dark:text-white min-w-[2rem] text-center">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                      >
-                        <Plus className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
-                      </button>
-                    </div>
+                    <QuantityControl
+                      itemId={item.id}
+                      quantity={item.quantity}
+                      onUpdate={updateQuantity}
+                    />
 
                     {/* Price */}
                     <span className="font-black text-slate-800 dark:text-white text-sm">

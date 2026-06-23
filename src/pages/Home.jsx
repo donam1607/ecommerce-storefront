@@ -780,7 +780,7 @@ export default function Home() {
       )}
       
       {/* 1. Hero Section */}
-      <section className="relative overflow-hidden bg-slate-950 text-white py-28 px-4 border-b border-slate-900">
+      <section data-nebula-zone="true" className="relative overflow-hidden bg-slate-950 text-white py-28 px-4 border-b border-slate-900">
 
         {/* Deep space radial background */}
         <div className="absolute inset-0 z-0" style={{
