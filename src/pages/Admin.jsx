@@ -294,38 +294,6 @@ export default function Admin() {
     return linkedProduct?.badge || "";
   };
 
-  // Mock analytics stats for offline UI presentation
-  const MOCK_ANALYTICS = {
-    today: {
-      uniqueVisitors: 142,
-      loggedIn: 38,
-      pageViews: 854
-    },
-    yesterday: {
-      uniqueVisitors: 125,
-      pageViews: 710
-    },
-    growth: {
-      visitors: "13.6",
-      pageViews: "20.3"
-    },
-    allTime: {
-      uniqueVisitors: 4520,
-      loggedInUsers: 840,
-      pageViews: 28450
-    },
-    last30Days: Array.from({ length: 30 }).map((_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (29 - i));
-      return {
-        date: d.toISOString().slice(0, 10),
-        uniqueVisitors: Math.floor(Math.random() * 50) + 80,
-        loggedIn: Math.floor(Math.random() * 15) + 20,
-        pageViews: Math.floor(Math.random() * 300) + 500
-      };
-    })
-  };
-
   const [activeTab, setActiveTab] = useState("stats");
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
@@ -342,8 +310,10 @@ export default function Admin() {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingOrders, setLoadingOrders] = useState(false);
-  const [analyticsStats, setAnalyticsStats] = useState(MOCK_ANALYTICS);
-  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+  // null = chưa tải xong, object = đã có data thật
+  const [analyticsStats, setAnalyticsStats] = useState(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+  const [analyticsError, setAnalyticsError] = useState(null);
   const [error, setError] = useState(null);
 
   // Filters for product list
@@ -654,6 +624,7 @@ export default function Admin() {
 
   const fetchAnalyticsStats = async () => {
     setLoadingAnalytics(true);
+    setAnalyticsError(null);
     try {
       const token = localStorage.getItem("token");
       const response = await fetchWithRetry(`${API_URL}/api/analytics/stats`, {
@@ -662,9 +633,13 @@ export default function Admin() {
       if (response.ok) {
         const data = await response.json();
         setAnalyticsStats(data);
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        setAnalyticsError(errData.message || `Lỗi server: ${response.status}`);
       }
     } catch (err) {
       console.error("Lỗi tải thông tin truy cập:", err);
+      setAnalyticsError("Không thể kết nối đến server để tải số liệu.");
     } finally {
       setLoadingAnalytics(false);
     }
@@ -2704,13 +2679,53 @@ export default function Admin() {
                     </button>
                   </div>
 
-                  {analyticsStats ? (
+                  {/* 3 trạng thái: đang tải, lỗi, hoặc data thật */}
+                  {loadingAnalytics ? (
+                    /* Skeleton loading - hiển thị khi đang chờ server */
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        {[1,2,3,4].map(i => (
+                          <div key={i} className="bg-slate-100 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/40 rounded-2xl p-4 animate-pulse">
+                            <div className="h-2 w-16 bg-slate-200 dark:bg-slate-700 rounded-full mb-3" />
+                            <div className="h-7 w-12 bg-slate-200 dark:bg-slate-700 rounded-lg mb-2" />
+                            <div className="h-2 w-24 bg-slate-100 dark:bg-slate-800 rounded-full" />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
+                        <div className="h-2 w-40 bg-slate-200 dark:bg-slate-700 rounded-full mb-3 animate-pulse" />
+                        <div className="h-16 rounded-2xl bg-slate-100 dark:bg-slate-800/40 animate-pulse flex items-end gap-1 p-2">
+                          {Array.from({length: 30}).map((_, i) => (
+                            <div key={i} className="flex-1 rounded-t-sm bg-slate-200 dark:bg-slate-700/60" style={{ height: `${20 + Math.random() * 60}%` }} />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : analyticsError ? (
+                    /* Trạng thái lỗi kết nối */
+                    <div className="py-8 flex flex-col items-center justify-center gap-3 text-center">
+                      <div className="h-10 w-10 rounded-2xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center">
+                        <AlertCircle className="h-5 w-5 text-rose-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Không thể tải số liệu</p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 max-w-xs">{analyticsError}</p>
+                      </div>
+                      <button
+                        onClick={fetchAnalyticsStats}
+                        className="mt-1 px-4 py-1.5 text-[10px] font-black uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors cursor-pointer"
+                      >
+                        Thử lại
+                      </button>
+                    </div>
+                  ) : analyticsStats ? (
+                    /* Data thật từ server */
                     <>
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                         <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4">
                           <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Khách hôm nay</span>
                           <div className="flex items-baseline gap-2 mt-1">
-                            <span className="text-xl font-black text-slate-900 dark:text-white">{analyticsStats?.today?.uniqueVisitors || 0}</span>
+                            <span className="text-xl font-black text-slate-900 dark:text-white">{analyticsStats?.today?.uniqueVisitors ?? 0}</span>
                             {analyticsStats?.growth?.visitors !== null && analyticsStats?.growth?.visitors !== undefined && (
                               <span className={`text-[9px] font-black ${Number(analyticsStats.growth.visitors) >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
                                 {Number(analyticsStats.growth.visitors) >= 0 ? "+" : ""}{analyticsStats.growth.visitors}%
@@ -2722,27 +2737,27 @@ export default function Admin() {
 
                         <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4">
                           <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Đã đăng nhập hôm nay</span>
-                          <p className="text-xl font-black text-slate-900 dark:text-white mt-1">{analyticsStats?.today?.loggedIn || 0}</p>
+                          <p className="text-xl font-black text-slate-900 dark:text-white mt-1">{analyticsStats?.today?.loggedIn ?? 0}</p>
                           <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">Tài khoản đăng nhập hệ thống</p>
                         </div>
 
                         <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4">
                           <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Lượt xem hôm nay</span>
                           <div className="flex items-baseline gap-2 mt-1">
-                            <span className="text-xl font-black text-slate-900 dark:text-white">{analyticsStats?.today?.pageViews || 0}</span>
+                            <span className="text-xl font-black text-slate-900 dark:text-white">{analyticsStats?.today?.pageViews ?? 0}</span>
                             {analyticsStats?.growth?.pageViews !== null && analyticsStats?.growth?.pageViews !== undefined && (
                               <span className={`text-[9px] font-black ${Number(analyticsStats.growth.pageViews) >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
                                 {Number(analyticsStats.growth.pageViews) >= 0 ? "+" : ""}{analyticsStats.growth.pageViews}%
                               </span>
                             )}
                           </div>
-                          <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">Tổng lượt xem trang trong ngày</p>
+                          <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">So với hôm qua ({analyticsStats?.yesterday?.pageViews ?? 0} lượt)</p>
                         </div>
 
                         <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4">
                           <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Tổng lượt xem (All-Time)</span>
-                          <p className="text-xl font-black text-slate-900 dark:text-white mt-1">{analyticsStats?.allTime?.pageViews || 0}</p>
-                          <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">Lượt tải trang tích lũy</p>
+                          <p className="text-xl font-black text-slate-900 dark:text-white mt-1">{(analyticsStats?.allTime?.pageViews ?? 0).toLocaleString('vi-VN')}</p>
+                          <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">{(analyticsStats?.allTime?.uniqueVisitors ?? 0).toLocaleString()} thiết bị tích lũy</p>
                         </div>
                       </div>
 
@@ -2750,36 +2765,44 @@ export default function Admin() {
                       <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Biểu đồ xu hướng 30 ngày qua (Unique Visitors)</span>
-                          <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold">Khách nhiều nhất: {Math.max(...(analyticsStats?.last30Days || []).map(d => d.uniqueVisitors || 0), 0)}</span>
+                          <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold">
+                            Cao nhất: {Math.max(...(analyticsStats?.last30Days || []).map(d => d.uniqueVisitors || 0), 0)} khách
+                          </span>
                         </div>
-                        <div className="h-16 flex items-end gap-1 w-full bg-slate-50/50 dark:bg-slate-950/20 rounded-2xl p-2 border border-slate-100/50 dark:border-slate-800/30">
-                          {(analyticsStats?.last30Days || []).map((day, idx) => {
+                        <div className="h-16 flex items-end gap-0.5 w-full bg-slate-50/50 dark:bg-slate-950/20 rounded-2xl p-2 border border-slate-100/50 dark:border-slate-800/30">
+                          {(analyticsStats?.last30Days || []).map((day) => {
                             const maxVal = Math.max(...(analyticsStats?.last30Days || []).map(d => d.uniqueVisitors || 0), 1);
                             const heightPct = ((day.uniqueVisitors || 0) / maxVal) * 100;
+                            const isToday = day.date === new Date().toISOString().slice(0, 10);
                             return (
-                              <div 
-                                key={day.date} 
+                              <div
+                                key={day.date}
                                 className="flex-1 group relative h-full flex items-end"
                               >
-                                <div 
-                                  className="w-full bg-gradient-to-t from-blue-500 to-indigo-500 dark:from-blue-600 dark:to-indigo-650 rounded-t-sm group-hover:from-blue-400 group-hover:to-indigo-400 transition-all cursor-pointer"
-                                  style={{ height: `${Math.max(heightPct, 8)}%` }}
+                                <div
+                                  className={`w-full rounded-t-sm transition-all cursor-pointer ${isToday ? "bg-gradient-to-t from-emerald-500 to-emerald-400" : "bg-gradient-to-t from-blue-500 to-indigo-500 dark:from-blue-600 dark:to-indigo-600 group-hover:from-blue-400 group-hover:to-indigo-400"}`}
+                                  style={{ height: `${Math.max(heightPct, 6)}%` }}
                                 />
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[8px] font-bold py-1 px-2 rounded-lg whitespace-nowrap z-30 shadow-md">
-                                  <p>{day.date ? new Date(day.date).toLocaleDateString('vi-VN', { day: 'numeric', month: 'short' }) : '—'}</p>
-                                  <p className="mt-0.5 text-blue-500">Khách: {day.uniqueVisitors || 0}</p>
-                                  <p className="text-indigo-500">Lượt xem: {day.pageViews || 0}</p>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[8px] font-bold py-1 px-2 rounded-lg whitespace-nowrap z-30 shadow-md pointer-events-none">
+                                  <p className="font-black">{day.date ? new Date(day.date + 'T12:00:00').toLocaleDateString('vi-VN', { day: 'numeric', month: 'short' }) : '—'}{isToday ? ' (hôm nay)' : ''}</p>
+                                  <p className="mt-0.5 text-blue-400 dark:text-blue-600">Khách: {day.uniqueVisitors || 0}</p>
+                                  <p className="text-indigo-400 dark:text-indigo-600">Lượt xem: {day.pageViews || 0}</p>
                                 </div>
                               </div>
                             );
                           })}
                         </div>
+                        {(analyticsStats?.last30Days || []).every(d => (d.uniqueVisitors || 0) === 0) && (
+                          <p className="text-center text-[10px] text-slate-400 dark:text-slate-500 mt-2 font-semibold">
+                            Chưa có dữ liệu truy cập trong 30 ngày qua. Các thiết bị cần phải mở trang web để tracker ghi nhận.
+                          </p>
+                        )}
                       </div>
                     </>
                   ) : (
-                    <div className="h-28 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 gap-2">
-                      <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-                      <span className="text-[10px] font-bold">Đang tính toán số liệu truy cập...</span>
+                    /* Trường hợp rất hiếm: fetch xong nhưng data null */
+                    <div className="py-6 text-center text-[10px] text-slate-400 dark:text-slate-500 font-semibold">
+                      Không có dữ liệu. Nhấn nút làm mới để thử lại.
                     </div>
                   )}
                 </div>
