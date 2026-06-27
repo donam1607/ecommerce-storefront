@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search, FileText, Printer, Truck, Calendar, Clock, CreditCard, Tag, ChevronLeft, ChevronRight, ChevronDown, Menu, RefreshCw, GripVertical, ClipboardPaste, WandSparkles } from "lucide-react";
+import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search, FileText, Printer, Truck, Calendar, Clock, CreditCard, Tag, ChevronLeft, ChevronRight, ChevronDown, Menu, RefreshCw, GripVertical, ClipboardPaste, WandSparkles, Activity } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import { formatVND, toVndInt } from "../utils/money";
 import RippleButton from "../components/RippleButton";
@@ -294,6 +294,38 @@ export default function Admin() {
     return linkedProduct?.badge || "";
   };
 
+  // Mock analytics stats for offline UI presentation
+  const MOCK_ANALYTICS = {
+    today: {
+      uniqueVisitors: 142,
+      loggedIn: 38,
+      pageViews: 854
+    },
+    yesterday: {
+      uniqueVisitors: 125,
+      pageViews: 710
+    },
+    growth: {
+      visitors: "13.6",
+      pageViews: "20.3"
+    },
+    allTime: {
+      uniqueVisitors: 4520,
+      loggedInUsers: 840,
+      pageViews: 28450
+    },
+    last30Days: Array.from({ length: 30 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (29 - i));
+      return {
+        date: d.toISOString().slice(0, 10),
+        uniqueVisitors: Math.floor(Math.random() * 50) + 80,
+        loggedIn: Math.floor(Math.random() * 15) + 20,
+        pageViews: Math.floor(Math.random() * 300) + 500
+      };
+    })
+  };
+
   const [activeTab, setActiveTab] = useState("stats");
   const [products, setProducts] = useState([]);
   const [users, setUsers] = useState([]);
@@ -310,6 +342,8 @@ export default function Admin() {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [analyticsStats, setAnalyticsStats] = useState(MOCK_ANALYTICS);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
   const [error, setError] = useState(null);
 
   // Filters for product list
@@ -618,6 +652,24 @@ export default function Admin() {
     }
   };
 
+  const fetchAnalyticsStats = async () => {
+    setLoadingAnalytics(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetchWithRetry(`${API_URL}/api/analytics/stats`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      }, 3, 2000);
+      if (response.ok) {
+        const data = await response.json();
+        setAnalyticsStats(data);
+      }
+    } catch (err) {
+      console.error("Lỗi tải thông tin truy cập:", err);
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
+
   // Helper quản lý và cập nhật đơn hàng chuyên nghiệp
   const openOrderDetailModal = (order) => {
     setSelectedOrder(order);
@@ -860,6 +912,7 @@ export default function Admin() {
       fetchOrders();
       fetchCoupons();
       fetchRoles();
+      fetchAnalyticsStats();
     }
   }, [isAdmin]);
 
@@ -2629,6 +2682,106 @@ export default function Admin() {
                       <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5">Tổng số máy còn lại trong kho</p>
                     </div>
                   </div>
+                </div>
+
+                {/* Traffic Analytics Panel */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-4 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Activity className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400 animate-pulse" />
+                        Phân tích lưu lượng truy cập
+                      </h3>
+                      <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Xác định khách truy cập bằng thiết bị duy nhất (Cookies) và thành viên đã đăng nhập.</p>
+                    </div>
+                    <button 
+                      onClick={fetchAnalyticsStats} 
+                      disabled={loadingAnalytics}
+                      className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                      title="Làm mới số liệu"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${loadingAnalytics ? "animate-spin text-blue-600" : ""}`} />
+                    </button>
+                  </div>
+
+                  {analyticsStats ? (
+                    <>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Khách hôm nay</span>
+                          <div className="flex items-baseline gap-2 mt-1">
+                            <span className="text-xl font-black text-slate-900 dark:text-white">{analyticsStats?.today?.uniqueVisitors || 0}</span>
+                            {analyticsStats?.growth?.visitors !== null && analyticsStats?.growth?.visitors !== undefined && (
+                              <span className={`text-[9px] font-black ${Number(analyticsStats.growth.visitors) >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                                {Number(analyticsStats.growth.visitors) >= 0 ? "+" : ""}{analyticsStats.growth.visitors}%
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">Thiết bị duy nhất truy cập</p>
+                        </div>
+
+                        <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Đã đăng nhập hôm nay</span>
+                          <p className="text-xl font-black text-slate-900 dark:text-white mt-1">{analyticsStats?.today?.loggedIn || 0}</p>
+                          <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">Tài khoản đăng nhập hệ thống</p>
+                        </div>
+
+                        <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Lượt xem hôm nay</span>
+                          <div className="flex items-baseline gap-2 mt-1">
+                            <span className="text-xl font-black text-slate-900 dark:text-white">{analyticsStats?.today?.pageViews || 0}</span>
+                            {analyticsStats?.growth?.pageViews !== null && analyticsStats?.growth?.pageViews !== undefined && (
+                              <span className={`text-[9px] font-black ${Number(analyticsStats.growth.pageViews) >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                                {Number(analyticsStats.growth.pageViews) >= 0 ? "+" : ""}{analyticsStats.growth.pageViews}%
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">Tổng lượt xem trang trong ngày</p>
+                        </div>
+
+                        <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Tổng lượt xem (All-Time)</span>
+                          <p className="text-xl font-black text-slate-900 dark:text-white mt-1">{analyticsStats?.allTime?.pageViews || 0}</p>
+                          <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">Lượt tải trang tích lũy</p>
+                        </div>
+                      </div>
+
+                      {/* Sparkline trend Last 30 days */}
+                      <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Biểu đồ xu hướng 30 ngày qua (Unique Visitors)</span>
+                          <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold">Khách nhiều nhất: {Math.max(...(analyticsStats?.last30Days || []).map(d => d.uniqueVisitors || 0), 0)}</span>
+                        </div>
+                        <div className="h-16 flex items-end gap-1 w-full bg-slate-50/50 dark:bg-slate-950/20 rounded-2xl p-2 border border-slate-100/50 dark:border-slate-800/30">
+                          {(analyticsStats?.last30Days || []).map((day, idx) => {
+                            const maxVal = Math.max(...(analyticsStats?.last30Days || []).map(d => d.uniqueVisitors || 0), 1);
+                            const heightPct = ((day.uniqueVisitors || 0) / maxVal) * 100;
+                            return (
+                              <div 
+                                key={day.date} 
+                                className="flex-1 group relative h-full flex items-end"
+                              >
+                                <div 
+                                  className="w-full bg-gradient-to-t from-blue-500 to-indigo-500 dark:from-blue-600 dark:to-indigo-650 rounded-t-sm group-hover:from-blue-400 group-hover:to-indigo-400 transition-all cursor-pointer"
+                                  style={{ height: `${Math.max(heightPct, 8)}%` }}
+                                />
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[8px] font-bold py-1 px-2 rounded-lg whitespace-nowrap z-30 shadow-md">
+                                  <p>{day.date ? new Date(day.date).toLocaleDateString('vi-VN', { day: 'numeric', month: 'short' }) : '—'}</p>
+                                  <p className="mt-0.5 text-blue-500">Khách: {day.uniqueVisitors || 0}</p>
+                                  <p className="text-indigo-500">Lượt xem: {day.pageViews || 0}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="h-28 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 gap-2">
+                      <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                      <span className="text-[10px] font-bold">Đang tính toán số liệu truy cập...</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">

@@ -21,6 +21,12 @@ import CosmicBackground from './components/CosmicBackground';
 import ComparisonBar from './components/ComparisonBar';
 import ComparisonModal from './components/ComparisonModal';
 import NebulaTrail from './components/NebulaTrail';
+import { useVisitorTrack } from './hooks/useVisitorTrack';
+
+function AnalyticsTracker() {
+  useVisitorTrack();
+  return null;
+}
 
 function App() {
   const [isCompareOpen, setIsCompareOpen] = useState(false);
@@ -31,6 +37,7 @@ function App() {
         <ComparisonProvider>
           <Router>
             <ScrollToTop />
+            <AnalyticsTracker />
             {/* Global cosmic starfield — fixed behind all pages, only visible in dark mode */}
             <CosmicBackground />
             {/* Nebula particle trail follows the mouse cursor on desktop */}
