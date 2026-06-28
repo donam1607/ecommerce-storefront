@@ -6369,7 +6369,13 @@ export default function Admin() {
                                       />
                                     )}
                                     <div>
-                                      <p className="text-slate-800 dark:text-slate-200 font-bold">{dev.city || dev.region || 'Không rõ'}</p>
+                                      <p className="text-slate-800 dark:text-slate-200 font-bold">
+                                        {dev.city && dev.region 
+                                          ? `${dev.city}, ${dev.region}` 
+                                          : dev.city 
+                                          || dev.region 
+                                          || 'Không rõ'}
+                                      </p>
                                       <p className="text-[9px] text-slate-400">{dev.country}</p>
                                     </div>
                                   </div>
