@@ -844,7 +844,7 @@ export default function Home() {
               </span>
             </h1>
             <p className="max-w-xl mx-auto lg:mx-0 text-slate-300 text-sm sm:text-base font-semibold leading-relaxed">
-              Mua sắm các dòng máy Laptop Gaming, Smartphone và phụ kiện chính hãng chất lượng cao. Khám phá các ưu đãi độc quyền kèm chế độ bảo hành vàng 2 năm.
+              Mua sắm các dòng máy Laptop Gaming, Smartphone và phụ kiện chính hãng chất lượng cao. Khám phá các ưu đãi độc quyền và chế độ hậu mãi trọn đời.
             </p>
 
             {/* Premium Search Box */}
@@ -1008,7 +1008,7 @@ export default function Home() {
             </div>
             <div>
               <h4 className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">Giao hàng siêu tốc</h4>
-              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold leading-relaxed">Nhận hàng trong 2h tại nội thành HN/HCM</p>
+              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold leading-relaxed">Nhận hàng trong 2h tại nội thành HCM</p>
             </div>
           </div>
 
@@ -1027,7 +1027,7 @@ export default function Home() {
               <Award className="h-5 w-5" />
             </div>
             <div>
-              <h4 className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">30 ngày đổi trả miễn phí</h4>
+              <h4 className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">7 ngày đổi trả miễn phí</h4>
               <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold leading-relaxed">Hoàn tiền 100% nếu có lỗi từ nhà sản xuất</p>
             </div>
           </div>
@@ -1115,7 +1115,7 @@ export default function Home() {
                     </span>
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-black">Xả Kho Công Nghệ Giá Cực Sốc</h2>
-                  <p className="text-xs text-red-100 max-w-sm font-semibold">Ưu đãi giảm giá đặc biệt áp dụng cho sản phẩm cấu hình cao, bảo hành vàng. Số lượng cực kỳ giới hạn.</p>
+                  <p className="text-xs text-red-100 max-w-sm font-semibold">Ưu đãi giảm giá đặc biệt chào Hè 2026</p>
                 </div>
 
                 {/* Countdown Timer Widget */}
@@ -1263,15 +1263,15 @@ export default function Home() {
                       {/* Stock Claims Tracker */}
                       <div className="space-y-1.5">
                         <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 dark:text-slate-500">
-                          <span>Đã bán: {Math.floor((soldPercentage / 100) * 15)}/15 cái</span>
-                          <span>{soldPercentage}%</span>
+                          {/* <span>Đã bán: {Math.floor((soldPercentage / 100) * 15)}/15 cái</span> */}
+                          {/* <span>{soldPercentage}%</span> */}
                         </div>
-                        <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        {/* <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full transition-all duration-1000"
                             style={{ width: `${soldPercentage}%` }}
                           />
-                        </div>
+                        </div> */}
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 pt-1">
