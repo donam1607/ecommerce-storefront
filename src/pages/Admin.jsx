@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search, FileText, Printer, Truck, Calendar, Clock, CreditCard, Tag, ChevronLeft, ChevronRight, ChevronDown, Menu, RefreshCw, GripVertical, ClipboardPaste, WandSparkles, Activity } from "lucide-react";
+import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search, FileText, Printer, Truck, Calendar, Clock, CreditCard, Tag, ChevronLeft, ChevronRight, ChevronDown, Menu, RefreshCw, GripVertical, ClipboardPaste, WandSparkles, Activity, Globe, MapPin, Smartphone, Monitor, Tablet } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import { formatVND, toVndInt } from "../utils/money";
 import RippleButton from "../components/RippleButton";
@@ -314,6 +314,14 @@ export default function Admin() {
   const [analyticsStats, setAnalyticsStats] = useState(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   const [analyticsError, setAnalyticsError] = useState(null);
+  // Devices detail modal
+  const [showDevicesModal, setShowDevicesModal] = useState(false);
+  const [devicesList, setDevicesList] = useState([]);
+  const [devicesTotal, setDevicesTotal] = useState(0);
+  const [devicesPage, setDevicesPage] = useState(1);
+  const [devicesTotalPages, setDevicesTotalPages] = useState(1);
+  const [devicesDate, setDevicesDate] = useState(new Date().toISOString().slice(0, 10));
+  const [loadingDevices, setLoadingDevices] = useState(false);
   const [error, setError] = useState(null);
 
   // Filters for product list
@@ -643,6 +651,38 @@ export default function Admin() {
     } finally {
       setLoadingAnalytics(false);
     }
+  };
+
+  const fetchDevices = async (date = devicesDate, page = 1) => {
+    setLoadingDevices(true);
+    try {
+      const token = localStorage.getItem("token");
+      const params = new URLSearchParams({ date, page, limit: 50 });
+      const response = await fetchWithRetry(
+        `${API_URL}/api/analytics/devices?${params}`,
+        { headers: { "Authorization": `Bearer ${token}` } },
+        2, 1500
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setDevicesList(data.devices || []);
+        setDevicesTotal(data.total || 0);
+        setDevicesPage(data.page || 1);
+        setDevicesTotalPages(data.totalPages || 1);
+      }
+    } catch (err) {
+      console.error("Lỗi tải danh sách thiết bị:", err);
+    } finally {
+      setLoadingDevices(false);
+    }
+  };
+
+  const openDevicesModal = (date) => {
+    const targetDate = date || new Date().toISOString().slice(0, 10);
+    setDevicesDate(targetDate);
+    setDevicesPage(1);
+    setShowDevicesModal(true);
+    fetchDevices(targetDate, 1);
   };
 
   // Helper quản lý và cập nhật đơn hàng chuyên nghiệp
@@ -2722,8 +2762,15 @@ export default function Admin() {
                     /* Data thật từ server */
                     <>
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                        <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4">
-                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Khách hôm nay</span>
+                        <button
+                          onClick={() => openDevicesModal(new Date().toISOString().slice(0, 10))}
+                          className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4 text-left group hover:border-blue-400/60 dark:hover:border-blue-500/60 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all cursor-pointer relative"
+                          title="Xem chi tiết thiết bị"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 group-hover:text-blue-500 transition-colors">Khách hôm nay</span>
+                            <Eye className="h-3 w-3 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors" />
+                          </div>
                           <div className="flex items-baseline gap-2 mt-1">
                             <span className="text-xl font-black text-slate-900 dark:text-white">{analyticsStats?.today?.uniqueVisitors ?? 0}</span>
                             {analyticsStats?.growth?.visitors !== null && analyticsStats?.growth?.visitors !== undefined && (
@@ -2732,8 +2779,8 @@ export default function Admin() {
                               </span>
                             )}
                           </div>
-                          <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">Thiết bị duy nhất truy cập</p>
-                        </div>
+                          <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1 group-hover:text-blue-500/70 transition-colors">Bấm để xem chi tiết thiết bị →</p>
+                        </button>
 
                         <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4">
                           <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Đã đăng nhập hôm nay</span>
@@ -6132,6 +6179,217 @@ export default function Admin() {
           </div>
         );
       })()}
+
+      {/* Geolocated Devices Detail Modal */}
+      {showDevicesModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-5xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <Activity className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
+                  Chi tiết thiết bị & vị trí truy cập
+                </h3>
+                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
+                  Tra cứu địa lý IP, trình duyệt, OS và liên kết tài khoản thành viên.
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {/* Date Filter */}
+                <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-xl">
+                  <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="date"
+                    value={devicesDate}
+                    onChange={(e) => {
+                      setDevicesDate(e.target.value);
+                      setDevicesPage(1);
+                      fetchDevices(e.target.value, 1);
+                    }}
+                    className="bg-transparent border-none text-[11px] font-bold text-slate-700 dark:text-slate-200 outline-none p-0 cursor-pointer"
+                  />
+                </div>
+
+                {/* Refresh button */}
+                <button
+                  onClick={() => fetchDevices(devicesDate, devicesPage)}
+                  disabled={loadingDevices}
+                  className="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                  title="Làm mới"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${loadingDevices ? "animate-spin text-blue-600" : ""}`} />
+                </button>
+
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowDevicesModal(false)}
+                  className="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 min-h-[300px] relative">
+              {loadingDevices && (
+                <div className="absolute inset-0 bg-white/70 dark:bg-slate-900/70 z-10 flex items-center justify-center backdrop-blur-[1px]">
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                    <span className="text-[10px] font-bold text-slate-500">Đang tải danh sách thiết bị...</span>
+                  </div>
+                </div>
+              )}
+
+              {devicesList.length === 0 ? (
+                <div className="h-64 flex flex-col items-center justify-center text-center gap-2 text-slate-400 dark:text-slate-500">
+                  <Globe className="h-8 w-8 text-slate-300 dark:text-slate-700" />
+                  <p className="text-xs font-bold">Không tìm thấy thiết bị truy cập nào trong ngày này</p>
+                  <p className="text-[10px]">Người dùng cần tải trang web để hệ thống ghi lại thiết bị.</p>
+                </div>
+              ) : (
+                <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                          <th className="px-4 py-3">Thiết bị & Trình duyệt</th>
+                          <th className="px-4 py-3">Địa chỉ IP</th>
+                          <th className="px-4 py-3">Vị trí (Địa lý IP)</th>
+                          <th className="px-4 py-3">Tài khoản</th>
+                          <th className="px-4 py-3">Lượt xem</th>
+                          <th className="px-4 py-3 text-right">Lần cuối</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        {devicesList.map((dev) => {
+                          // Icon for device type
+                          let DeviceIcon = Monitor;
+                          if (dev.deviceType === 'Mobile') DeviceIcon = Smartphone;
+                          if (dev.deviceType === 'Tablet') DeviceIcon = Tablet;
+
+                          return (
+                            <tr key={dev.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 transition-colors">
+                              {/* Device & OS */}
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
+                                    <DeviceIcon className="h-4 w-4" />
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-slate-800 dark:text-white">{dev.browser}</p>
+                                    <p className="text-[9px] text-slate-400 mt-0.5">{dev.os} &bull; {dev.deviceType}</p>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* IP Address */}
+                              <td className="px-4 py-3 font-mono text-[10px] font-bold text-slate-500">
+                                {dev.ip || 'Ẩn/Không rõ'}
+                              </td>
+
+                              {/* Location */}
+                              <td className="px-4 py-3">
+                                {dev.country ? (
+                                  <div className="flex items-center gap-1.5">
+                                    {dev.countryCode && (
+                                      <img
+                                        src={`https://flagcdn.com/16x12/${dev.countryCode.toLowerCase()}.png`}
+                                        alt={dev.countryCode}
+                                        className="rounded-xs"
+                                        onError={(e) => { e.target.style.display = 'none'; }}
+                                      />
+                                    )}
+                                    <div>
+                                      <p className="text-slate-800 dark:text-slate-200 font-bold">{dev.city || dev.region || 'Không rõ'}</p>
+                                      <p className="text-[9px] text-slate-400">{dev.country}</p>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400 dark:text-slate-600 text-[10px] flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" /> Localhost / Mạng LAN
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* User account */}
+                              <td className="px-4 py-3">
+                                {dev.userId ? (
+                                  <div>
+                                    <p className="text-blue-600 dark:text-blue-400 font-black">{dev.userName || 'Thành viên'}</p>
+                                    <p className="text-[9px] text-slate-400">{dev.userEmail}</p>
+                                  </div>
+                                ) : (
+                                  <span className="text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                                    Khách (Guest)
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Page views */}
+                              <td className="px-4 py-3">
+                                <span className="font-bold text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-950 px-2.5 py-1 border border-slate-100 dark:border-slate-800/80 rounded-lg">
+                                  {dev.pageViews}
+                                </span>
+                              </td>
+
+                              {/* Last seen */}
+                              <td className="px-4 py-3 text-right">
+                                <p className="text-slate-800 dark:text-white font-bold">
+                                  {new Date(dev.lastSeen).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                </p>
+                                <p className="text-[9px] text-slate-400 mt-0.5">
+                                  Vào lúc: {new Date(dev.firstSeen).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer / Pagination */}
+            {devicesList.length > 0 && (
+              <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400">
+                <span>Tổng cộng: <strong className="text-slate-800 dark:text-white font-black">{devicesTotal}</strong> thiết bị</span>
+                
+                <div className="flex items-center gap-3">
+                  <button
+                    disabled={devicesPage <= 1 || loadingDevices}
+                    onClick={() => {
+                      const prevPage = devicesPage - 1;
+                      setDevicesPage(prevPage);
+                      fetchDevices(devicesDate, prevPage);
+                    }}
+                    className="p-1.5 border border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 disabled:opacity-40 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span className="text-[11px]">Trang {devicesPage} / {devicesTotalPages}</span>
+                  <button
+                    disabled={devicesPage >= devicesTotalPages || loadingDevices}
+                    onClick={() => {
+                      const nextPage = devicesPage + 1;
+                      setDevicesPage(nextPage);
+                      fetchDevices(devicesDate, nextPage);
+                    }}
+                    className="p-1.5 border border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 disabled:opacity-40 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

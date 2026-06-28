@@ -835,8 +835,7 @@ export default function Home() {
           >
             <span className="inline-flex items-center gap-1.5 bg-blue-500/10 border border-blue-400/30 text-blue-300 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider animate-fade-in animate-glow-pulse">
               <Sparkles className="h-3.5 w-3.5 animate-spin text-blue-400" />
-              Next-Gen Tech Shop 2026
-            </span>
+              Sinh viên IT yêu công nghệ            </span>
             <h1 className="text-4xl sm:text-6xl lg:text-6xl font-extrabold tracking-tight leading-[1.12]">
               Trải Nghiệm Công Nghệ<br />
               <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-400 bg-clip-text text-transparent drop-shadow-sm">
@@ -1049,8 +1048,8 @@ export default function Home() {
       <section id="categories-showcase" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 relative z-10">
         <ScrollReveal>
           <div className="text-center space-y-2 mb-10">
-            <span className="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest bg-blue-500/10 px-3.5 py-1.5 rounded-full border border-blue-500/10">Danh mục nổi bật</span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Khám Phá Vũ Trụ Công Nghệ</h2>
+            {/* <span className="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest bg-blue-500/10 px-3.5 py-1.5 rounded-full border border-blue-500/10">Danh mục nổi bật</span> */}
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white pt-1">Khám Phá Theo Danh Mục Sản Phẩm</h2>
             <p className="max-w-md mx-auto text-xs text-slate-600 dark:text-slate-400 font-semibold leading-relaxed">Lựa chọn các thiết bị phù hợp với nhu cầu từ hệ sinh thái công nghệ đa dạng của chúng tôi.</p>
           </div>
         </ScrollReveal>
@@ -1304,7 +1303,7 @@ export default function Home() {
         
         <ScrollReveal>
           <div className="text-center space-y-2 mb-10">
-            <span className="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest bg-blue-500/10 px-3 py-1 rounded-full">Sản phẩm của chúng tôi</span>
+            {/* <span className="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest bg-blue-500/10 px-3 py-1 rounded-full">Sản phẩm của chúng tôi</span> */}
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Hệ Thống Thiết Bị ShopTech</h2>
             <p className="max-w-md mx-auto text-xs text-slate-500 font-semibold">Sử dụng bộ lọc thông minh để tìm sản phẩm với mức giá và tình trạng ưng ý nhất.</p>
           </div>
