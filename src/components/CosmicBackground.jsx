@@ -10,6 +10,16 @@ export default function CosmicBackground() {
   const [isDark, setIsDark] = useState(
     () => document.documentElement.classList.contains("dark")
   );
+  const [isMobile, setIsMobile] = useState(true); // Default check on mount
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const touchCapable = window.matchMedia("(pointer: coarse)").matches;
+      setIsMobile(mobileUA || touchCapable);
+    };
+    checkMobile();
+  }, []);
 
   // Watch dark mode changes
   useEffect(() => {
@@ -37,11 +47,12 @@ export default function CosmicBackground() {
     window.addEventListener("resize", setSize);
 
     /* ── STARS ── */
-    const STAR_COUNT = 380;
+    /* ── STARS ── */
+    const STAR_COUNT = isMobile ? 80 : 380;
     const stars = Array.from({ length: STAR_COUNT }, () => ({
       x: Math.random(),   // normalized 0-1 so resize doesn't scatter them
       y: Math.random(),
-      r: Math.random() * 1.8 + 0.15,
+      r: Math.random() * (isMobile ? 1.2 : 1.8) + 0.15,
       baseAlpha: Math.random() * 0.7 + 0.28,
       phase: Math.random() * Math.PI * 2,
       speed: Math.random() * 0.020 + 0.005,
@@ -50,7 +61,8 @@ export default function CosmicBackground() {
     }));
 
     /* ── PLEXUS NODES ── */
-    const NODE_COUNT = 60;
+    // plexus nodes are completely disabled on mobile (0 nodes) to save nested loop distance calculations
+    const NODE_COUNT = isMobile ? 0 : 60;
     const MAX_DIST   = 150;
     const nodes = Array.from({ length: NODE_COUNT }, () => ({
       x: Math.random() * window.innerWidth,
@@ -65,19 +77,21 @@ export default function CosmicBackground() {
     /* ── SHOOTING STARS ── */
     let shooters = [];
     const spawnShooter = () => {
+      if (isMobile && Math.random() > 0.3) return; // spawn less shooting stars on mobile
       shooters.push({
         x: Math.random() * w * 0.8,
         y: Math.random() * h * 0.5,
-        len: Math.random() * 140 + 80,
+        len: Math.random() * (isMobile ? 80 : 140) + 40,
         speed: Math.random() * 13 + 8,
         alpha: 1,
-        decay: Math.random() * 0.015 + 0.009,
+        decay: Math.random() * 0.025 + 0.009,
         angle: Math.PI / 6 + (Math.random() - 0.5) * 0.55,
         bright: Math.random() * 0.3 + 0.7,
       });
     };
-    const shootTimer = setInterval(spawnShooter, 1400);
-    spawnShooter(); spawnShooter(); spawnShooter();
+    const shootTimer = setInterval(spawnShooter, isMobile ? 3000 : 1400);
+    spawnShooter(); spawnShooter();
+    if (!isMobile) spawnShooter();
 
     /* ── NEBULA ORBS ── */
     const nebulae = [
@@ -188,7 +202,7 @@ export default function CosmicBackground() {
       clearInterval(shootTimer);
       window.removeEventListener("resize", setSize);
     };
-  }, [isDark]);
+  }, [isDark, isMobile]);
 
   return (
     <canvas

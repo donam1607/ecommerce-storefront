@@ -15,6 +15,17 @@ export default function NebulaTrail() {
   const [isDark, setIsDark] = useState(
     () => document.documentElement.classList.contains("dark")
   );
+  const [isMobile, setIsMobile] = useState(true); // Default to true, check on mount
+
+  // Check device capabilities
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const touchCapable = window.matchMedia("(pointer: coarse)").matches;
+      setIsMobile(mobileUA || touchCapable);
+    };
+    checkMobile();
+  }, []);
 
   // Watch dark mode toggle
   useEffect(() => {
@@ -30,7 +41,7 @@ export default function NebulaTrail() {
 
   useEffect(() => {
     // Skip on touch-only devices
-    if (window.matchMedia("(pointer: coarse)").matches) return;
+    if (isMobile) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -152,9 +163,11 @@ export default function NebulaTrail() {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("resize", setSize);
     };
-    // Re-run effect when isDark changes so the closure captures the latest value
+    // Re-run effect when isDark or isMobile changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDark]);
+  }, [isDark, isMobile]);
+
+  if (isMobile) return null;
 
   return (
     <canvas
