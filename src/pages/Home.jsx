@@ -1179,13 +1179,12 @@ export default function Home() {
                   : hasDiscountPercent
                     ? Math.floor(product.price * (1 - discountPercent / 100))
                     : product.price;
-              const soldPercentage = 45 + (idx * 12); // Mock claims
               return (
                 <ScrollReveal
                   key={`flash-${product.id}`}
                   delay={idx * 80}
                   distance="25px"
-                  className="snap-start flex-shrink-0 w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(25%-1.125rem)] overflow-visible"
+                  className="snap-start flex-shrink-0 w-[calc(50%-0.375rem)] sm:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1.125rem)] overflow-visible"
                 >
                   <div
                     className="group bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 rounded-2xl overflow-hidden card-shadow-premium hover:border-red-500/30 flex flex-col relative h-full"
@@ -1201,12 +1200,12 @@ export default function Home() {
 
                     {/* Discount Tag */}
                     {hasDiscountPercent && (
-                      <span className="absolute top-3 right-3 z-30 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md animate-pulse">
+                      <span className="absolute top-2 right-2 z-30 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-md animate-pulse">
                         -{discountPercent}%
                       </span>
                     )}
 
-                    {/* Image */}
+                    {/* Image — full clickable */}
                     <Link to={`/product/${product.id}`} className="block relative overflow-hidden bg-slate-50 dark:bg-slate-950 aspect-[4/3]">
                       <img
                         src={product.images && product.images[0] ? product.images[0] : ""}
@@ -1214,75 +1213,40 @@ export default function Home() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=100&auto=format&fit=crop" }}
                       />
-                      
-                      {/* Compare toggle button overlay */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          addToComparison(product);
-                        }}
-                        className={`compare-toggle-btn absolute bottom-3 right-3 z-30 w-8 h-8 flex items-center justify-center p-0 rounded-full backdrop-blur-md transition-all duration-300 shadow-lg border hover:scale-110 active:scale-95 cursor-pointer ${
-                          isCompared(product.id)
-                            ? 'bg-blue-600 border-blue-700 text-white shadow-blue-500/30 font-bold'
-                            : 'bg-white/70 dark:bg-slate-900/70 border-slate-200/50 dark:border-slate-800/50 text-slate-700 dark:text-slate-250 hover:bg-white dark:hover:bg-slate-800'
-                        }`}
-                        title={isCompared(product.id) ? "Xóa khỏi so sánh" : "Thêm vào so sánh"}
-                      >
-                        <GitCompare className="h-4 w-4" />
-                      </button>
                     </Link>
 
                     {/* Info */}
-                    <div className="p-4 flex-grow flex flex-col justify-between space-y-4">
-                      <div className="space-y-1">
+                    <div className="p-2 sm:p-3 flex-grow flex flex-col justify-between gap-2">
+                      <Link to={`/product/${product.id}`} className="block space-y-1">
                         <span className="text-[9px] text-red-500 font-extrabold uppercase tracking-widest flex items-center gap-0.5 animate-pulse">
                           <Flame className="h-3 w-3 fill-red-500" /> Giá Sập Sàn
                         </span>
-                        <Link to={`/product/${product.id}`}>
-                          <h3 className="font-extrabold text-slate-900 dark:text-slate-100 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-1 text-sm">
-                            {product.name}
-                          </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 font-semibold">{product.description}</p>
-                        </Link>
-                        
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="font-black text-red-600 dark:text-red-400 text-base">
+                        <h3 className="font-extrabold text-slate-900 dark:text-slate-100 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-2 text-[11px] sm:text-sm leading-snug">
+                          {product.name}
+                        </h3>
+                        <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-1 font-medium">{product.description}</p>
+                        <div className="flex items-center gap-1.5 pt-0.5">
+                          <span className="font-black text-red-600 dark:text-red-400 text-sm sm:text-base">
                             {formatVND(salePrice)}
                           </span>
                           {hasDiscountPercent && (
-                            <span className="text-xs text-slate-400 line-through">
+                            <span className="text-[10px] text-slate-400 line-through">
                               {formatVND(product.price)}
                             </span>
                           )}
                         </div>
-                      </div>
+                      </Link>
 
-                      {/* Stock Claims Tracker */}
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 dark:text-slate-500">
-                          {/* <span>Đã bán: {Math.floor((soldPercentage / 100) * 15)}/15 cái</span> */}
-                          {/* <span>{soldPercentage}%</span> */}
-                        </div>
-                        {/* <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full transition-all duration-1000"
-                            style={{ width: `${soldPercentage}%` }}
-                          />
-                        </div> */}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 pt-1">
+                      <div className="grid grid-cols-2 gap-1.5">
                         <RippleButton
                           onClick={() => handleAddToCart(product)}
-                          className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[10px] sm:text-[11px] py-2 rounded-xl transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1"
+                          className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[10px] py-2 rounded-xl transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1"
                         >
-                          <ShoppingCart className="h-3.5 w-3.5" /> Thêm giỏ
+                          <ShoppingCart className="h-3 w-3" /> Thêm giỏ
                         </RippleButton>
                         <RippleButton
                           onClick={() => handleBuyNow(product)}
-                          className="bg-gradient-to-r from-red-600 to-rose-600 hover:opacity-95 text-white font-bold text-[10px] sm:text-[11px] py-2 rounded-xl transition-all hover:shadow-md hover:shadow-red-600/20 active:scale-95 cursor-pointer flex items-center justify-center"
+                          className="bg-gradient-to-r from-red-600 to-rose-600 hover:opacity-95 text-white font-bold text-[10px] py-2 rounded-xl transition-all hover:shadow-md hover:shadow-red-600/20 active:scale-95 cursor-pointer flex items-center justify-center"
                         >
                           Mua ngay
                         </RippleButton>
@@ -1693,7 +1657,7 @@ export default function Home() {
 
         {/* Product Cards Listing (Scroll Reveal integration: lướt tới đâu hiện tới đó) */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
             {[...Array(8)].map((_, idx) => (
               <div key={idx} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/40 dark:border-slate-800/40 rounded-2xl p-4 space-y-4 shadow-sm">
                 <div className="animate-shimmer aspect-[4/3] rounded-xl w-full"></div>
@@ -1719,7 +1683,7 @@ export default function Home() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-2 pb-2" style={{ overflowY: 'visible' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 pt-2 pb-2" style={{ overflowY: 'visible' }}>
               {paginatedProducts.map((product, idx) => (
                 <ScrollReveal 
                   key={product.id} 
@@ -1728,118 +1692,90 @@ export default function Home() {
                   duration={600}
                   className="overflow-visible"
                 >
-                  <div className="group/card bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col relative h-full" style={{ willChange: 'transform', transform: 'translateY(0)', transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease, border-color 0.3s ease' }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(59,130,246,0.18)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}>
-                    
+                  {/* Entire card is a link — tap anywhere to view detail (Shopee/TikTok style) */}
+                  <Link
+                    to={`/product/${product.id}`}
+                    className="group/card block bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col relative h-full"
+                    style={{ willChange: 'transform', transform: 'translateY(0)', transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease, border-color 0.3s ease' }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(59,130,246,0.18)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
+                  >
                     {/* Glint/Shine hover effect overlay */}
                     <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-20">
                       <div className="absolute top-0 -left-[150%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/10 dark:via-white/5 to-transparent skew-x-[-25deg] transition-all duration-1000 ease-out group-hover/card:left-[150%]" />
                     </div>
 
                     {/* Image */}
-                    <Link to={`/product/${product.id}`} className="block relative overflow-hidden bg-slate-50 dark:bg-slate-950 aspect-[4/3]">
+                    <div className="relative overflow-hidden bg-slate-50 dark:bg-slate-950 aspect-[4/3]">
                       <img
                         src={product.images && product.images[0] ? product.images[0] : ""}
                         alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-500"
                         onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=100&auto=format&fit=crop" }}
                       />
                       {product.badge && (
-                        <span className={`absolute top-3 left-3 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md ${getBadgeClass(product.badge)}`}>
+                        <span className={`absolute top-2 left-2 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-md ${getBadgeClass(product.badge)}`}>
                           {product.badge}
                         </span>
                       )}
                       {product.discount > 0 && (
-                        <span className="absolute top-3 right-3 z-30 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md">
+                        <span className="absolute top-2 right-2 z-10 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-md">
                           -{product.discount}%
                         </span>
                       )}
-                      
-                      {/* Compare toggle button overlay */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          addToComparison(product);
-                        }}
-                        className={`compare-toggle-btn absolute bottom-3 right-3 z-30 w-8 h-8 flex items-center justify-center p-0 rounded-full backdrop-blur-md transition-all duration-300 shadow-lg border hover:scale-110 active:scale-95 cursor-pointer ${
-                          isCompared(product.id)
-                            ? 'bg-blue-600 border-blue-700 text-white shadow-blue-500/30 font-bold'
-                            : 'bg-white/70 dark:bg-slate-900/70 border-slate-200/50 dark:border-slate-800/50 text-slate-700 dark:text-slate-250 hover:bg-white dark:hover:bg-slate-800'
-                        }`}
-                        title={isCompared(product.id) ? "Xóa khỏi so sánh" : "Thêm vào so sánh"}
-                      >
-                        <GitCompare className="h-4 w-4" />
-                      </button>
-                    </Link>
+                    </div>
 
                     {/* Info */}
-                    <div className="p-4 flex-grow flex flex-col justify-between space-y-4">
-                      <div className="space-y-1">
-                        <Link to={`/product/${product.id}`}>
-                          <h3 className="font-extrabold text-slate-900 dark:text-slate-100 group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400 transition-colors line-clamp-1 text-sm">
-                            {product.name}
-                          </h3>
-                        </Link>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 line-clamp-1 font-semibold">{product.description}</p>
-
-                        <div className="flex items-center gap-1 mt-2">
-                          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 animate-pulse" />
-                          <span className="text-xs font-black text-slate-700 dark:text-slate-300">{product.rating || 0}</span>
-                          <span className="text-[10px] text-slate-500 dark:text-slate-500">({product.reviews || 0})</span>
+                    <div className="p-2 sm:p-3 flex-grow flex flex-col gap-1.5">
+                      <div className="flex-grow space-y-1">
+                        <h3 className="font-extrabold text-slate-900 dark:text-slate-100 group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400 transition-colors line-clamp-2 text-[11px] sm:text-sm leading-snug">
+                          {product.name}
+                        </h3>
+                        <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-1 font-medium">{product.description}</p>
+                        <div className="flex items-center gap-1 pt-0.5">
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                          <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">{product.rating || 0}</span>
+                          <span className="text-[9px] text-slate-400">({product.reviews || 0})</span>
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-2 pt-1">
+                      {/* Price */}
+                      <div>
                         {(product.discount > 0 || (product.discountedPrice !== null && product.discountedPrice !== undefined)) ? (
-                          <div className="flex flex-col gap-0.5">
-                            <div className="flex items-baseline gap-1.5 flex-wrap">
-                              <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-                                {formatVND(
-                                  product.discountedPrice !== null && product.discountedPrice !== undefined
-                                    ? toVndInt(product.discountedPrice)
-                                    : Math.floor(product.price * (1 - product.discount / 100))
-                                )}
-                              </span>
-                              {product.discount > 0 && (
-                                <span className="text-[10px] text-red-500 font-extrabold bg-red-50 dark:bg-red-950/30 px-1.5 py-0.2 rounded border border-red-100 dark:border-red-950/20">
-                                  -{product.discount}%
-                                </span>
+                          <div className="flex flex-wrap items-baseline gap-1">
+                            <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
+                              {formatVND(
+                                product.discountedPrice !== null && product.discountedPrice !== undefined
+                                  ? toVndInt(product.discountedPrice)
+                                  : Math.floor(product.price * (1 - product.discount / 100))
                               )}
-                            </div>
+                            </span>
                             {product.discount > 0 && (
-                              <span className="text-xs text-slate-400 line-through">
-                                {formatVND(product.price)}
-                              </span>
+                              <span className="text-[9px] text-slate-400 line-through">{formatVND(product.price)}</span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                          <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
                             {formatVND(product.price)}
                           </span>
                         )}
-                        <div className="grid grid-cols-2 gap-2">
-                          <RippleButton
-                            onClick={() => handleAddToCart(product)}
-                            className={`flex items-center justify-center gap-1 px-2 py-2 rounded-xl font-bold text-[10px] sm:text-[11px] transition-all duration-200 cursor-pointer ${
-                              addedId === product.id
-                                ? "bg-emerald-500 text-white"
-                                : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 active:scale-95"
-                            }`}
-                          >
-                            <ShoppingCart className="h-3.5 w-3.5" />
-                            {addedId === product.id ? "Đã thêm!" : "Thêm giỏ"}
-                          </RippleButton>
-                          <RippleButton
-                            onClick={() => handleBuyNow(product)}
-                            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-[10px] sm:text-[11px] py-2 rounded-xl transition-all hover:shadow-md hover:shadow-blue-500/25 active:scale-95 text-center flex items-center justify-center cursor-pointer"
-                          >
-                            Mua ngay
-                          </RippleButton>
-                        </div>
                       </div>
+
+                      {/* Compare — subtle, bottom of card, stops propagation */}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToComparison(product); }}
+                        className={`compare-toggle-btn w-full flex items-center justify-center gap-1 py-1 rounded-lg text-[9px] font-semibold transition-all border mt-0.5 ${
+                          isCompared(product.id)
+                            ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400'
+                            : 'bg-transparent border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-400'
+                        }`}
+                      >
+                        <GitCompare className="h-3 w-3" />
+                        {isCompared(product.id) ? 'Đang so sánh' : 'So sánh'}
+                      </button>
                     </div>
-                  </div>
+                  </Link>
                 </ScrollReveal>
               ))}
             </div>

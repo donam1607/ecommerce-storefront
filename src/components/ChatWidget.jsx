@@ -310,11 +310,10 @@ export default function ChatWidget() {
   const [showWelcomeBubble, setShowWelcomeBubble] = useState(false);
   const [activeActionIndex, setActiveActionIndex] = useState(0);
   const [contactHubOpen, setContactHubOpen] = useState(false);
-  
-  const chatEndRef = useRef(null);
+  const chatEndRef = useRef(null);
   const inputRef = useRef(null);
   const contactCloseTimerRef = useRef(null);
-  
+
   // Tự động hiện bong bóng chào mừng sau 3 giây
   useEffect(() => {
     const isDismissed = sessionStorage.getItem('dismiss_ai_welcome');
@@ -325,7 +324,18 @@ export default function ChatWidget() {
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
-  
+
+  // Tự động tắt bong bóng sau 8 giây nếu người dùng không tương tác (giúp mobile khỏi bị chiếm chỗ)
+  useEffect(() => {
+    if (showWelcomeBubble) {
+      const autoCloseTimer = setTimeout(() => {
+        setShowWelcomeBubble(false);
+        sessionStorage.setItem('dismiss_ai_welcome', 'true');
+      }, 8000);
+      return () => clearTimeout(autoCloseTimer);
+    }
+  }, [showWelcomeBubble]);
+
   // Cuộn xuống đáy khi có tin nhắn mới
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
