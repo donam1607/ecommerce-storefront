@@ -1168,7 +1168,7 @@ export default function Home() {
             </button>
             <div
               ref={flashTrackRef}
-              className="flex gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none pt-4 pb-4 px-2"
+              className="flex gap-3 lg:gap-6 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-none pt-4 pb-4 px-1 sm:px-0"
             >
             {flashSaleProducts.map((product, idx) => {
               const hasDiscountPercent = product.discount > 0;
@@ -1184,7 +1184,7 @@ export default function Home() {
                   key={`flash-${product.id}`}
                   delay={idx * 80}
                   distance="25px"
-                  className="snap-start flex-shrink-0 w-[calc(50%-0.375rem)] sm:w-[calc(33.333%-1rem)] lg:w-[calc(25%-1.125rem)] overflow-visible"
+                  className="snap-start flex-shrink-0 w-[calc(50%-0.375rem)] sm:w-[calc(50%-0.375rem)] lg:w-[calc(33.333%-1rem)] xl:w-[calc(25%-1.125rem)] overflow-visible"
                 >
                   <div
                     className="group bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 rounded-2xl overflow-hidden card-shadow-premium hover:border-red-500/30 flex flex-col relative h-full"
@@ -1216,37 +1216,44 @@ export default function Home() {
                     </Link>
 
                     {/* Info */}
-                    <div className="p-2 sm:p-3 flex-grow flex flex-col justify-between gap-2">
-                      <Link to={`/product/${product.id}`} className="block space-y-1">
-                        <span className="text-[9px] text-red-500 font-extrabold uppercase tracking-widest flex items-center gap-0.5 animate-pulse">
+                    <div className="p-2 sm:p-3 flex-grow flex flex-col gap-2">
+                      <Link to={`/product/${product.id}`} className="block flex-grow">
+                        <span className="text-[8px] sm:text-[9px] text-red-500 font-extrabold uppercase tracking-widest flex items-center gap-0.5 animate-pulse">
                           <Flame className="h-3 w-3 fill-red-500" /> Giá Sập Sàn
                         </span>
+                        <div className="mt-1 min-h-[48px] sm:min-h-[58px]">
                         <h3 className="font-extrabold text-slate-900 dark:text-slate-100 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-2 text-[11px] sm:text-sm leading-snug">
                           {product.name}
                         </h3>
-                        <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-1 font-medium">{product.description}</p>
-                        <div className="flex items-center gap-1.5 pt-0.5">
-                          <span className="font-black text-red-600 dark:text-red-400 text-sm sm:text-base">
+                        <p className="mt-1 text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-1 font-medium">{product.description}</p>
+                        </div>
+                        <div className="mt-1 min-h-[42px] sm:min-h-[46px] flex flex-col justify-start">
+                          <span className="font-black text-red-600 dark:text-red-400 text-sm sm:text-base leading-tight">
                             {formatVND(salePrice)}
                           </span>
                           {hasDiscountPercent && (
-                            <span className="text-[10px] text-slate-400 line-through">
+                            <span className="text-[9px] sm:text-[10px] text-slate-400 line-through leading-tight">
                               {formatVND(product.price)}
+                            </span>
+                          )}
+                          {!hasDiscountPercent && (
+                            <span className="text-[9px] sm:text-[10px] leading-tight opacity-0 select-none" aria-hidden="true">
+                              {formatVND(salePrice)}
                             </span>
                           )}
                         </div>
                       </Link>
 
-                      <div className="grid grid-cols-2 gap-1.5">
+                      <div className="grid grid-cols-2 gap-1.5 mt-auto">
                         <RippleButton
                           onClick={() => handleAddToCart(product)}
-                          className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[10px] py-2 rounded-xl transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1"
+                          className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[9px] sm:text-[10px] py-2 rounded-xl transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1"
                         >
                           <ShoppingCart className="h-3 w-3" /> Thêm giỏ
                         </RippleButton>
                         <RippleButton
                           onClick={() => handleBuyNow(product)}
-                          className="bg-gradient-to-r from-red-600 to-rose-600 hover:opacity-95 text-white font-bold text-[10px] py-2 rounded-xl transition-all hover:shadow-md hover:shadow-red-600/20 active:scale-95 cursor-pointer flex items-center justify-center"
+                          className="bg-gradient-to-r from-red-600 to-rose-600 hover:opacity-95 text-white font-bold text-[9px] sm:text-[10px] py-2 rounded-xl transition-all hover:shadow-md hover:shadow-red-600/20 active:scale-95 cursor-pointer flex items-center justify-center"
                         >
                           Mua ngay
                         </RippleButton>
