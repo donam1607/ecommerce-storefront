@@ -2727,7 +2727,7 @@ export default function Admin() {
                       <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Xác định khách truy cập bằng thiết bị duy nhất (Cookies) và thành viên đã đăng nhập.</p>
                     </div>
                     <button 
-                      onClick={fetchAnalyticsStats} 
+                      onClick={() => fetchAnalyticsStats()} 
                       disabled={loadingAnalytics}
                       className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
                       title="Làm mới số liệu"
