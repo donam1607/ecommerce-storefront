@@ -3,13 +3,10 @@ import { useLocation } from 'react-router-dom';
 
 const API_BASE = String(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').trim().replace(/\/$/, '');
 const VISITOR_ID_KEY = '_shoptech_vid';
-// Key để theo dõi userId đã gửi lần cuối — tránh gửi trùng khi không có gì thay đổi
 const LAST_SENT_USER_KEY = '_shoptech_last_uid';
 
 /**
  * Sinh visitorId ngắn (<= 36 chars) an toàn trên cả HTTP và HTTPS.
- * Ưu tiên crypto.randomUUID() nếu có (HTTPS/localhost),
- * fallback sang UUID v4 thủ công cho HTTP thường.
  */
 function generateVisitorId() {
   try {
@@ -17,7 +14,6 @@ function generateVisitorId() {
       return crypto.randomUUID();
     }
   } catch (_) { /* not secure context */ }
-  // Manual UUID v4 fallback — always 36 chars
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
@@ -26,7 +22,6 @@ function generateVisitorId() {
 
 /**
  * Lấy userId từ JWT trong localStorage.
- * Trả về null nếu chưa đăng nhập hoặc token lỗi.
  */
 function getCurrentUserId() {
   try {
@@ -39,6 +34,29 @@ function getCurrentUserId() {
   }
 }
 
+// Client properties extraction helpers
+function getScreenResolution() {
+  return typeof window !== 'undefined' ? `${window.screen.width}x${window.screen.height}` : null;
+}
+
+function getBrowserLanguage() {
+  return typeof navigator !== 'undefined' ? (navigator.language || navigator.userLanguage || 'vi-VN') : null;
+}
+
+function getEntryPage() {
+  if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') return null;
+  let entry = sessionStorage.getItem('_shoptech_entry');
+  if (!entry) {
+    entry = window.location.href;
+    sessionStorage.setItem('_shoptech_entry', entry);
+  }
+  return entry;
+}
+
+function getReferrer() {
+  return typeof document !== 'undefined' ? (document.referrer || 'Direct') : 'Direct';
+}
+
 /**
  * Gửi lượt truy cập lên server.
  */
@@ -47,7 +65,14 @@ async function recordVisit(visitorId, userId) {
     const res = await fetch(`${API_BASE}/api/analytics/visit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ visitorId, userId }),
+      body: JSON.stringify({
+        visitorId,
+        userId,
+        screenResolution: getScreenResolution(),
+        browserLanguage: getBrowserLanguage(),
+        entryPage: getEntryPage(),
+        referrer: getReferrer()
+      }),
     });
     if (!res.ok) {
       console.warn('[analytics] visit record failed:', res.status, await res.text().catch(() => ''));
@@ -58,10 +83,7 @@ async function recordVisit(visitorId, userId) {
 }
 
 /**
- * useVisitorTrack — ghi nhận lượt truy cập khi:
- * 1. Người dùng điều hướng sang trang khác (pathname thay đổi)
- * 2. Trạng thái đăng nhập thay đổi (đăng nhập / đăng xuất)
- *    → Đảm bảo "Đã đăng nhập hôm nay" được cập nhật ngay khi login
+ * useVisitorTrack — Ghi nhận lượt truy cập khi chuyển trang hoặc đổi login status
  */
 export function useVisitorTrack() {
   const location = useLocation();
@@ -77,7 +99,6 @@ export function useVisitorTrack() {
         localStorage.setItem(VISITOR_ID_KEY, visitorId);
       }
       const userId = getCurrentUserId();
-      // Cập nhật userId đã gửi gần nhất
       localStorage.setItem(LAST_SENT_USER_KEY, userId || '');
       await recordVisit(visitorId, userId);
     }, 500);
@@ -85,19 +106,14 @@ export function useVisitorTrack() {
     return () => clearTimeout(timerRef.current);
   }, [location.pathname]);
 
-  // === Trigger 2: Theo dõi sự kiện storage để bắt login/logout ===
-  // Khi token được ghi vào localStorage (đăng nhập), storage event bắn ra
-  // → gửi lại visit với userId mới để cập nhật "Đã đăng nhập hôm nay"
+  // === Trigger 2: Login/logout changes ===
   useEffect(() => {
     const handleStorageChange = async (e) => {
-      // StorageEvent (cross-tab): chỉ quan tâm khi key là 'token'
-      // Custom Event 'auth-changed' (same-tab): không có e.key, luôn xử lý
       if (e instanceof StorageEvent && e.key !== 'token') return;
 
       const userId = getCurrentUserId();
       const lastSentUid = localStorage.getItem(LAST_SENT_USER_KEY) || '';
 
-      // Tránh gửi trùng nếu userId không thay đổi
       if ((userId || '') === lastSentUid) return;
 
       const visitorId = localStorage.getItem(VISITOR_ID_KEY) || generateVisitorId();
@@ -107,8 +123,6 @@ export function useVisitorTrack() {
       await recordVisit(visitorId, userId);
     };
 
-    // storage event chỉ bắn cho các tab/window KHÁC cùng origin.
-    // Để bắt login trong cùng tab, dùng custom event 'auth-change'
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('auth-changed', handleStorageChange);
 

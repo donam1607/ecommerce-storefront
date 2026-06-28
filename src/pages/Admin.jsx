@@ -286,6 +286,19 @@ export default function Admin() {
     }
   };
 
+  const formatStatsDateLabel = (dateStr) => {
+    if (!dateStr) return "";
+    if (dateStr === new Date().toISOString().slice(0, 10)) {
+      return "hôm nay";
+    }
+    try {
+      const parts = dateStr.split('-');
+      return `ngày ${parts[2]}/${parts[1]}`;
+    } catch {
+      return dateStr;
+    }
+  };
+
   const getOrderItemBadge = (item) => {
     const directBadge = item?.badge || item?.condition || item?.status;
     if (directBadge) return directBadge;
@@ -314,6 +327,7 @@ export default function Admin() {
   const [analyticsStats, setAnalyticsStats] = useState(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   const [analyticsError, setAnalyticsError] = useState(null);
+  const [selectedStatsDate, setSelectedStatsDate] = useState(new Date().toISOString().slice(0, 10));
   // Devices detail modal
   const [showDevicesModal, setShowDevicesModal] = useState(false);
   const [devicesList, setDevicesList] = useState([]);
@@ -321,6 +335,7 @@ export default function Admin() {
   const [devicesPage, setDevicesPage] = useState(1);
   const [devicesTotalPages, setDevicesTotalPages] = useState(1);
   const [devicesDate, setDevicesDate] = useState(new Date().toISOString().slice(0, 10));
+  const [devicesLoggedInOnly, setDevicesLoggedInOnly] = useState(false);
   const [loadingDevices, setLoadingDevices] = useState(false);
   const [error, setError] = useState(null);
 
@@ -630,17 +645,18 @@ export default function Admin() {
     }
   };
 
-  const fetchAnalyticsStats = async () => {
+  const fetchAnalyticsStats = async (date = selectedStatsDate) => {
     setLoadingAnalytics(true);
     setAnalyticsError(null);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetchWithRetry(`${API_URL}/api/analytics/stats`, {
+      const response = await fetchWithRetry(`${API_URL}/api/analytics/stats?date=${date}`, {
         headers: { "Authorization": `Bearer ${token}` }
       }, 3, 2000);
       if (response.ok) {
         const data = await response.json();
         setAnalyticsStats(data);
+        setSelectedStatsDate(data.targetDate || date);
       } else {
         const errData = await response.json().catch(() => ({}));
         setAnalyticsError(errData.message || `Lỗi server: ${response.status}`);
@@ -653,11 +669,11 @@ export default function Admin() {
     }
   };
 
-  const fetchDevices = async (date = devicesDate, page = 1) => {
+  const fetchDevices = async (date = devicesDate, page = 1, loggedInOnly = devicesLoggedInOnly) => {
     setLoadingDevices(true);
     try {
       const token = localStorage.getItem("token");
-      const params = new URLSearchParams({ date, page, limit: 50 });
+      const params = new URLSearchParams({ date, page, limit: 50, loggedInOnly: String(loggedInOnly) });
       const response = await fetchWithRetry(
         `${API_URL}/api/analytics/devices?${params}`,
         { headers: { "Authorization": `Bearer ${token}` } },
@@ -677,12 +693,13 @@ export default function Admin() {
     }
   };
 
-  const openDevicesModal = (date) => {
+  const openDevicesModal = (date, loggedInOnly = false) => {
     const targetDate = date || new Date().toISOString().slice(0, 10);
     setDevicesDate(targetDate);
     setDevicesPage(1);
+    setDevicesLoggedInOnly(loggedInOnly);
     setShowDevicesModal(true);
-    fetchDevices(targetDate, 1);
+    fetchDevices(targetDate, 1, loggedInOnly);
   };
 
   // Helper quản lý và cập nhật đơn hàng chuyên nghiệp
@@ -2752,7 +2769,7 @@ export default function Admin() {
                         <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 max-w-xs">{analyticsError}</p>
                       </div>
                       <button
-                        onClick={fetchAnalyticsStats}
+                        onClick={() => fetchAnalyticsStats()}
                         className="mt-1 px-4 py-1.5 text-[10px] font-black uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors cursor-pointer"
                       >
                         Thử lại
@@ -2763,12 +2780,12 @@ export default function Admin() {
                     <>
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                         <button
-                          onClick={() => openDevicesModal(new Date().toISOString().slice(0, 10))}
+                          onClick={() => openDevicesModal(selectedStatsDate, false)}
                           className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4 text-left group hover:border-blue-400/60 dark:hover:border-blue-500/60 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all cursor-pointer relative"
                           title="Xem chi tiết thiết bị"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 group-hover:text-blue-500 transition-colors">Khách hôm nay</span>
+                            <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 group-hover:text-blue-500 transition-colors">Khách {formatStatsDateLabel(selectedStatsDate)}</span>
                             <Eye className="h-3 w-3 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors" />
                           </div>
                           <div className="flex items-baseline gap-2 mt-1">
@@ -2782,14 +2799,21 @@ export default function Admin() {
                           <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1 group-hover:text-blue-500/70 transition-colors">Bấm để xem chi tiết thiết bị →</p>
                         </button>
 
-                        <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4">
-                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Đã đăng nhập hôm nay</span>
+                        <button
+                          onClick={() => openDevicesModal(selectedStatsDate, true)}
+                          className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4 text-left group hover:border-blue-400/60 dark:hover:border-blue-500/60 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all cursor-pointer relative"
+                          title="Xem tài khoản đăng nhập"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 group-hover:text-blue-500 transition-colors">Đã đăng nhập {formatStatsDateLabel(selectedStatsDate)}</span>
+                            <Eye className="h-3 w-3 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors" />
+                          </div>
                           <p className="text-xl font-black text-slate-900 dark:text-white mt-1">{analyticsStats?.today?.loggedIn ?? 0}</p>
-                          <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">Tài khoản đăng nhập hệ thống</p>
-                        </div>
+                          <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1 group-hover:text-blue-500/70 transition-colors">Bấm để xem tài khoản →</p>
+                        </button>
 
                         <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4">
-                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Lượt xem hôm nay</span>
+                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Lượt xem {formatStatsDateLabel(selectedStatsDate)}</span>
                           <div className="flex items-baseline gap-2 mt-1">
                             <span className="text-xl font-black text-slate-900 dark:text-white">{analyticsStats?.today?.pageViews ?? 0}</span>
                             {analyticsStats?.growth?.pageViews !== null && analyticsStats?.growth?.pageViews !== undefined && (
@@ -2798,7 +2822,7 @@ export default function Admin() {
                               </span>
                             )}
                           </div>
-                          <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">So với hôm qua ({analyticsStats?.yesterday?.pageViews ?? 0} lượt)</p>
+                          <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">So với hôm trước ({analyticsStats?.yesterday?.pageViews ?? 0} lượt)</p>
                         </div>
 
                         <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl p-4">
@@ -2811,7 +2835,7 @@ export default function Admin() {
                       {/* Sparkline trend Last 30 days */}
                       <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
                         <div className="flex items-center justify-between mb-3">
-                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Biểu đồ xu hướng 30 ngày qua (Unique Visitors)</span>
+                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Biểu đồ xu hướng 30 ngày qua (Click cột để xem số liệu ngày đó)</span>
                           <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold">
                             Cao nhất: {Math.max(...(analyticsStats?.last30Days || []).map(d => d.uniqueVisitors || 0), 0)} khách
                           </span>
@@ -2821,19 +2845,22 @@ export default function Admin() {
                             const maxVal = Math.max(...(analyticsStats?.last30Days || []).map(d => d.uniqueVisitors || 0), 1);
                             const heightPct = ((day.uniqueVisitors || 0) / maxVal) * 100;
                             const isToday = day.date === new Date().toISOString().slice(0, 10);
+                            const isSelectedCol = day.date === selectedStatsDate;
                             return (
                               <div
                                 key={day.date}
+                                onClick={() => fetchAnalyticsStats(day.date)}
                                 className="flex-1 group relative h-full flex items-end"
                               >
                                 <div
-                                  className={`w-full rounded-t-sm transition-all cursor-pointer ${isToday ? "bg-gradient-to-t from-emerald-500 to-emerald-400" : "bg-gradient-to-t from-blue-500 to-indigo-500 dark:from-blue-600 dark:to-indigo-600 group-hover:from-blue-400 group-hover:to-indigo-400"}`}
+                                  className={`w-full rounded-t-sm transition-all cursor-pointer ${isSelectedCol ? "bg-gradient-to-t from-orange-500 to-amber-500 ring-1 ring-orange-400 dark:ring-orange-500 scale-x-110 shadow-md" : isToday ? "bg-gradient-to-t from-emerald-500 to-emerald-400" : "bg-gradient-to-t from-blue-500 to-indigo-500 dark:from-blue-600 dark:to-indigo-600 group-hover:from-blue-400 group-hover:to-indigo-400"}`}
                                   style={{ height: `${Math.max(heightPct, 6)}%` }}
                                 />
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[8px] font-bold py-1 px-2 rounded-lg whitespace-nowrap z-30 shadow-md pointer-events-none">
                                   <p className="font-black">{day.date ? new Date(day.date + 'T12:00:00').toLocaleDateString('vi-VN', { day: 'numeric', month: 'short' }) : '—'}{isToday ? ' (hôm nay)' : ''}</p>
                                   <p className="mt-0.5 text-blue-400 dark:text-blue-600">Khách: {day.uniqueVisitors || 0}</p>
                                   <p className="text-indigo-400 dark:text-indigo-600">Lượt xem: {day.pageViews || 0}</p>
+                                  {isSelectedCol && <p className="text-orange-500 font-extrabold">(Đang chọn)</p>}
                                 </div>
                               </div>
                             );
@@ -6183,21 +6210,38 @@ export default function Admin() {
       {/* Geolocated Devices Detail Modal */}
       {showDevicesModal && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-5xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-6xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up">
             
             {/* Modal Header */}
             <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
                   <Activity className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
-                  Chi tiết thiết bị & vị trí truy cập
+                  {devicesLoggedInOnly ? "Danh sách tài khoản hoạt động" : "Chi tiết thiết bị & vị trí truy cập"}
                 </h3>
                 <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
-                  Tra cứu địa lý IP, trình duyệt, OS và liên kết tài khoản thành viên.
+                  Tra cứu địa lý IP, trình duyệt, OS, thông số kỹ thuật, nguồn giới thiệu và tài khoản.
                 </p>
               </div>
               
               <div className="flex items-center gap-2">
+                {/* Member/All Toggle */}
+                <button
+                  onClick={() => {
+                    const nextVal = !devicesLoggedInOnly;
+                    setDevicesLoggedInOnly(nextVal);
+                    setDevicesPage(1);
+                    fetchDevices(devicesDate, 1, nextVal);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                    devicesLoggedInOnly
+                      ? "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-600 dark:text-blue-400"
+                      : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  {devicesLoggedInOnly ? "Chỉ thành viên" : "Tất cả thiết bị"}
+                </button>
+
                 {/* Date Filter */}
                 <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-xl">
                   <Calendar className="h-3.5 w-3.5 text-slate-400" />
@@ -6207,7 +6251,7 @@ export default function Admin() {
                     onChange={(e) => {
                       setDevicesDate(e.target.value);
                       setDevicesPage(1);
-                      fetchDevices(e.target.value, 1);
+                      fetchDevices(e.target.value, 1, devicesLoggedInOnly);
                     }}
                     className="bg-transparent border-none text-[11px] font-bold text-slate-700 dark:text-slate-200 outline-none p-0 cursor-pointer"
                   />
@@ -6215,7 +6259,7 @@ export default function Admin() {
 
                 {/* Refresh button */}
                 <button
-                  onClick={() => fetchDevices(devicesDate, devicesPage)}
+                  onClick={() => fetchDevices(devicesDate, devicesPage, devicesLoggedInOnly)}
                   disabled={loadingDevices}
                   className="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
                   title="Làm mới"
@@ -6239,7 +6283,7 @@ export default function Admin() {
                 <div className="absolute inset-0 bg-white/70 dark:bg-slate-900/70 z-10 flex items-center justify-center backdrop-blur-[1px]">
                   <div className="flex flex-col items-center gap-2">
                     <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-                    <span className="text-[10px] font-bold text-slate-500">Đang tải danh sách thiết bị...</span>
+                    <span className="text-[10px] font-bold text-slate-500">Đang tải danh sách...</span>
                   </div>
                 </div>
               )}
@@ -6247,33 +6291,44 @@ export default function Admin() {
               {devicesList.length === 0 ? (
                 <div className="h-64 flex flex-col items-center justify-center text-center gap-2 text-slate-400 dark:text-slate-500">
                   <Globe className="h-8 w-8 text-slate-300 dark:text-slate-700" />
-                  <p className="text-xs font-bold">Không tìm thấy thiết bị truy cập nào trong ngày này</p>
-                  <p className="text-[10px]">Người dùng cần tải trang web để hệ thống ghi lại thiết bị.</p>
+                  <p className="text-xs font-bold">Không tìm thấy bản ghi truy cập nào trong ngày này</p>
+                  <p className="text-[10px]">Người dùng cần hoạt động trên trang web để hệ thống lưu dữ liệu.</p>
                 </div>
               ) : (
                 <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse min-w-[1000px]">
                       <thead>
                         <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                          <th className="px-4 py-3">Thiết bị & Trình duyệt</th>
-                          <th className="px-4 py-3">Địa chỉ IP</th>
-                          <th className="px-4 py-3">Vị trí (Địa lý IP)</th>
+                          <th className="px-4 py-3">Thiết bị & Thông số</th>
+                          <th className="px-4 py-3">Mạng & IP</th>
+                          <th className="px-4 py-3">Vị trí địa lý</th>
                           <th className="px-4 py-3">Tài khoản</th>
+                          <th className="px-4 py-3">Nguồn / Landing Page</th>
                           <th className="px-4 py-3">Lượt xem</th>
                           <th className="px-4 py-3 text-right">Lần cuối</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                         {devicesList.map((dev) => {
-                          // Icon for device type
                           let DeviceIcon = Monitor;
                           if (dev.deviceType === 'Mobile') DeviceIcon = Smartphone;
                           if (dev.deviceType === 'Tablet') DeviceIcon = Tablet;
 
+                          // Helper clean page URLs for display
+                          const formatUrlPath = (urlStr) => {
+                            if (!urlStr || urlStr === 'Unknown') return 'Unknown';
+                            try {
+                              const url = new URL(urlStr);
+                              return url.pathname + url.search;
+                            } catch {
+                              return urlStr.length > 30 ? urlStr.substring(0, 30) + '...' : urlStr;
+                            }
+                          };
+
                           return (
                             <tr key={dev.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 transition-colors">
-                              {/* Device & OS */}
+                              {/* Device info */}
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2.5">
                                   <div className="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
@@ -6282,13 +6337,23 @@ export default function Admin() {
                                   <div>
                                     <p className="font-bold text-slate-800 dark:text-white">{dev.browser}</p>
                                     <p className="text-[9px] text-slate-400 mt-0.5">{dev.os} &bull; {dev.deviceType}</p>
+                                    <p className="text-[8px] text-slate-400/80 mt-0.5">{dev.screenResolution} &bull; {dev.browserLanguage}</p>
                                   </div>
                                 </div>
                               </td>
 
-                              {/* IP Address */}
-                              <td className="px-4 py-3 font-mono text-[10px] font-bold text-slate-500">
-                                {dev.ip || 'Ẩn/Không rõ'}
+                              {/* IP & ISP network */}
+                              <td className="px-4 py-3">
+                                <p className="font-mono text-[10px] font-bold text-slate-700 dark:text-slate-300">{dev.ip || 'Ẩn/Không rõ'}</p>
+                                <p className="text-[9px] text-slate-400 mt-0.5 truncate max-w-[150px]" title={dev.isp}>{dev.isp}</p>
+                                <div className="flex gap-1.5 mt-1">
+                                  {dev.isMobileData && (
+                                    <span className="text-[8px] font-black uppercase bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-md">Mobile Data</span>
+                                  )}
+                                  {dev.isVpn && (
+                                    <span className="text-[8px] font-black uppercase bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-md">VPN/Proxy</span>
+                                  )}
+                                </div>
                               </td>
 
                               {/* Location */}
@@ -6299,7 +6364,7 @@ export default function Admin() {
                                       <img
                                         src={`https://flagcdn.com/16x12/${dev.countryCode.toLowerCase()}.png`}
                                         alt={dev.countryCode}
-                                        className="rounded-xs"
+                                        className="rounded-xs flex-shrink-0"
                                         onError={(e) => { e.target.style.display = 'none'; }}
                                       />
                                     )}
@@ -6315,18 +6380,33 @@ export default function Admin() {
                                 )}
                               </td>
 
-                              {/* User account */}
+                              {/* Member User info */}
                               <td className="px-4 py-3">
                                 {dev.userId ? (
                                   <div>
-                                    <p className="text-blue-600 dark:text-blue-400 font-black">{dev.userName || 'Thành viên'}</p>
-                                    <p className="text-[9px] text-slate-400">{dev.userEmail}</p>
+                                    <p className="text-blue-600 dark:text-blue-400 font-black flex items-center gap-1">
+                                      <Users className="h-3 w-3" />
+                                      {dev.userName || 'Thành viên'}
+                                    </p>
+                                    <p className="text-[9px] text-slate-400 mt-0.5">{dev.userEmail}</p>
                                   </div>
                                 ) : (
                                   <span className="text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
                                     Khách (Guest)
                                   </span>
                                 )}
+                              </td>
+
+                              {/* Landing & Referrer */}
+                              <td className="px-4 py-3">
+                                <div className="max-w-[200px] overflow-hidden">
+                                  <p className="text-slate-800 dark:text-slate-200 font-bold truncate" title={dev.entryPage}>
+                                    Entry: <span className="font-normal text-slate-500 font-mono text-[10px]">{formatUrlPath(dev.entryPage)}</span>
+                                  </p>
+                                  <p className="text-[9px] text-slate-400 mt-0.5 truncate" title={dev.referrer}>
+                                    Nguồn: <span className="text-indigo-500 dark:text-indigo-400">{dev.referrer || 'Direct'}</span>
+                                  </p>
+                                </div>
                               </td>
 
                               {/* Page views */}
@@ -6358,7 +6438,7 @@ export default function Admin() {
             {/* Modal Footer / Pagination */}
             {devicesList.length > 0 && (
               <div className="px-6 py-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400">
-                <span>Tổng cộng: <strong className="text-slate-800 dark:text-white font-black">{devicesTotal}</strong> thiết bị</span>
+                <span>Tổng cộng: <strong className="text-slate-800 dark:text-white font-black">{devicesTotal}</strong> {devicesLoggedInOnly ? "tài khoản" : "thiết bị"}</span>
                 
                 <div className="flex items-center gap-3">
                   <button
@@ -6366,7 +6446,7 @@ export default function Admin() {
                     onClick={() => {
                       const prevPage = devicesPage - 1;
                       setDevicesPage(prevPage);
-                      fetchDevices(devicesDate, prevPage);
+                      fetchDevices(devicesDate, prevPage, devicesLoggedInOnly);
                     }}
                     className="p-1.5 border border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 disabled:opacity-40 rounded-lg transition-colors cursor-pointer"
                   >
@@ -6378,7 +6458,7 @@ export default function Admin() {
                     onClick={() => {
                       const nextPage = devicesPage + 1;
                       setDevicesPage(nextPage);
-                      fetchDevices(devicesDate, nextPage);
+                      fetchDevices(devicesDate, nextPage, devicesLoggedInOnly);
                     }}
                     className="p-1.5 border border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 disabled:opacity-40 rounded-lg transition-colors cursor-pointer"
                   >
