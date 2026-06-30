@@ -363,7 +363,7 @@ export default function Checkout() {
                     </div>
                     <div>
                       <label className={labelClass}>Số điện thoại</label>
-                      <input required name="phone" type="tel" value={form.phone} onChange={handleChange} placeholder="0901 234 567" className={inputClass} />
+                      <input required name="phone" type="tel" value={form.phone} onChange={handleChange} placeholder="033 331 0964" className={inputClass} />
                     </div>
                     <div className="sm:col-span-2">
                       <label className={labelClass}>Địa chỉ giao hàng</label>
@@ -408,7 +408,7 @@ export default function Checkout() {
                     <div>
                       <p className="font-bold text-sm text-slate-800 dark:text-white">Liên hệ</p>
                       <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                        Hotline: <a href="tel:+84901234567" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">0901 234 567</a>
+                        Hotline: <a href="tel:+84901234567" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">033 331 0964</a>
                       </p>
                       <p className="text-sm text-slate-600 dark:text-slate-400">
                         Email: <a href="mailto:dodinhnam160703@gmail.com" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">dodinhnam160703@gmail.com</a>
