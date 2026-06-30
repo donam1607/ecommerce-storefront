@@ -62,6 +62,96 @@ const formatSpecValue = (spec) => {
   return value.toLowerCase().includes(unit.toLowerCase()) ? value : `${value} ${unit}`;
 };
 
+const renderMarkdown = (text) => {
+  if (!text) return null;
+  
+  const lines = text.split('\n');
+  const elements = [];
+  let currentList = [];
+  
+  const pushCurrentList = (key) => {
+    if (currentList.length > 0) {
+      elements.push(
+        <ul key={`list-${key}`} className="list-disc pl-6 my-4 space-y-2 text-slate-700 dark:text-slate-350 font-medium text-sm sm:text-base">
+          {currentList.map((item, idx) => (
+            <li key={idx} className="leading-relaxed">{parseInlineMarkdown(item)}</li>
+          ))}
+        </ul>
+      );
+      currentList = [];
+    }
+  };
+
+  const parseInlineMarkdown = (inlineText) => {
+    const parts = [];
+    const regex = /\*\*(.*?)\*\*/g;
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = regex.exec(inlineText)) !== null) {
+      const before = inlineText.substring(lastIndex, match.index);
+      if (before) parts.push(before);
+      parts.push(<strong key={match.index} className="font-extrabold text-slate-900 dark:text-white">{match[1]}</strong>);
+      lastIndex = regex.lastIndex;
+    }
+    
+    const after = inlineText.substring(lastIndex);
+    if (after) parts.push(after);
+    
+    return parts.length > 0 ? parts : inlineText;
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // Check list item
+    if (line.startsWith('* ') || line.startsWith('- ')) {
+      currentList.push(line.substring(2));
+      continue;
+    }
+    
+    // If not a list item, push any existing list first
+    pushCurrentList(i);
+    
+    if (line === '') {
+      continue;
+    }
+    
+    // Check Headers
+    if (line.startsWith('# ')) {
+      elements.push(
+        <h1 key={i} className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-7 mb-4 leading-snug border-b border-slate-100 dark:border-slate-800 pb-2">
+          {parseInlineMarkdown(line.substring(2))}
+        </h1>
+      );
+    } else if (line.startsWith('## ')) {
+      elements.push(
+        <h2 key={i} className="text-lg sm:text-xl font-black text-slate-900 dark:text-white mt-6 mb-3.5 leading-snug">
+          {parseInlineMarkdown(line.substring(3))}
+        </h2>
+      );
+    } else if (line.startsWith('### ')) {
+      elements.push(
+        <h3 key={i} className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white mt-5 mb-3 leading-snug">
+          {parseInlineMarkdown(line.substring(4))}
+        </h3>
+      );
+    } else {
+      // Regular paragraph
+      elements.push(
+        <p key={i} className="text-slate-700 dark:text-slate-350 font-medium text-sm sm:text-base leading-relaxed mb-4">
+          {parseInlineMarkdown(lines[i])}
+        </p>
+      );
+    }
+  }
+  
+  // Push remaining list if any
+  pushCurrentList('end');
+  
+  return <div className="space-y-1">{elements}</div>;
+};
+
 export default function ProductDetail() {
   const { id } = useParams();
   const { addToCart } = useCart();
@@ -699,8 +789,8 @@ export default function ProductDetail() {
                         <div className="h-4 bg-slate-100 dark:bg-slate-855 rounded w-2/3 animate-shimmer" />
                       </div>
                     ) : analysis?.content ? (
-                      <div className="text-slate-700 dark:text-slate-300 font-medium whitespace-pre-line space-y-4">
-                        {analysis.content}
+                      <div className="text-slate-700 dark:text-slate-300 font-medium">
+                        {renderMarkdown(analysis.content)}
                       </div>
                     ) : (
                       <div className="text-center py-12 flex flex-col items-center">

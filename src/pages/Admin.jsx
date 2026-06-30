@@ -1425,11 +1425,15 @@ export default function Admin() {
   };
 
   const handleSaveInsightAnalysis = async () => {
-    if (!insightProduct) return;
+    const prodId = editingId || (insightProduct && insightProduct.id);
+    if (!prodId) {
+      showToast("Không tìm thấy thông tin sản phẩm để lưu!", "error");
+      return;
+    }
     setSavingInsightAnalysis(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URL}/api/products/${insightProduct.id}/analysis`, {
+      const response = await fetch(`${API_URL}/api/products/${prodId}/analysis`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -1440,7 +1444,8 @@ export default function Admin() {
       if (response.ok) {
         showToast("Đã lưu bài viết phân tích sản phẩm thành công!", "success");
       } else {
-        showToast("Lưu bài viết thất bại", "error");
+        const errData = await response.json().catch(() => ({}));
+        showToast(errData.message || "Lưu bài viết thất bại", "error");
       }
     } catch (error) {
       showToast("Lỗi kết nối lưu bài viết", "error");
@@ -1450,12 +1455,16 @@ export default function Admin() {
   };
 
   const handleDeleteInsightReview = async (reviewId) => {
-    if (!insightProduct) return;
+    const prodId = editingId || (insightProduct && insightProduct.id);
+    if (!prodId) {
+      showToast("Không tìm thấy thông tin sản phẩm để xóa đánh giá!", "error");
+      return;
+    }
     if (!window.confirm("Bạn có chắc chắn muốn xóa đánh giá này không?")) return;
     
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URL}/api/products/${insightProduct.id}/reviews/${reviewId}`, {
+      const response = await fetch(`${API_URL}/api/products/${prodId}/reviews/${reviewId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`
@@ -1463,7 +1472,7 @@ export default function Admin() {
       });
       if (response.ok) {
         showToast("Đã xóa đánh giá thành công!", "success");
-        fetchInsightReviews(insightProduct.id);
+        fetchInsightReviews(prodId);
         fetchProducts(); // Cập nhật lại rating tổng ở bảng quản lý
       } else {
         showToast("Xóa đánh giá thất bại", "error");
