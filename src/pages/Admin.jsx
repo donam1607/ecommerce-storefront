@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search, FileText, Printer, Truck, Calendar, Clock, CreditCard, Tag, ChevronLeft, ChevronRight, ChevronDown, Menu, RefreshCw, GripVertical, ClipboardPaste, WandSparkles, Activity, Globe, MapPin, Smartphone, Monitor, Tablet } from "lucide-react";
+import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search, FileText, Printer, Truck, Calendar, Clock, CreditCard, Tag, ChevronLeft, ChevronRight, ChevronDown, Menu, RefreshCw, GripVertical, ClipboardPaste, WandSparkles, Activity, Globe, MapPin, Smartphone, Monitor, Tablet, BookOpen, MessageSquare, Star } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import { formatVND, toVndInt } from "../utils/money";
 import RippleButton from "../components/RippleButton";
@@ -1515,6 +1515,17 @@ export default function Admin() {
           ? Math.round(prod.discountedPrice).toString()
           : Math.round(prod.price * (1 - discountNum / 100)).toString()
       );
+      // Auto-load insights for edit modal
+      setInsightProduct(prod);
+      setInsightAnalysisContent("");
+      setInsightReviews([]);
+      // Load analysis
+      fetch(`${API_URL}/api/products/${prod.id}/analysis`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data) setInsightAnalysisContent(data.content || ""); })
+        .catch(() => {});
+      // Load reviews
+      fetchInsightReviews(prod.id);
     } else {
       setEditingId(null);
       setFormName("");
@@ -1532,6 +1543,9 @@ export default function Admin() {
       setFormIsHot(false);
       setFormDiscount("0");
       setFormDiscountedPrice("");
+      setInsightProduct(null);
+      setInsightAnalysisContent("");
+      setInsightReviews([]);
     }
     setIsModalOpen(true);
   };
@@ -5113,7 +5127,7 @@ export default function Admin() {
         >
           <div 
             onClick={(e) => e.stopPropagation()} 
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl max-h-[92vh] overflow-y-auto overflow-x-hidden transition-all scale-100 animate-scale-in"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-3xl rounded-3xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden transition-all scale-100 animate-scale-in"
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
@@ -5128,8 +5142,38 @@ export default function Admin() {
               </button>
             </div>
 
-            {/* Modal Body Form */}
-            <form onSubmit={handleProductSubmit} className="p-4 sm:p-6 space-y-4">
+            {/* Sticky Footer (always visible) */}
+            <div className="flex items-center justify-between gap-3 px-6 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/50 flex-shrink-0">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                {modalType === "add" ? "Điền đầy đủ thông tin rồi lưu" : `ID: ${editingId || "–"}`}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-400 font-bold text-xs rounded-xl transition-all cursor-pointer"
+                >
+                  Hủy bỏ
+                </button>
+                <RippleButton
+                  type="button"
+                  onClick={handleProductSubmit}
+                  disabled={!canWriteProducts || submittingProduct}
+                  className="flex items-center gap-1.5 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-75"
+                >
+                  {submittingProduct ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Check className="h-3.5 w-3.5" />
+                  )}
+                  <span>{modalType === "add" ? "Thêm sản phẩm" : "Lưu thay đổi"}</span>
+                </RippleButton>
+              </div>
+            </div>
+
+            {/* Modal Body (scrollable) */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <form onSubmit={handleProductSubmit} id="product-edit-form" className="p-4 sm:p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4">
                 
                 {/* Product Name */}
@@ -5515,29 +5559,84 @@ export default function Admin() {
                 </div>
               </div>
 
-              {/* Modal submit buttons */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-400 font-bold text-xs rounded-xl transition-all"
-                >
-                  Hủy bỏ
-                </button>
-                <RippleButton
-                  type="submit"
-                  disabled={!canWriteProducts || submittingProduct}
-                  className="flex items-center gap-1.5 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-75 hover:-translate-y-0.5"
-                >
-                  {submittingProduct ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Check className="h-4 w-4" />
-                  )}
-                  <span>{modalType === "add" ? "Thêm sản phẩm" : "Lưu thay đổi"}</span>
-                </RippleButton>
-              </div>
             </form>
+
+            {/* Analysis & Reviews Management (edit mode only) */}
+            {modalType === "edit" && editingId && (
+              <div className="px-4 sm:px-6 pb-6 space-y-4">
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-5">
+                  <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-1.5">
+                    <BookOpen className="h-3.5 w-3.5 text-indigo-500" />
+                    Bài phân tích chuyên sâu
+                  </h4>
+                  <textarea
+                    rows={8}
+                    value={insightAnalysisContent}
+                    onChange={(e) => setInsightAnalysisContent(e.target.value)}
+                    placeholder="Nhập bài đánh giá phân tích chi tiết sản phẩm, ưu/nhược điểm thực tế..."
+                    className="w-full p-4 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white rounded-2xl focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm font-medium leading-relaxed"
+                  />
+                  <div className="flex justify-end mt-2">
+                    <RippleButton
+                      onClick={handleSaveInsightAnalysis}
+                      disabled={savingInsightAnalysis}
+                      className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
+                    >
+                      {savingInsightAnalysis ? "Đang lưu..." : "Lưu bài phân tích"}
+                    </RippleButton>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <MessageSquare className="h-3.5 w-3.5 text-indigo-500" />
+                      Đánh giá khách hàng ({insightReviews.length})
+                    </h4>
+                    <button
+                      onClick={() => fetchInsightReviews(editingId)}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-black rounded-lg transition-all cursor-pointer"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      Tải lại
+                    </button>
+                  </div>
+                  {loadingInsightReviews ? (
+                    <div className="py-8 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-blue-500" /></div>
+                  ) : insightReviews.length > 0 ? (
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                      {insightReviews.map((rev) => (
+                        <div key={rev.id} className="flex items-start justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <div className="min-w-0 space-y-0.5">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-extrabold text-xs text-slate-800 dark:text-white truncate">{rev.name}</span>
+                              <div className="flex text-amber-400">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star key={i} className={`h-2.5 w-2.5 ${i < rev.rating ? "fill-amber-400 text-amber-400" : "text-slate-200 dark:text-slate-700"}`} />
+                                ))}
+                              </div>
+                              <span className="text-[9px] text-slate-400">{new Date(rev.createdAt).toLocaleDateString("vi-VN")}</span>
+                            </div>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{rev.comment || <span className="italic text-slate-400">Không có bình luận</span>}</p>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteInsightReview(rev.id)}
+                            className="flex-shrink-0 p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-lg transition-all cursor-pointer"
+                            title="Xóa đánh giá này"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-slate-400 text-xs font-bold">Chưa có đánh giá nào.</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            </div>{/* end scrollable body */}
           </div>
         </div>
       )}

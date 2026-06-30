@@ -91,6 +91,8 @@ export default function ProductDetail() {
   const [isEditingAnalysis, setIsEditingAnalysis] = useState(false);
   const [editedAnalysisContent, setEditedAnalysisContent] = useState("");
   const [savingAnalysis, setSavingAnalysis] = useState(false);
+  const [isAnalysisOpen, setIsAnalysisOpen] = useState(true);
+  const [isReviewsOpen, setIsReviewsOpen] = useState(true);
 
   // Similar Products States
   const [similarProducts, setSimilarProducts] = useState([]);
@@ -627,93 +629,112 @@ export default function ProductDetail() {
         <div className="space-y-8 mb-12 animate-fade-in">
           
           {/* Block 1: Analysis Article */}
-          <div id="detail-analysis-section" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-200/50 dark:border-slate-800/50 p-6 sm:p-8 shadow-xl">
-            <div className="space-y-6">
-              <div className="flex justify-between items-center flex-wrap gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-4">
-                <div>
-                  <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 text-indigo-500" /> Bài phân tích chuyên sâu từ Tech Lead
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1">Đọc bài đánh giá, phân tích tính năng và lời khuyên sử dụng thực tế.</p>
-                </div>
-
-                {/* Edit button visible to admins only */}
-                {currentUser?.role === "admin" && (
-                  <button
-                    onClick={() => setIsEditingAnalysis(!isEditingAnalysis)}
-                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700"
-                  >
-                    {isEditingAnalysis ? "Hủy chỉnh sửa" : "Chỉnh sửa bài viết (Admin)"}
-                  </button>
-                )}
+          <div id="detail-analysis-section" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-200/50 dark:border-slate-800/50 shadow-xl overflow-hidden">
+            {/* Collapsible Toggle Header */}
+            <button
+              type="button"
+              onClick={() => setIsAnalysisOpen(v => !v)}
+              className="w-full flex items-center justify-between p-6 sm:p-8 text-left cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors"
+            >
+              <div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-indigo-500" /> Bài phân tích chuyên sâu từ Tech Lead
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">Đọc bài đánh giá, phân tích tính năng và lời khuyên sử dụng thực tế.</p>
               </div>
+              <ChevronRight className={`h-5 w-5 text-slate-400 flex-shrink-0 ml-4 transition-transform duration-300 ${isAnalysisOpen ? "rotate-90" : ""}`} />
+            </button>
 
-              {/* Edit Form */}
-              {isEditingAnalysis ? (
-                <div className="space-y-4 max-w-4xl">
-                  <div>
-                    <label className="block text-xs font-black uppercase text-slate-500 mb-1.5">Nội dung bài viết (Hỗ trợ xuống dòng tự động)</label>
-                    <textarea
-                      rows={14}
-                      value={editedAnalysisContent}
-                      onChange={(e) => setEditedAnalysisContent(e.target.value)}
-                      placeholder="Nhập nội dung phân tích chi tiết sản phẩm, các ưu và nhược điểm thực tế..."
-                      className="w-full p-4 border border-slate-250 dark:border-slate-750 bg-white dark:bg-slate-955 text-slate-800 dark:text-white rounded-2xl focus:outline-none focus:border-blue-500 text-sm font-medium leading-relaxed shadow-inner"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <RippleButton
-                      onClick={handleSaveAnalysis}
-                      disabled={savingAnalysis}
-                      className="bg-gradient-to-r from-blue-600 to-indigo-650 hover:from-blue-500 hover:to-indigo-600 text-white font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl cursor-pointer"
-                    >
-                      {savingAnalysis ? "Đang lưu..." : "Lưu bài viết"}
-                    </RippleButton>
+            {/* Collapsible Content */}
+            {isAnalysisOpen && (
+              <div className="border-t border-slate-100 dark:border-slate-800/80 px-6 sm:px-8 pb-8 pt-6 space-y-6">
+                {/* Edit button — admins only */}
+                {currentUser?.role === "admin" && (
+                  <div className="flex justify-end">
                     <button
-                      onClick={() => {
-                        setIsEditingAnalysis(false);
-                        setEditedAnalysisContent(analysis?.content || "");
-                      }}
-                      className="px-6 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-355 text-xs font-black uppercase tracking-wider rounded-xl hover:opacity-90"
+                      onClick={() => setIsEditingAnalysis(!isEditingAnalysis)}
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700"
                     >
-                      Hủy
+                      {isEditingAnalysis ? "Hủy chỉnh sửa" : "Chỉnh sửa bài viết (Admin)"}
                     </button>
                   </div>
-                </div>
-              ) : (
-                /* Display Content */
-                <div className="max-w-3xl leading-relaxed text-sm sm:text-base">
-                  {loadingAnalysis ? (
-                    <div className="space-y-3">
-                      <div className="h-4 bg-slate-100 dark:bg-slate-855 rounded w-full animate-shimmer" />
-                      <div className="h-4 bg-slate-100 dark:bg-slate-855 rounded w-5/6 animate-shimmer" />
-                      <div className="h-4 bg-slate-100 dark:bg-slate-855 rounded w-2/3 animate-shimmer" />
+                )}
+
+                {/* Edit Form */}
+                {isEditingAnalysis ? (
+                  <div className="space-y-4 max-w-4xl">
+                    <div>
+                      <label className="block text-xs font-black uppercase text-slate-500 mb-1.5">Nội dung bài viết (Hỗ trợ xuống dòng tự động)</label>
+                      <textarea
+                        rows={14}
+                        value={editedAnalysisContent}
+                        onChange={(e) => setEditedAnalysisContent(e.target.value)}
+                        placeholder="Nhập nội dung phân tích chi tiết sản phẩm, các ưu và nhược điểm thực tế..."
+                        className="w-full p-4 border border-slate-250 dark:border-slate-750 bg-white dark:bg-slate-955 text-slate-800 dark:text-white rounded-2xl focus:outline-none focus:border-blue-500 text-sm font-medium leading-relaxed shadow-inner"
+                      />
                     </div>
-                  ) : analysis?.content ? (
-                    <div className="text-slate-700 dark:text-slate-300 font-medium whitespace-pre-line space-y-4">
-                      {analysis.content}
+                    <div className="flex gap-2">
+                      <RippleButton
+                        onClick={handleSaveAnalysis}
+                        disabled={savingAnalysis}
+                        className="bg-gradient-to-r from-blue-600 to-indigo-650 hover:from-blue-500 hover:to-indigo-600 text-white font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl cursor-pointer"
+                      >
+                        {savingAnalysis ? "Đang lưu..." : "Lưu bài viết"}
+                      </RippleButton>
+                      <button
+                        onClick={() => { setIsEditingAnalysis(false); setEditedAnalysisContent(analysis?.content || ""); }}
+                        className="px-6 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-355 text-xs font-black uppercase tracking-wider rounded-xl hover:opacity-90"
+                      >
+                        Hủy
+                      </button>
                     </div>
-                  ) : (
-                    <div className="text-center py-12 flex flex-col items-center">
-                      <span className="text-4xl mb-3">📝</span>
-                      <h4 className="font-extrabold text-slate-700 dark:text-white text-sm mb-1">Chưa có bài phân tích chuyên sâu</h4>
-                      <p className="text-slate-400 dark:text-slate-500 text-xs max-w-xs">Đội ngũ kỹ thuật đang cập nhật bài viết chi tiết trải nghiệm thực tế cho sản phẩm này.</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                  </div>
+                ) : (
+                  /* Display Content */
+                  <div className="max-w-3xl leading-relaxed text-sm sm:text-base">
+                    {loadingAnalysis ? (
+                      <div className="space-y-3">
+                        <div className="h-4 bg-slate-100 dark:bg-slate-855 rounded w-full animate-shimmer" />
+                        <div className="h-4 bg-slate-100 dark:bg-slate-855 rounded w-5/6 animate-shimmer" />
+                        <div className="h-4 bg-slate-100 dark:bg-slate-855 rounded w-2/3 animate-shimmer" />
+                      </div>
+                    ) : analysis?.content ? (
+                      <div className="text-slate-700 dark:text-slate-300 font-medium whitespace-pre-line space-y-4">
+                        {analysis.content}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 flex flex-col items-center">
+                        <span className="text-4xl mb-3">📝</span>
+                        <h4 className="font-extrabold text-slate-700 dark:text-white text-sm mb-1">Chưa có bài phân tích chuyên sâu</h4>
+                        <p className="text-slate-400 dark:text-slate-500 text-xs max-w-xs">Đội ngũ kỹ thuật đang cập nhật bài viết chi tiết trải nghiệm thực tế cho sản phẩm này.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Block 2: Reviews */}
-          <div id="detail-reviews-section" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-200/50 dark:border-slate-800/50 p-6 sm:p-8 shadow-xl">
-            <div className="animate-fade-in space-y-8">
+          <div id="detail-reviews-section" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-200/50 dark:border-slate-800/50 shadow-xl overflow-hidden">
+            {/* Collapsible Toggle Header */}
+            <button
+              type="button"
+              onClick={() => setIsReviewsOpen(v => !v)}
+              className="w-full flex items-center justify-between p-6 sm:p-8 text-left cursor-pointer hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors"
+            >
               <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5 text-indigo-500" /> Đánh giá & Phản hồi khách hàng ({totalCount})
+                  <MessageSquare className="h-5 w-5 text-indigo-500" /> Đánh giá &amp; Phản hồi khách hàng ({totalCount})
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">Xem phản hồi thực tế từ những khách hàng đã sở hữu sản phẩm.</p>
               </div>
+              <ChevronRight className={`h-5 w-5 text-slate-400 flex-shrink-0 ml-4 transition-transform duration-300 ${isReviewsOpen ? "rotate-90" : ""}`} />
+            </button>
+
+            {/* Collapsible Content */}
+            {isReviewsOpen && (
+            <div className="border-t border-slate-100 dark:border-slate-800/80 px-6 sm:px-8 pb-8 pt-6 animate-fade-in space-y-8">
 
               {/* Top Rating Summary Banner */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 bg-slate-50/50 dark:bg-slate-950/20 rounded-2xl p-6 border border-slate-100 dark:border-slate-800/40">
@@ -889,6 +910,7 @@ export default function ProductDetail() {
                 )}
               </div>
             </div>
+            )}
           </div>
         </div>
 
@@ -904,7 +926,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scroll-smooth scrollbar-none px-1">
+            <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scroll-smooth scrollbar-none px-1">
               {similarProducts.map((simProd) => {
                 const simHasDiscount = simProd.discount > 0 || (simProd.discountedPrice !== null && simProd.discountedPrice !== undefined);
                 const simSalePrice = simHasDiscount
@@ -913,42 +935,63 @@ export default function ProductDetail() {
                       : Math.floor(simProd.price * (1 - simProd.discount / 100)))
                   : simProd.price;
                 return (
-                  <div key={simProd.id} className="snap-start flex-shrink-0 w-[200px] sm:w-[220px]">
+                  <div key={simProd.id} className="snap-start flex-shrink-0 w-[160px] sm:w-[200px]">
                     <Link
                       to={`/product/${simProd.id}`}
-                      className="group/card block bg-white/70 dark:bg-slate-900/70 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 flex flex-col relative h-full"
+                      className="group/card block bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col relative h-full"
+                      style={{ willChange: 'transform', transform: 'translateY(0)', transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease' }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.boxShadow = '0 16px 32px -8px rgba(59,130,246,0.18)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
                     >
-                      {simProd.discount > 0 && (
-                        <span className="absolute top-2 right-2 z-10 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
-                          -{simProd.discount}%
-                        </span>
-                      )}
-                      
-                      <div className="aspect-[4/3] overflow-hidden bg-slate-50 dark:bg-slate-950 relative">
+                      {/* Glint hover effect */}
+                      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-20">
+                        <div className="absolute top-0 -left-[150%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/10 dark:via-white/5 to-transparent skew-x-[-25deg] transition-all duration-1000 ease-out group-hover/card:left-[150%]" />
+                      </div>
+
+                      {/* Image */}
+                      <div className="relative overflow-hidden bg-slate-50 dark:bg-slate-950 aspect-[4/3]">
                         <img
                           src={simProd.images && simProd.images[0] ? simProd.images[0] : ""}
                           alt={simProd.name}
                           className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-500"
                           onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=100&auto=format&fit=crop" }}
                         />
+                        {simProd.badge && (
+                          <span className="absolute top-2 left-2 z-10 bg-blue-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-md">
+                            {simProd.badge}
+                          </span>
+                        )}
+                        {simProd.discount > 0 && (
+                          <span className="absolute top-2 right-2 z-10 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider shadow-md">
+                            -{simProd.discount}%
+                          </span>
+                        )}
                       </div>
 
-                      <div className="p-3 flex-grow flex flex-col justify-between gap-1">
-                        <div className="space-y-1">
-                          <h4 className="font-extrabold text-slate-900 dark:text-slate-100 group-hover/card:text-blue-500 transition-colors line-clamp-2 text-xs leading-snug">
+                      {/* Info */}
+                      <div className="p-2.5 flex-grow flex flex-col gap-1.5">
+                        <div className="flex-grow space-y-1">
+                          <h4 className="font-extrabold text-slate-900 dark:text-slate-100 group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400 transition-colors line-clamp-2 text-[11px] sm:text-xs leading-snug">
                             {simProd.name}
                           </h4>
-                          <div className="flex items-center gap-1">
-                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                            <span className="text-[10px] font-black text-slate-700 dark:text-slate-350">{simProd.rating || 0}</span>
+                          {simProd.description && (
+                            <p className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1 font-medium">{simProd.description}</p>
+                          )}
+                          <div className="flex items-center gap-1 pt-0.5">
+                            <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
+                            <span className="text-[9px] font-bold text-slate-700 dark:text-slate-300">{simProd.rating || 0}</span>
+                            <span className="text-[8px] text-slate-400">({simProd.reviews || 0})</span>
                           </div>
                         </div>
 
-                        <div className="pt-1">
+                        {/* Price */}
+                        <div>
                           {simHasDiscount ? (
-                            <div className="flex items-baseline gap-1.5 flex-wrap">
+                            <div className="flex flex-wrap items-baseline gap-1">
                               <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">{formatVND(simSalePrice)}</span>
-                              <span className="text-[9px] text-slate-400 line-through">{formatVND(simProd.price)}</span>
+                              {simProd.discount > 0 && (
+                                <span className="text-[8px] text-slate-400 line-through">{formatVND(simProd.price)}</span>
+                              )}
                             </div>
                           ) : (
                             <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">{formatVND(simProd.price)}</span>
