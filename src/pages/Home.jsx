@@ -888,7 +888,7 @@ export default function Home() {
 
           {/* Right Column: Dynamic Featured Rotating Showcase Card (scroll parallax + mouse 3D tilt) */}
           <div 
-            className="lg:col-span-5 flex justify-center lg:justify-end transition-transform duration-75 ease-out z-10"
+            className="hidden lg:flex lg:col-span-5 justify-center lg:justify-end transition-transform duration-75 ease-out z-10"
             style={{ transform: `translateY(${scrollY * -0.06}px)` }}
           >
             <div className="relative w-full max-w-[380px] group/showcase">
