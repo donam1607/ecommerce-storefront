@@ -484,6 +484,15 @@ export default function Admin() {
   const [orderDetailCancelReason, setOrderDetailCancelReason] = useState("");
   const [savingOrderDetail, setSavingOrderDetail] = useState(false);
 
+  // Product Insights Modal states
+  const [isInsightsModalOpen, setIsInsightsModalOpen] = useState(false);
+  const [insightProduct, setInsightProduct] = useState(null);
+  const [insightTab, setInsightTab] = useState("analysis"); // analysis | reviews
+  const [insightAnalysisContent, setInsightAnalysisContent] = useState("");
+  const [insightReviews, setInsightReviews] = useState([]);
+  const [loadingInsightReviews, setLoadingInsightReviews] = useState(false);
+  const [savingInsightAnalysis, setSavingInsightAnalysis] = useState(false);
+
   const navigate = useNavigate();
 
   // Check auth
@@ -1378,6 +1387,90 @@ export default function Admin() {
   const handleDiscountedPriceChange = (val) => {
     const cleanVal = val.replace(/[^0-9]/g, "");
     setFormDiscountedPrice(cleanVal);
+  };
+
+  const fetchInsightReviews = async (productId) => {
+    setLoadingInsightReviews(true);
+    try {
+      const resReviews = await fetch(`${API_URL}/api/products/${productId}/reviews?limit=100`);
+      if (resReviews.ok) {
+        const data = await resReviews.json();
+        setInsightReviews(data.reviews || []);
+      }
+    } catch (error) {
+      console.error("Lỗi lấy đánh giá:", error);
+    } finally {
+      setLoadingInsightReviews(false);
+    }
+  };
+
+  const openInsightsModal = async (product) => {
+    setInsightProduct(product);
+    setInsightTab("analysis");
+    setInsightAnalysisContent("");
+    setInsightReviews([]);
+    setIsInsightsModalOpen(true);
+    
+    try {
+      const resAnalysis = await fetch(`${API_URL}/api/products/${product.id}/analysis`);
+      if (resAnalysis.ok) {
+        const data = await resAnalysis.json();
+        setInsightAnalysisContent(data.content || "");
+      }
+    } catch (error) {
+      console.error("Lỗi lấy bài phân tích:", error);
+    }
+    
+    fetchInsightReviews(product.id);
+  };
+
+  const handleSaveInsightAnalysis = async () => {
+    if (!insightProduct) return;
+    setSavingInsightAnalysis(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_URL}/api/products/${insightProduct.id}/analysis`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ content: insightAnalysisContent })
+      });
+      if (response.ok) {
+        showToast("Đã lưu bài viết phân tích sản phẩm thành công!", "success");
+      } else {
+        showToast("Lưu bài viết thất bại", "error");
+      }
+    } catch (error) {
+      showToast("Lỗi kết nối lưu bài viết", "error");
+    } finally {
+      setSavingInsightAnalysis(false);
+    }
+  };
+
+  const handleDeleteInsightReview = async (reviewId) => {
+    if (!insightProduct) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xóa đánh giá này không?")) return;
+    
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_URL}/api/products/${insightProduct.id}/reviews/${reviewId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        showToast("Đã xóa đánh giá thành công!", "success");
+        fetchInsightReviews(insightProduct.id);
+        fetchProducts(); // Cập nhật lại rating tổng ở bảng quản lý
+      } else {
+        showToast("Xóa đánh giá thất bại", "error");
+      }
+    } catch (error) {
+      showToast("Lỗi kết nối xóa đánh giá", "error");
+    }
   };
 
   // Open Modal Product
@@ -3381,6 +3474,13 @@ export default function Admin() {
 
                               <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex justify-end gap-1.5">
+                                  <button
+                                    onClick={() => openInsightsModal(prod)}
+                                    className="p-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 text-blue-600 dark:text-blue-300 rounded-xl transition-all"
+                                    title="Quản lý Phân tích & Đánh giá"
+                                  >
+                                    <MessageSquare className="h-4 w-4" />
+                                  </button>
                                   <button
                                     disabled={!canWriteProducts}
                                     onClick={() => openModal("edit", prod)}
@@ -6206,6 +6306,148 @@ export default function Admin() {
           </div>
         );
       })()}
+
+      {/* Product Insights Modal (Analysis & Reviews Management) */}
+      {isInsightsModalOpen && insightProduct && (
+        <div
+          onClick={() => setIsInsightsModalOpen(false)}
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 animate-fade-in-overlay"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-4xl rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col transition-all animate-scale-in"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 rounded-t-3xl flex-shrink-0">
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>Quản lý Phân tích & Đánh giá</span>
+                  <span className="text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded border border-blue-500/20 font-bold uppercase tracking-wider">
+                    {insightProduct.name}
+                  </span>
+                </h3>
+                <p className="text-[10px] text-slate-405 mt-1 font-bold">Danh mục: {insightProduct.category}</p>
+              </div>
+              <button
+                onClick={() => setIsInsightsModalOpen(false)}
+                className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl text-slate-500 transition-all cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Navigation Tabs */}
+            <div className="flex border-b border-slate-100 dark:border-slate-855/60 bg-slate-50/50 dark:bg-slate-955/10 flex-shrink-0">
+              <button
+                onClick={() => setInsightTab("analysis")}
+                className={`flex items-center gap-2 px-6 py-4.5 border-b-2 font-black text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer ${
+                  insightTab === "analysis"
+                    ? "border-blue-650 text-blue-655 dark:text-blue-400 dark:border-blue-400 bg-white dark:bg-slate-900"
+                    : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+              >
+                <BookOpen className="h-4 w-4" />
+                Bài phân tích chuyên sâu
+              </button>
+              <button
+                onClick={() => setInsightTab("reviews")}
+                className={`flex items-center gap-2 px-6 py-4.5 border-b-2 font-black text-xs uppercase tracking-wider transition-all duration-150 cursor-pointer ${
+                  insightTab === "reviews"
+                    ? "border-blue-650 text-blue-655 dark:text-blue-400 dark:border-blue-400 bg-white dark:bg-slate-900"
+                    : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+              >
+                <MessageSquare className="h-4 w-4" />
+                Đánh giá khách hàng ({insightReviews.length})
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              
+              {/* Tab 1: Analysis Editor */}
+              {insightTab === "analysis" && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-black uppercase text-slate-505 tracking-wider">Nội dung bài viết phân tích</span>
+                  </div>
+                  <textarea
+                    rows={12}
+                    value={insightAnalysisContent}
+                    onChange={(e) => setInsightAnalysisContent(e.target.value)}
+                    placeholder="Nhập bài đánh giá phân tích chi tiết sản phẩm..."
+                    className="w-full p-4 border border-slate-200 dark:border-slate-750 bg-slate-50 dark:bg-slate-950 text-slate-850 dark:text-white rounded-2xl focus:outline-none focus:border-blue-500 text-sm font-medium leading-relaxed"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <RippleButton
+                      onClick={handleSaveInsightAnalysis}
+                      disabled={savingInsightAnalysis}
+                      className="px-6 py-2.5 bg-blue-650 hover:bg-blue-600 text-white font-extrabold text-xs rounded-xl shadow-md shadow-blue-500/10 transition-all cursor-pointer"
+                    >
+                      {savingInsightAnalysis ? "Đang lưu..." : "Lưu bài viết"}
+                    </RippleButton>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 2: Reviews Management */}
+              {insightTab === "reviews" && (
+                <div className="space-y-4">
+                  <span className="text-xs font-black uppercase text-slate-505 tracking-wider block">Quản lý phản hồi</span>
+                  {loadingInsightReviews ? (
+                    <div className="py-12 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-650" /></div>
+                  ) : insightReviews.length > 0 ? (
+                    <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+                      {insightReviews.map((rev) => (
+                        <div key={rev.id} className="p-4 flex items-start justify-between gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-xs text-slate-800 dark:text-white">{rev.name}</span>
+                              <div className="flex text-amber-400">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star key={i} className={`h-3 w-3 ${i < rev.rating ? "fill-amber-400 text-amber-400" : "text-slate-200 dark:text-slate-700"}`} />
+                                ))}
+                              </div>
+                              {rev.badge === "verified" && (
+                                <span className="text-[8px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-1.5 py-0.2 rounded-full font-black uppercase">
+                                  Đã mua
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-350">{rev.comment || <span className="italic text-slate-400">Không có bình luận</span>}</p>
+                            <span className="text-[9px] text-slate-400 block">{new Date(rev.createdAt).toLocaleString("vi-VN")}</span>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteInsightReview(rev.id)}
+                            className="p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-500 rounded-xl transition-all cursor-pointer"
+                            title="Xóa đánh giá này"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-slate-450 text-xs font-bold">Chưa có đánh giá nào cho sản phẩm này.</div>
+                  )}
+                </div>
+              )}
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-end gap-2 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsInsightsModalOpen(false)}
+                className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-250 font-extrabold text-xs rounded-xl transition-all cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Geolocated Devices Detail Modal */}
       {showDevicesModal && (

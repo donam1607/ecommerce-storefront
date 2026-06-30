@@ -7,7 +7,7 @@ import RippleButton from "../components/RippleButton";
 import {
   ShoppingCart, Star, ArrowLeft, Shield, Truck, RefreshCw,
   ChevronLeft, ChevronRight, X, ZoomIn, Zap, Award, GitCompare,
-  BookOpen, MessageSquare, List, UserCheck, ThumbsUp, Send, CheckCircle, Flame
+  BookOpen, MessageSquare, List, Send, CheckCircle, Flame
 } from "lucide-react";
 import { PRODUCTS } from "../data/products";
 import { formatVND, toVndInt } from "../utils/money";
@@ -76,9 +76,6 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Tab Navigation State
-  const [activeTab, setActiveTab] = useState("specs"); // specs, analysis, reviews
-
   // Reviews States
   const [reviewsData, setReviewsData] = useState({ reviews: [], pagination: {}, summary: { avgRating: 0, totalCount: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } } });
   const [reviewsPage, setReviewsPage] = useState(1);
@@ -126,7 +123,7 @@ export default function ProductDetail() {
         const normProduct = { ...data, price: toVndInt(data.price) };
         setProduct(normProduct);
         
-        // Fetch extra tabs info
+        // Fetch extra insights
         fetchReviews(id, 1);
         fetchAnalysis(id);
         fetchSimilarProducts(id, normProduct);
@@ -310,7 +307,7 @@ export default function ProductDetail() {
         <p className="text-6xl mb-4">🔍</p>
         <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Không tìm thấy sản phẩm</h2>
         <p className="text-slate-500 dark:text-slate-400 mb-6">Sản phẩm bạn tìm không tồn tại hoặc đã bị xóa.</p>
-        <Link to="/" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-2xl font-bold hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/20">
+        <Link to="/" className="bg-gradient-to-r from-blue-600 to-indigo-650 text-white px-6 py-3 rounded-2xl font-bold hover:opacity-90 transition-opacity shadow-lg shadow-blue-500/20">
           Quay lại trang chủ
         </Link>
       </div>
@@ -391,7 +388,7 @@ export default function ProductDetail() {
         </Link>
 
         {/* TOP: Images + Essential Info Panel */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-2xl shadow-slate-200/30 dark:shadow-slate-950/30 border border-white/60 dark:border-slate-800/50 transition-colors duration-300 mb-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-2xl shadow-slate-200/30 dark:shadow-slate-955/30 border border-white/60 dark:border-slate-800/50 transition-colors duration-300 mb-10">
 
           {/* Image Gallery */}
           <div className="space-y-4">
@@ -412,7 +409,7 @@ export default function ProductDetail() {
               />
               {magnifier.visible && images[activeImage] && (
                 <div
-                  className="hidden sm:block absolute z-10 w-40 h-40 rounded-full overflow-hidden border-2 border-white/90 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl shadow-slate-950/35 pointer-events-none"
+                  className="hidden sm:block absolute z-10 w-40 h-40 rounded-full overflow-hidden border-2 border-white/90 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl shadow-slate-955/35 pointer-events-none"
                   style={{ left: magnifier.x - 80, top: magnifier.y - 80 }}
                   aria-hidden="true"
                 >
@@ -446,11 +443,11 @@ export default function ProductDetail() {
                 <>
                   <button type="button" onClick={(e) => { e.stopPropagation(); prevImage(); }}
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:scale-110 cursor-pointer">
-                    <ChevronLeft className="h-5 w-5 text-slate-750 dark:text-slate-200" />
+                    <ChevronLeft className="h-5 w-5 text-slate-755 dark:text-slate-200" />
                   </button>
                   <button type="button" onClick={(e) => { e.stopPropagation(); nextImage(); }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:scale-110 cursor-pointer">
-                    <ChevronRight className="h-5 w-5 text-slate-750 dark:text-slate-200" />
+                    <ChevronRight className="h-5 w-5 text-slate-755 dark:text-slate-200" />
                   </button>
                 </>
               )}
@@ -495,15 +492,14 @@ export default function ProductDetail() {
 
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-3 leading-tight">{product.name}</h1>
 
-            {/* Rating summary clickable tab jump */}
+            {/* Rating summary clickable jump to reviews block below */}
             <button
               onClick={() => {
-                setActiveTab("reviews");
-                document.getElementById("detail-tabs-section")?.scrollIntoView({ behavior: "smooth" });
+                document.getElementById("detail-reviews-section")?.scrollIntoView({ behavior: "smooth" });
               }}
               className="flex items-center gap-2 mb-4 w-fit hover:opacity-85"
             >
-              <div className="flex text-amber-455">
+              <div className="flex text-amber-400">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className={`h-4 w-4 ${i < Math.floor(avgRating) ? "fill-amber-400 text-amber-400" : "text-slate-200 dark:text-slate-700"}`} />
                 ))}
@@ -513,6 +509,34 @@ export default function ProductDetail() {
             </button>
 
             <p className="text-slate-600 dark:text-slate-400 mb-5 text-sm leading-relaxed">{product.description}</p>
+
+            {/* Specifications - placed right below name/desc as user requested */}
+            {displaySpecs.length > 0 && (
+              <div className="mb-6 rounded-3xl border border-slate-100 dark:border-slate-700/50 bg-white/70 dark:bg-slate-900/60 overflow-hidden shadow-sm">
+                <div className="px-4 py-3 bg-slate-50/90 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-black text-slate-900 dark:text-white">Thông số kỹ thuật</h2>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-300 text-[10px] font-black">
+                    {displaySpecs.length} mục
+                  </span>
+                </div>
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {displaySpecs.map((spec) => (
+                    <div key={spec.key} className="grid grid-cols-[40%_1fr] sm:grid-cols-[32%_1fr] hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors">
+                      <div className="min-w-0 px-4 py-3 bg-slate-50/70 dark:bg-slate-800/35 border-l-2 border-blue-500">
+                        <span className="text-xs font-extrabold text-slate-600 dark:text-slate-300">
+                          {spec.legacy ? "Cấu hình" : spec.label}
+                        </span>
+                      </div>
+                      <p className="px-4 py-3 text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-relaxed">
+                        {formatSpecValue(spec)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Price section */}
             <div className="flex items-end gap-4 mb-6 p-4 bg-gradient-to-r from-slate-50 to-blue-50/30 dark:from-slate-800/40 dark:to-blue-950/20 rounded-2xl border border-slate-100 dark:border-slate-700/40">
@@ -562,7 +586,7 @@ export default function ProductDetail() {
               </RippleButton>
               <RippleButton
                 onClick={handleBuyNow}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-650 hover:from-blue-500 hover:to-indigo-600 text-white font-bold text-sm py-4 rounded-2xl transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/35 hover:scale-[1.01] active:scale-[0.98] text-center cursor-pointer flex items-center justify-center gap-2"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-650 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm py-4 rounded-2xl transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/35 hover:scale-[1.01] active:scale-[0.98] text-center cursor-pointer flex items-center justify-center gap-2"
               >
                 <Zap className="h-4.5 w-4.5" />
                 Mua ngay
@@ -591,7 +615,7 @@ export default function ProductDetail() {
               ].map(({ icon: Icon, label, sub, color }) => (
                 <div key={label} className="flex flex-col items-center text-center gap-1.5 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                   <Icon className={`h-5 w-5 ${color}`} />
-                  <span className="text-[10px] text-slate-700 dark:text-slate-300 font-bold leading-tight">{label}</span>
+                  <span className="text-[10px] text-slate-700 dark:text-slate-350 font-bold leading-tight">{label}</span>
                   <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium">{sub}</span>
                 </div>
               ))}
@@ -599,332 +623,272 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        {/* BOTTOM: Premium Tabbed Section (Specs, Analysis, Reviews) */}
-        <div id="detail-tabs-section" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-200/50 dark:border-slate-800/50 overflow-hidden shadow-xl mb-12">
-          {/* Tab Headers */}
-          <div className="flex border-b border-slate-200 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-950/20 overflow-x-auto scrollbar-none">
-            {[
-              { id: "specs", label: "Thông số kỹ thuật", icon: List },
-              { id: "analysis", label: "Bài phân tích chuyên sâu", icon: BookOpen },
-              { id: "reviews", label: `Đánh giá & Phản hồi (${totalCount})`, icon: MessageSquare }
-            ].map(tab => {
-              const IconComp = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-6 py-4.5 border-b-2 font-black text-xs uppercase tracking-wider transition-all duration-200 flex-shrink-0 cursor-pointer ${
-                    isActive 
-                      ? "border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400 bg-white dark:bg-slate-900" 
-                      : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-250"
-                  }`}
-                >
-                  <IconComp className="h-4 w-4" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Tab Contents */}
-          <div className="p-6 sm:p-8 min-h-[300px]">
-
-            {/* TAB 1: Specs */}
-            {activeTab === "specs" && (
-              <div className="animate-fade-in space-y-6">
+        {/* BOTTOM: Premium Column Sections (Analysis, then Reviews) */}
+        <div className="space-y-8 mb-12 animate-fade-in">
+          
+          {/* Block 1: Analysis Article */}
+          <div id="detail-analysis-section" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-200/50 dark:border-slate-800/50 p-6 sm:p-8 shadow-xl">
+            <div className="space-y-6">
+              <div className="flex justify-between items-center flex-wrap gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-4">
                 <div>
                   <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                    <List className="h-5 w-5 text-blue-500" /> Bảng thông số chi tiết
+                    <BookOpen className="h-5 w-5 text-indigo-500" /> Bài phân tích chuyên sâu từ Tech Lead
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1">Đầy đủ các thông tin kỹ thuật được kiểm duyệt từ hãng.</p>
+                  <p className="text-xs text-slate-500 mt-1">Đọc bài đánh giá, phân tích tính năng và lời khuyên sử dụng thực tế.</p>
                 </div>
 
-                {displaySpecs.length > 0 ? (
-                  <div className="border border-slate-250/60 dark:border-slate-800/80 rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800/80 shadow-sm max-w-3xl">
-                    {displaySpecs.map((spec, idx) => (
-                      <div key={spec.key || idx} className="grid grid-cols-[38%_1fr] sm:grid-cols-[28%_1fr]">
-                        <div className="px-4 py-3.5 bg-slate-50/80 dark:bg-slate-950/20 border-r border-slate-200 dark:border-slate-800/80 flex items-center">
-                          <span className="text-xs font-extrabold text-slate-600 dark:text-slate-350">{spec.legacy ? "Cấu hình" : spec.label}</span>
+                {/* Edit button visible to admins only */}
+                {currentUser?.role === "admin" && (
+                  <button
+                    onClick={() => setIsEditingAnalysis(!isEditingAnalysis)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700"
+                  >
+                    {isEditingAnalysis ? "Hủy chỉnh sửa" : "Chỉnh sửa bài viết (Admin)"}
+                  </button>
+                )}
+              </div>
+
+              {/* Edit Form */}
+              {isEditingAnalysis ? (
+                <div className="space-y-4 max-w-4xl">
+                  <div>
+                    <label className="block text-xs font-black uppercase text-slate-500 mb-1.5">Nội dung bài viết (Hỗ trợ xuống dòng tự động)</label>
+                    <textarea
+                      rows={14}
+                      value={editedAnalysisContent}
+                      onChange={(e) => setEditedAnalysisContent(e.target.value)}
+                      placeholder="Nhập nội dung phân tích chi tiết sản phẩm, các ưu và nhược điểm thực tế..."
+                      className="w-full p-4 border border-slate-250 dark:border-slate-750 bg-white dark:bg-slate-955 text-slate-800 dark:text-white rounded-2xl focus:outline-none focus:border-blue-500 text-sm font-medium leading-relaxed shadow-inner"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <RippleButton
+                      onClick={handleSaveAnalysis}
+                      disabled={savingAnalysis}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-650 hover:from-blue-500 hover:to-indigo-600 text-white font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl cursor-pointer"
+                    >
+                      {savingAnalysis ? "Đang lưu..." : "Lưu bài viết"}
+                    </RippleButton>
+                    <button
+                      onClick={() => {
+                        setIsEditingAnalysis(false);
+                        setEditedAnalysisContent(analysis?.content || "");
+                      }}
+                      className="px-6 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-355 text-xs font-black uppercase tracking-wider rounded-xl hover:opacity-90"
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Display Content */
+                <div className="max-w-3xl leading-relaxed text-sm sm:text-base">
+                  {loadingAnalysis ? (
+                    <div className="space-y-3">
+                      <div className="h-4 bg-slate-100 dark:bg-slate-855 rounded w-full animate-shimmer" />
+                      <div className="h-4 bg-slate-100 dark:bg-slate-855 rounded w-5/6 animate-shimmer" />
+                      <div className="h-4 bg-slate-100 dark:bg-slate-855 rounded w-2/3 animate-shimmer" />
+                    </div>
+                  ) : analysis?.content ? (
+                    <div className="text-slate-700 dark:text-slate-300 font-medium whitespace-pre-line space-y-4">
+                      {analysis.content}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 flex flex-col items-center">
+                      <span className="text-4xl mb-3">📝</span>
+                      <h4 className="font-extrabold text-slate-700 dark:text-white text-sm mb-1">Chưa có bài phân tích chuyên sâu</h4>
+                      <p className="text-slate-400 dark:text-slate-500 text-xs max-w-xs">Đội ngũ kỹ thuật đang cập nhật bài viết chi tiết trải nghiệm thực tế cho sản phẩm này.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Block 2: Reviews */}
+          <div id="detail-reviews-section" className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-200/50 dark:border-slate-800/50 p-6 sm:p-8 shadow-xl">
+            <div className="animate-fade-in space-y-8">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-indigo-500" /> Đánh giá & Phản hồi khách hàng ({totalCount})
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">Xem phản hồi thực tế từ những khách hàng đã sở hữu sản phẩm.</p>
+              </div>
+
+              {/* Top Rating Summary Banner */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 bg-slate-50/50 dark:bg-slate-950/20 rounded-2xl p-6 border border-slate-100 dark:border-slate-800/40">
+                <div className="md:col-span-4 flex flex-col items-center justify-center text-center md:border-r border-slate-200 dark:border-slate-800 pr-0 md:pr-6">
+                  <span className="text-5xl font-black text-slate-900 dark:text-white">{avgRating}</span>
+                  <span className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1.5">Điểm đánh giá chung</span>
+                  <div className="flex mt-2 text-amber-400">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`h-4.5 w-4.5 ${i < Math.round(avgRating) ? "fill-amber-400 text-amber-450" : "text-slate-250 dark:text-slate-700"}`} />
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-slate-400 mt-1">Dựa trên {totalCount} phản hồi</span>
+                </div>
+
+                <div className="md:col-span-8 space-y-2.5">
+                  <span className="text-xs font-black uppercase text-slate-400 tracking-wider">Phân tích xếp hạng</span>
+                  {[5, 4, 3, 2, 1].map((stars) => {
+                    const count = distribution[stars] || 0;
+                    const percent = totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
+                    return (
+                      <div key={stars} className="flex items-center gap-3 text-xs">
+                        <span className="w-10 font-bold text-slate-500 dark:text-slate-400 flex items-center gap-0.5 justify-end">
+                          {stars} <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                        </span>
+                        <div className="flex-1 h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-amber-450 to-orange-400 rounded-full" style={{ width: `${percent}%` }} />
                         </div>
-                        <div className="px-4 py-3.5 bg-white dark:bg-slate-900 flex items-center">
-                          <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-white leading-relaxed">{formatSpecValue(spec)}</span>
-                        </div>
+                        <span className="w-8 text-right font-extrabold text-slate-600 dark:text-slate-355">{percent}%</span>
+                        <span className="w-10 text-slate-400 text-[10px]">({count})</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Submitting form (Shopee style rating entry) */}
+              <form onSubmit={handleSubmitReview} className="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm space-y-4">
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-0.5">Viết đánh giá của bạn</h4>
+                  <p className="text-[11px] text-slate-500">Ý kiến đóng góp quý báu giúp ShopTech liên tục tối ưu hóa chất lượng phục vụ.</p>
+                </div>
+
+                {/* Rating Selector */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-xs font-extrabold text-slate-600 dark:text-slate-400">Chọn số sao:</span>
+                  <div className="flex gap-1.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setNewRating(star)}
+                        className="hover:scale-125 transition-transform duration-100 cursor-pointer"
+                      >
+                        <Star className={`h-6 w-6 ${star <= newRating ? "fill-amber-400 text-amber-400" : "text-slate-250 dark:text-slate-700"}`} />
+                      </button>
+                    ))}
+                  </div>
+                  <span className="text-xs font-black text-amber-500 uppercase tracking-widest">
+                    {newRating === 5 && "Cực kỳ hài lòng"}
+                    {newRating === 4 && "Hài lòng"}
+                    {newRating === 3 && "Bình thường"}
+                    {newRating === 2 && "Chưa hài lòng"}
+                    {newRating === 1 && "Rất không hài lòng"}
+                  </span>
+                </div>
+
+                {/* Anonymous Guest Name input (only if guest) */}
+                {!currentUser && (
+                  <div className="max-w-md">
+                    <label className="block text-xs font-black text-slate-500 uppercase mb-1">Tên của bạn (Tùy chọn)</label>
+                    <input
+                      type="text"
+                      placeholder="Nhập tên hiển thị (mặc định: Ẩn danh)"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-850 rounded-xl focus:outline-none focus:border-blue-500 text-sm font-semibold text-slate-800 dark:text-white"
+                    />
+                  </div>
+                )}
+
+                {/* Review comment */}
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase mb-1">Bình luận, trải nghiệm thực tế (Tùy chọn)</label>
+                  <textarea
+                    rows={3}
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Bàn phím gõ êm, màn hình sắc nét, máy hơi nóng khi chơi game nặng..."
+                    className="w-full p-4 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-850 rounded-xl focus:outline-none focus:border-blue-500 text-sm font-medium text-slate-800 dark:text-white"
+                  />
+                </div>
+
+                <RippleButton
+                  type="submit"
+                  disabled={submittingReview}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-650 hover:from-blue-500 hover:to-indigo-600 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-blue-500/10 active:scale-95"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  {submittingReview ? "Đang gửi..." : "Gửi đánh giá"}
+                </RippleButton>
+              </form>
+
+              {/* Reviews List */}
+              <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Tất cả đánh giá khách hàng</h4>
+
+                {loadingReviews ? (
+                  <div className="space-y-4">
+                    {[...Array(2)].map((_, i) => (
+                      <div key={i} className="animate-shimmer p-4 rounded-xl space-y-2.5">
+                        <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
+                        <div className="h-3.5 bg-slate-200 dark:bg-slate-800 rounded w-1/3" />
+                        <div className="h-3.5 bg-slate-200 dark:bg-slate-800 rounded w-5/6" />
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <p className="text-slate-400 dark:text-slate-500 font-semibold">Chưa có thông số chi tiết cho sản phẩm này.</p>
-                  </div>
-                )}
-              </div>
-            )}
+                ) : reviewsData.reviews && reviewsData.reviews.length > 0 ? (
+                  <>
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                      {reviewsData.reviews.map((rev) => (
+                        <div key={rev.id} className="py-4 first:pt-0 space-y-1.5">
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-slate-800 dark:text-white text-xs sm:text-sm">{rev.name}</span>
+                              {rev.badge === "verified" && (
+                                <span className="inline-flex items-center gap-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider">
+                                  <CheckCircle className="h-2.5 w-2.5 fill-emerald-500/10" /> Đã mua hàng
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-slate-405 font-bold">
+                              {new Date(rev.createdAt).toLocaleDateString("vi-VN")}
+                            </span>
+                          </div>
 
-            {/* TAB 2: Analysis Article */}
-            {activeTab === "analysis" && (
-              <div className="animate-fade-in space-y-6">
-                <div className="flex justify-between items-center flex-wrap gap-4 border-b border-slate-100 dark:border-slate-800/80 pb-4">
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                      <BookOpen className="h-5 w-5 text-indigo-500" /> Bài phân tích chuyên sâu từ Tech Lead
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-1">Đọc bài đánh giá, phân tích tính năng và lời khuyên sử dụng thực tế.</p>
-                  </div>
+                          <div className="flex text-amber-400">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} className={`h-3.5 w-3.5 ${i < rev.rating ? "fill-amber-400 text-amber-450" : "text-slate-250 dark:text-slate-700"}`} />
+                            ))}
+                          </div>
 
-                  {/* Edit button visible to admins only */}
-                  {currentUser?.role === "admin" && (
-                    <button
-                      onClick={() => setIsEditingAnalysis(!isEditingAnalysis)}
-                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700"
-                    >
-                      {isEditingAnalysis ? "Hủy chỉnh sửa" : "Chỉnh sửa bài viết (Admin)"}
-                    </button>
-                  )}
-                </div>
-
-                {/* Edit Form */}
-                {isEditingAnalysis ? (
-                  <div className="space-y-4 max-w-4xl">
-                    <div>
-                      <label className="block text-xs font-black uppercase text-slate-500 mb-1.5">Nội dung bài viết (Hỗ trợ xuống dòng tự động)</label>
-                      <textarea
-                        rows={14}
-                        value={editedAnalysisContent}
-                        onChange={(e) => setEditedAnalysisContent(e.target.value)}
-                        placeholder="Nhập nội dung phân tích chi tiết sản phẩm, các ưu và nhược điểm thực tế..."
-                        className="w-full p-4 border border-slate-250 dark:border-slate-750 bg-white dark:bg-slate-950 text-slate-800 dark:text-white rounded-2xl focus:outline-none focus:border-blue-500 text-sm font-medium leading-relaxed shadow-inner"
-                      />
+                          {rev.comment ? (
+                            <p className="text-xs sm:text-sm text-slate-750 dark:text-slate-355 leading-relaxed font-semibold">{rev.comment}</p>
+                          ) : (
+                            <p className="text-[11px] text-slate-400 italic">Khách hàng không để lại bình luận chi tiết.</p>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex gap-2">
-                      <RippleButton
-                        onClick={handleSaveAnalysis}
-                        disabled={savingAnalysis}
-                        className="bg-gradient-to-r from-blue-600 to-indigo-650 hover:from-blue-500 hover:to-indigo-600 text-white font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl cursor-pointer"
-                      >
-                        {savingAnalysis ? "Đang lưu..." : "Lưu bài viết"}
-                      </RippleButton>
-                      <button
-                        onClick={() => {
-                          setIsEditingAnalysis(false);
-                          setEditedAnalysisContent(analysis?.content || "");
-                        }}
-                        className="px-6 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-355 text-xs font-black uppercase tracking-wider rounded-xl hover:opacity-90"
-                      >
-                        Hủy
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* Display Content */
-                  <div className="max-w-3xl leading-relaxed text-sm sm:text-base">
-                    {loadingAnalysis ? (
-                      <div className="space-y-3">
-                        <div className="h-4 bg-slate-100 dark:bg-slate-855 rounded w-full animate-shimmer" />
-                        <div className="h-4 bg-slate-100 dark:bg-slate-855 rounded w-5/6 animate-shimmer" />
-                        <div className="h-4 bg-slate-100 dark:bg-slate-855 rounded w-2/3 animate-shimmer" />
-                      </div>
-                    ) : analysis?.content ? (
-                      <div className="text-slate-700 dark:text-slate-300 font-medium whitespace-pre-line space-y-4">
-                        {analysis.content}
-                      </div>
-                    ) : (
-                      <div className="text-center py-12 flex flex-col items-center">
-                        <span className="text-4xl mb-3">📝</span>
-                        <h4 className="font-extrabold text-slate-700 dark:text-white text-sm mb-1">Chưa có bài phân tích chuyên sâu</h4>
-                        <p className="text-slate-400 dark:text-slate-500 text-xs max-w-xs">Đội ngũ kỹ thuật đang cập nhật bài viết chi tiết trải nghiệm thực tế cho sản phẩm này.</p>
+
+                    {reviewsData.pagination?.totalPages > 1 && (
+                      <div className="flex justify-center items-center gap-2 pt-4">
+                        <button
+                          disabled={reviewsPage === 1}
+                          onClick={() => fetchReviews(id, reviewsPage - 1)}
+                          className="p-2 border border-slate-200 dark:border-slate-800 rounded-xl disabled:opacity-40 cursor-pointer text-slate-600 dark:text-slate-355 hover:bg-slate-50 dark:hover:bg-slate-850"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <span className="text-xs font-black text-slate-600 dark:text-slate-355">Trang {reviewsPage} / {reviewsData.pagination.totalPages}</span>
+                        <button
+                          disabled={reviewsPage === reviewsData.pagination.totalPages}
+                          onClick={() => fetchReviews(id, reviewsPage + 1)}
+                          className="p-2 border border-slate-200 dark:border-slate-800 rounded-xl disabled:opacity-40 cursor-pointer text-slate-600 dark:text-slate-355 hover:bg-slate-50 dark:hover:bg-slate-855"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
                       </div>
                     )}
-                  </div>
+                  </>
+                ) : (
+                  <p className="text-slate-400 dark:text-slate-500 text-xs font-semibold">Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên đánh giá!</p>
                 )}
               </div>
-            )}
-
-            {/* TAB 3: Reviews */}
-            {activeTab === "reviews" && (
-              <div className="animate-fade-in space-y-8">
-                {/* Top Rating Summary Banner */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 bg-slate-50/50 dark:bg-slate-950/20 rounded-2xl p-6 border border-slate-100 dark:border-slate-800/40">
-                  <div className="md:col-span-4 flex flex-col items-center justify-center text-center md:border-r border-slate-200 dark:border-slate-800 pr-0 md:pr-6">
-                    <span className="text-5xl font-black text-slate-900 dark:text-white">{avgRating}</span>
-                    <span className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1.5">Điểm đánh giá chung</span>
-                    <div className="flex mt-2 text-amber-400">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`h-4.5 w-4.5 ${i < Math.round(avgRating) ? "fill-amber-400 text-amber-400" : "text-slate-250 dark:text-slate-700"}`} />
-                      ))}
-                    </div>
-                    <span className="text-[10px] text-slate-400 mt-1">Dựa trên {totalCount} phản hồi</span>
-                  </div>
-
-                  <div className="md:col-span-8 space-y-2.5">
-                    <span className="text-xs font-black uppercase text-slate-400 tracking-wider">Phân tích xếp hạng</span>
-                    {[5, 4, 3, 2, 1].map((stars) => {
-                      const count = distribution[stars] || 0;
-                      const percent = totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
-                      return (
-                        <div key={stars} className="flex items-center gap-3 text-xs">
-                          <span className="w-10 font-bold text-slate-500 dark:text-slate-400 flex items-center gap-0.5 justify-end">
-                            {stars} <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                          </span>
-                          <div className="flex-1 h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-amber-450 to-orange-400 rounded-full" style={{ width: `${percent}%` }} />
-                          </div>
-                          <span className="w-8 text-right font-extrabold text-slate-600 dark:text-slate-355">{percent}%</span>
-                          <span className="w-10 text-slate-400 text-[10px]">({count})</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Submitting form (Shopee style rating entry) */}
-                <form onSubmit={handleSubmitReview} className="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm space-y-4">
-                  <div>
-                    <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-0.5">Viết đánh giá của bạn</h4>
-                    <p className="text-[11px] text-slate-500">Ý kiến đóng góp quý báu giúp ShopTech liên tục tối ưu hóa chất lượng phục vụ.</p>
-                  </div>
-
-                  {/* Rating Selector */}
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="text-xs font-extrabold text-slate-600 dark:text-slate-400">Chọn số sao:</span>
-                    <div className="flex gap-1.5">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setNewRating(star)}
-                          className="hover:scale-125 transition-transform duration-100 cursor-pointer"
-                        >
-                          <Star className={`h-6 w-6 ${star <= newRating ? "fill-amber-400 text-amber-400" : "text-slate-250 dark:text-slate-700"}`} />
-                        </button>
-                      ))}
-                    </div>
-                    <span className="text-xs font-black text-amber-500 uppercase tracking-widest">
-                      {newRating === 5 && "Cực kỳ hài lòng"}
-                      {newRating === 4 && "Hài lòng"}
-                      {newRating === 3 && "Bình thường"}
-                      {newRating === 2 && "Chưa hài lòng"}
-                      {newRating === 1 && "Rất không hài lòng"}
-                    </span>
-                  </div>
-
-                  {/* Anonymous Guest Name input (only if guest) */}
-                  {!currentUser && (
-                    <div className="max-w-md">
-                      <label className="block text-xs font-black text-slate-500 uppercase mb-1">Tên của bạn (Tùy chọn)</label>
-                      <input
-                        type="text"
-                        placeholder="Nhập tên hiển thị (mặc định: Ẩn danh)"
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-850 rounded-xl focus:outline-none focus:border-blue-500 text-sm font-semibold text-slate-800 dark:text-white"
-                      />
-                    </div>
-                  )}
-
-                  {/* Review comment */}
-                  <div>
-                    <label className="block text-xs font-black text-slate-500 uppercase mb-1">Bình luận, trải nghiệm thực tế (Tùy chọn)</label>
-                    <textarea
-                      rows={3}
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Bàn phím gõ êm, màn hình sắc nét, máy hơi nóng khi chơi game nặng..."
-                      className="w-full p-4 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-850 rounded-xl focus:outline-none focus:border-blue-500 text-sm font-medium text-slate-800 dark:text-white"
-                    />
-                  </div>
-
-                  <RippleButton
-                    type="submit"
-                    disabled={submittingReview}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-650 hover:from-blue-500 hover:to-indigo-600 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-blue-500/10 active:scale-95"
-                  >
-                    <Send className="h-3.5 w-3.5" />
-                    {submittingReview ? "Đang gửi..." : "Gửi đánh giá"}
-                  </RippleButton>
-                </form>
-
-                {/* Reviews List */}
-                <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800/80">
-                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Tất cả đánh giá khách hàng</h4>
-
-                  {loadingReviews ? (
-                    <div className="space-y-4">
-                      {[...Array(2)].map((_, i) => (
-                        <div key={i} className="animate-shimmer p-4 rounded-xl space-y-2.5">
-                          <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
-                          <div className="h-3.5 bg-slate-200 dark:bg-slate-800 rounded w-1/3" />
-                          <div className="h-3.5 bg-slate-200 dark:bg-slate-800 rounded w-5/6" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : reviewsData.reviews && reviewsData.reviews.length > 0 ? (
-                    <>
-                      <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                        {reviewsData.reviews.map((rev) => (
-                          <div key={rev.id} className="py-4 first:pt-0 space-y-1.5">
-                            {/* Header row */}
-                            <div className="flex items-center justify-between flex-wrap gap-2">
-                              <div className="flex items-center gap-2">
-                                <span className="font-extrabold text-slate-800 dark:text-white text-xs sm:text-sm">{rev.name}</span>
-                                {rev.badge === "verified" && (
-                                  <span className="inline-flex items-center gap-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider">
-                                    <CheckCircle className="h-2.5 w-2.5 fill-emerald-500/10" /> Đã mua hàng
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-[10px] text-slate-405 font-bold">
-                                {new Date(rev.createdAt).toLocaleDateString("vi-VN")}
-                              </span>
-                            </div>
-
-                            {/* Stars rating */}
-                            <div className="flex text-amber-400">
-                              {[...Array(5)].map((_, i) => (
-                                <Star key={i} className={`h-3.5 w-3.5 ${i < rev.rating ? "fill-amber-400 text-amber-400" : "text-slate-200 dark:text-slate-700"}`} />
-                              ))}
-                            </div>
-
-                            {/* Comment */}
-                            {rev.comment ? (
-                              <p className="text-xs sm:text-sm text-slate-750 dark:text-slate-350 leading-relaxed font-semibold">{rev.comment}</p>
-                            ) : (
-                              <p className="text-[11px] text-slate-400 italic">Khách hàng không để lại bình luận chi tiết.</p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Pagination Controls */}
-                      {reviewsData.pagination?.totalPages > 1 && (
-                        <div className="flex justify-center items-center gap-2 pt-4">
-                          <button
-                            disabled={reviewsPage === 1}
-                            onClick={() => fetchReviews(id, reviewsPage - 1)}
-                            className="p-2 border border-slate-200 dark:border-slate-800 rounded-xl disabled:opacity-40 cursor-pointer text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-850"
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                          </button>
-                          <span className="text-xs font-black text-slate-600 dark:text-slate-350">Trang {reviewsPage} / {reviewsData.pagination.totalPages}</span>
-                          <button
-                            disabled={reviewsPage === reviewsData.pagination.totalPages}
-                            onClick={() => fetchReviews(id, reviewsPage + 1)}
-                            className="p-2 border border-slate-200 dark:border-slate-800 rounded-xl disabled:opacity-40 cursor-pointer text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-855"
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-slate-400 dark:text-slate-500 text-xs font-semibold">Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên đánh giá!</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
+            </div>
           </div>
         </div>
 
