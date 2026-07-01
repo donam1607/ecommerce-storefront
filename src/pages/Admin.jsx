@@ -496,8 +496,9 @@ export default function Admin() {
   const [fakeReviewRating, setFakeReviewRating] = useState(5);
   const [fakeReviewComment, setFakeReviewComment] = useState("");
   const [savingFakeReview, setSavingFakeReview] = useState(false);
-  const [userEvents, setUserEvents] = useState([]);
-  const [loadingUserEvents, setLoadingUserEvents] = useState(false);
+  const [expandedVisitorId, setExpandedVisitorId] = useState(null);
+  const [eventsByVisitor, setEventsByVisitor] = useState({});
+  const [loadingEventsByVisitor, setLoadingEventsByVisitor] = useState({});
 
   const navigate = useNavigate();
 
@@ -686,6 +687,7 @@ export default function Admin() {
 
   const fetchDevices = async (date = devicesDate, page = 1, loggedInOnly = devicesLoggedInOnly) => {
     setLoadingDevices(true);
+    setExpandedVisitorId(null);
     try {
       const token = localStorage.getItem("token");
       const params = new URLSearchParams({ date, page, limit: 50, loggedInOnly: String(loggedInOnly) });
@@ -713,6 +715,8 @@ export default function Admin() {
     setDevicesDate(targetDate);
     setDevicesPage(1);
     setDevicesLoggedInOnly(loggedInOnly);
+    setExpandedVisitorId(null);
+    setEventsByVisitor({});
     setShowDevicesModal(true);
     fetchDevices(targetDate, 1, loggedInOnly);
   };
@@ -1519,25 +1523,38 @@ export default function Admin() {
     }
   };
 
-  const fetchUserEvents = async (filters = {}) => {
-    setLoadingUserEvents(true);
+  const toggleVisitorEvents = async (dev) => {
+    const visitorId = dev?.visitorId;
+    if (!visitorId) {
+      showToast("Không tìm thấy mã visitor của khách này", "warning");
+      return;
+    }
+
+    if (expandedVisitorId === visitorId) {
+      setExpandedVisitorId(null);
+      return;
+    }
+
+    setExpandedVisitorId(visitorId);
+    if (eventsByVisitor[visitorId]) return;
+
+    setLoadingEventsByVisitor((prev) => ({ ...prev, [visitorId]: true }));
     try {
       const params = new URLSearchParams({
-        page: String(filters.page || 1),
-        limit: String(filters.limit || 50),
+        page: "1",
+        limit: "50",
+        visitorId,
+        date: devicesDate,
       });
-      if (filters.visitorId) params.set("visitorId", filters.visitorId);
-      if (filters.userId) params.set("userId", filters.userId);
-      if (filters.date) params.set("date", filters.date);
       const response = await fetchWithRetry(`${API_URL}/api/analytics/events?${params.toString()}`, {
         headers: authHeaders(),
       });
       const data = await response.json();
-      setUserEvents(data.events || []);
+      setEventsByVisitor((prev) => ({ ...prev, [visitorId]: data.events || [] }));
     } catch (error) {
       showToast("Không thể tải lịch sử hành vi khách hàng", "error");
     } finally {
-      setLoadingUserEvents(false);
+      setLoadingEventsByVisitor((prev) => ({ ...prev, [visitorId]: false }));
     }
   };
 
@@ -6754,7 +6771,6 @@ export default function Admin() {
                           <th className="px-4 py-3">Nguồn / Landing Page</th>
                           <th className="px-4 py-3">Lượt xem</th>
                           <th className="px-4 py-3 text-right">Lần cuối</th>
-                          <th className="px-4 py-3 text-right">Hành vi</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
@@ -6762,6 +6778,9 @@ export default function Admin() {
                           let DeviceIcon = Monitor;
                           if (dev.deviceType === 'Mobile') DeviceIcon = Smartphone;
                           if (dev.deviceType === 'Tablet') DeviceIcon = Tablet;
+                          const isExpanded = expandedVisitorId === dev.visitorId;
+                          const rowEvents = eventsByVisitor[dev.visitorId] || [];
+                          const isLoadingEvents = !!loadingEventsByVisitor[dev.visitorId];
 
                           // Helper clean page URLs for display
                           const formatUrlPath = (urlStr) => {
@@ -6775,7 +6794,16 @@ export default function Admin() {
                           };
 
                           return (
-                            <tr key={dev.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 transition-colors">
+                            <React.Fragment key={dev.id}>
+                            <tr
+                              onClick={() => toggleVisitorEvents(dev)}
+                              className={`cursor-pointer transition-colors ${
+                                isExpanded
+                                  ? "bg-blue-50/60 dark:bg-blue-950/20"
+                                  : "hover:bg-slate-50/50 dark:hover:bg-slate-950/20"
+                              }`}
+                              title="Bấm để xem hành vi của khách này"
+                            >
                               {/* Device info */}
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2.5">
@@ -6872,23 +6900,68 @@ export default function Admin() {
 
                               {/* Last seen */}
                               <td className="px-4 py-3 text-right">
-                                <p className="text-slate-800 dark:text-white font-bold">
-                                  {new Date(dev.lastSeen).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                </p>
-                                <p className="text-[9px] text-slate-400 mt-0.5">
-                                  Vào lúc: {new Date(dev.firstSeen).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                                </p>
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                <button
-                                  type="button"
-                                  onClick={() => fetchUserEvents({ visitorId: dev.visitorId, date: devicesDate })}
-                                  className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/30 dark:hover:bg-blue-950/50 text-blue-600 dark:text-blue-300 text-[10px] font-black transition-colors"
-                                >
-                                  Xem
-                                </button>
+                                <div className="inline-flex items-center justify-end gap-2">
+                                  <div>
+                                    <p className="text-slate-800 dark:text-white font-bold">
+                                      {new Date(dev.lastSeen).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                    </p>
+                                    <p className="text-[9px] text-slate-400 mt-0.5">
+                                      Vào lúc: {new Date(dev.firstSeen).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                  </div>
+                                  <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? "rotate-180 text-blue-500" : ""}`} />
+                                </div>
                               </td>
                             </tr>
+                            {isExpanded && (
+                              <tr className="bg-blue-50/40 dark:bg-blue-950/10">
+                                <td colSpan={7} className="px-4 py-4">
+                                  <div className="rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-white/90 dark:bg-slate-950/70 overflow-hidden">
+                                    <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+                                      <div>
+                                        <p className="text-xs font-black text-slate-900 dark:text-white">
+                                          Hành vi của {dev.userName || dev.userEmail || "khách truy cập"}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400 font-semibold">
+                                          Visitor: {dev.visitorId} • {formatStatsDateLabel(devicesDate)}
+                                        </p>
+                                      </div>
+                                      {isLoadingEvents && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
+                                    </div>
+                                    {isLoadingEvents ? (
+                                      <div className="p-6 flex items-center justify-center text-xs font-bold text-slate-400">
+                                        Đang tải lịch sử hành vi...
+                                      </div>
+                                    ) : rowEvents.length > 0 ? (
+                                      <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                                        {rowEvents.map((event) => (
+                                          <div key={event.id} className="p-3 flex items-start justify-between gap-3 text-xs">
+                                            <div className="min-w-0">
+                                              <p className="font-black text-slate-800 dark:text-white">{event.eventType}</p>
+                                              <p className="text-[10px] text-slate-400 truncate">{event.page || "Không rõ trang"}</p>
+                                              {event.metadata && Object.keys(event.metadata).length > 0 && (
+                                                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                                                  {event.metadata.name || event.metadata.query || event.metadata.action || JSON.stringify(event.metadata)}
+                                                </p>
+                                              )}
+                                            </div>
+                                            <div className="text-right flex-shrink-0">
+                                              <p className="font-bold text-slate-600 dark:text-slate-300">{new Date(event.createdAt).toLocaleTimeString("vi-VN")}</p>
+                                              <p className="text-[9px] text-slate-400">{event.userName || event.userEmail || "Guest"}</p>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div className="p-6 text-center text-xs font-bold text-slate-400">
+                                        Chưa có hành vi chi tiết cho khách này trong ngày đã chọn.
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                            </React.Fragment>
                           );
                         })}
                       </tbody>
@@ -6896,49 +6969,6 @@ export default function Admin() {
                   </div>
                 </div>
               )}
-            </div>
-
-            <div className="px-6 pb-6">
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white">Lịch sử hành vi khách hàng</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">Bấm “Xem” ở từng thiết bị để xem khách đã xem/bấm gì.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => fetchUserEvents({ date: devicesDate })}
-                    className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 text-[10px] font-black transition-colors"
-                  >
-                    Tải tất cả
-                  </button>
-                </div>
-                <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
-                  {loadingUserEvents ? (
-                    <div className="p-6 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-blue-500" /></div>
-                  ) : userEvents.length > 0 ? (
-                    userEvents.map((event) => (
-                      <div key={event.id} className="p-3 flex items-start justify-between gap-3 text-xs">
-                        <div className="min-w-0">
-                          <p className="font-black text-slate-800 dark:text-white">{event.eventType}</p>
-                          <p className="text-[10px] text-slate-400 truncate">{event.page || "Không rõ trang"}</p>
-                          {event.metadata && Object.keys(event.metadata).length > 0 && (
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                              {event.metadata.name || event.metadata.query || JSON.stringify(event.metadata)}
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="font-bold text-slate-600 dark:text-slate-300">{new Date(event.createdAt).toLocaleTimeString("vi-VN")}</p>
-                          <p className="text-[9px] text-slate-400">{event.userName || event.userEmail || "Guest"}</p>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-6 text-center text-xs font-bold text-slate-400">Chưa tải lịch sử hành vi.</div>
-                  )}
-                </div>
-              </div>
             </div>
 
             {/* Modal Footer / Pagination */}

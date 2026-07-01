@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { 
   X, ShoppingCart, Star, Crown, Zap, GitCompare, ExternalLink, 
-  Sparkles, SlidersHorizontal, Info, Check, AlertCircle 
+  Sparkles, SlidersHorizontal, Info, Check, AlertCircle, Plus, Search, Loader2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatVND } from '../utils/money';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { useComparison } from '../context/ComparisonContext';
+import { API_BASE, fetchWithRetry } from '../utils/api';
 
 // Robust helper to extract displayable specs (supports objects with numerical keys)
 const getDisplaySpecs = (specs) => {
@@ -59,12 +60,16 @@ const formatSpecValue = (spec) => {
 };
 
 export default function ComparisonModal({ isOpen, onClose }) {
-  const { comparisonItems, removeFromComparison, clearComparison } = useComparison();
+  const { comparisonItems, addToComparison, removeFromComparison, clearComparison } = useComparison();
   const { addToCart } = useCart();
   const { showToast } = useToast();
 
   const [hoveredColIndex, setHoveredColIndex] = useState(null);
   const [highlightDifferences, setHighlightDifferences] = useState(false);
+  const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
+  const [allProducts, setAllProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
 
   // Escape key listener & Body scroll lock
   useEffect(() => {
@@ -84,6 +89,25 @@ export default function ComparisonModal({ isOpen, onClose }) {
       window.removeEventListener('keydown', handleEsc);
     };
   }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isProductPickerOpen || allProducts.length > 0) return;
+
+    const fetchProducts = async () => {
+      setLoadingProducts(true);
+      try {
+        const response = await fetchWithRetry(`${API_BASE}/api/products`, {}, 2, 1000);
+        const data = await response.json();
+        setAllProducts(Array.isArray(data) ? data : []);
+      } catch (error) {
+        showToast('Không thể tải danh sách sản phẩm để so sánh.', 'error');
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+
+    fetchProducts();
+  }, [isProductPickerOpen, allProducts.length, showToast]);
 
   if (!isOpen) return null;
 
@@ -154,8 +178,22 @@ export default function ComparisonModal({ isOpen, onClose }) {
     return new Set(values).size > 1;
   };
 
+  const lockedCategory = comparisonItems[0]?.category || null;
+  const selectedProductIds = new Set(comparisonItems.map((item) => item.id));
+  const pickerProducts = allProducts
+    .filter((product) => !selectedProductIds.has(product.id))
+    .filter((product) => !lockedCategory || product.category === lockedCategory)
+    .filter((product) => {
+      const q = productSearch.trim().toLowerCase();
+      if (!q) return true;
+      return [product.name, product.brand, product.category, product.subCategory]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(q));
+    })
+    .slice(0, 12);
+
   const colCount = comparisonItems.length;
-  const gridTemplateColumns = `220px repeat(${colCount}, minmax(0, 1fr))`;
+  const gridTemplateColumns = `minmax(120px, 180px) repeat(${colCount}, minmax(120px, 1fr))`;
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-950/75 dark:bg-slate-950/90 backdrop-blur-md animate-fade-in">
@@ -238,11 +276,84 @@ export default function ComparisonModal({ isOpen, onClose }) {
               </button>
             </div>
           ) : (
-            <div className="min-w-[1000px] divide-y divide-slate-100 dark:divide-slate-800/60">
+            <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              <div className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 border-b border-slate-200/50 dark:border-slate-800/80 p-4 sm:p-5 shadow-sm">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {comparisonItems.map((product, idx) => {
+                    const finalPrice = getProductFinalPrice(product);
+                    const isLowestPrice = finalPrice === minPrice && comparisonItems.length > 1;
+                    const isHighestRating = (product.rating || 0) === maxRating && maxRating > 0 && comparisonItems.length > 1;
+                    const isHovered = hoveredColIndex === idx;
+
+                    return (
+                      <div
+                        key={product.id}
+                        onMouseEnter={() => setHoveredColIndex(idx)}
+                        onMouseLeave={() => setHoveredColIndex(null)}
+                        className={`relative min-h-[190px] rounded-2xl border p-3 text-center transition-all ${
+                          isHovered
+                            ? 'border-blue-300 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20 shadow-sm'
+                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/40'
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => removeFromComparison(product.id)}
+                          className="absolute right-2 top-2 z-10 h-7 w-7 inline-flex items-center justify-center rounded-full bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-red-500 hover:border-red-200 transition-all"
+                          title="Loại bỏ"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                        <Link to={`/product/${product.id}`} onClick={onClose} className="block">
+                          <div className="mx-auto h-24 w-28 rounded-xl bg-slate-50 dark:bg-slate-900 overflow-hidden border border-slate-100 dark:border-slate-800">
+                            <img
+                              src={product.images && product.images[0] ? product.images[0] : ""}
+                              alt={product.name}
+                              className="h-full w-full object-contain p-1.5"
+                              onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=160&auto=format&fit=crop"; }}
+                            />
+                          </div>
+                          <p className="mt-3 min-h-[38px] text-[12px] font-black leading-snug text-slate-850 dark:text-slate-100 line-clamp-2 hover:text-blue-600 dark:hover:text-blue-400">
+                            {product.name}
+                          </p>
+                        </Link>
+                        <div className="mt-2 flex min-h-[18px] items-center justify-center gap-1.5">
+                          {isLowestPrice && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[8px] font-black uppercase text-emerald-600">Rẻ nhất</span>}
+                          {isHighestRating && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[8px] font-black uppercase text-amber-600">Đánh giá cao</span>}
+                        </div>
+                        <div className="mt-2 flex items-center justify-center gap-2">
+                          <span className="text-[11px] font-black text-blue-600 dark:text-blue-400">{formatVND(finalPrice)}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleAddToCartQuick(product)}
+                            className="h-7 w-7 inline-flex items-center justify-center rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-950 text-blue-600 dark:text-blue-400 transition-all"
+                            title="Thêm nhanh vào giỏ hàng"
+                          >
+                            <ShoppingCart className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {comparisonItems.length < 4 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsProductPickerOpen(true)}
+                      className="min-h-[190px] rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/30 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all flex flex-col items-center justify-center gap-3 text-slate-500 hover:text-blue-600"
+                    >
+                      <div className="h-14 w-14 rounded-2xl border border-dashed border-current flex items-center justify-center">
+                        <Plus className="h-7 w-7" />
+                      </div>
+                      <span className="text-xs font-black">Thêm sản phẩm</span>
+                    </button>
+                  )}
+                </div>
+              </div>
               
               {/* Product Cards Row (COMPACT STICKY HEADER) */}
               <div 
-                className="grid sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 border-b border-slate-200/50 dark:border-slate-800/80 py-4 shadow-sm"
+                className="hidden"
                 style={{ gridTemplateColumns }}
               >
                 {/* Top left cell */}
@@ -593,7 +704,89 @@ export default function ComparisonModal({ isOpen, onClose }) {
           )}
         </div>
 
+        {isProductPickerOpen && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/45 backdrop-blur-sm p-4">
+            <div className="w-full max-w-2xl max-h-[78vh] rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden animate-scale-up">
+              <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-slate-900 dark:text-white">Chọn thêm sản phẩm</p>
+                  <p className="text-[10px] font-semibold text-slate-400">
+                    {lockedCategory ? `Chỉ hiển thị sản phẩm cùng danh mục ${lockedCategory}.` : 'Tìm sản phẩm để thêm vào bảng so sánh.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsProductPickerOpen(false)}
+                  className="h-9 w-9 inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  aria-label="Đóng"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    placeholder="Tìm theo tên, hãng, phân loại..."
+                    className="w-full h-11 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 pl-10 pr-4 text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-blue-400 dark:focus:border-blue-700"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="max-h-[48vh] overflow-y-auto p-4">
+                {loadingProducts ? (
+                  <div className="h-40 flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                  </div>
+                ) : pickerProducts.length > 0 ? (
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {pickerProducts.map((product) => {
+                      const finalPrice = getProductFinalPrice(product);
+                      return (
+                        <button
+                          key={product.id}
+                          type="button"
+                          onClick={() => {
+                            addToComparison(product);
+                            setProductSearch('');
+                            if (comparisonItems.length >= 3) setIsProductPickerOpen(false);
+                          }}
+                          className="text-left rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/40 hover:border-blue-300 dark:hover:border-blue-800 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-all p-3 flex items-center gap-3"
+                        >
+                          <div className="h-16 w-16 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 overflow-hidden flex-shrink-0">
+                            <img
+                              src={product.images && product.images[0] ? product.images[0] : ""}
+                              alt={product.name}
+                              className="h-full w-full object-contain p-1"
+                              onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=120&auto=format&fit=crop"; }}
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-black text-slate-850 dark:text-slate-100 line-clamp-2">{product.name}</p>
+                            <p className="mt-1 text-[10px] font-bold text-slate-400">{product.brand || product.category || 'Sản phẩm'}</p>
+                            <p className="mt-1 text-[11px] font-black text-blue-600 dark:text-blue-400">{formatVND(finalPrice)}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="h-40 flex flex-col items-center justify-center text-center text-slate-400">
+                    <Search className="h-7 w-7 mb-2" />
+                    <p className="text-xs font-bold">Không tìm thấy sản phẩm phù hợp</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
 }
+
