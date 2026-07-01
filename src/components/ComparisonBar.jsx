@@ -111,12 +111,12 @@ export default function ComparisonBar({ onOpenCompareModal }) {
   return (
     <div
       ref={barRef}
-      className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-[9999] w-[calc(100%-1rem)] max-w-6xl animate-slide-up"
+      className="fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-[9999] w-[calc(100%-0.75rem)] max-w-6xl animate-slide-up"
     >
-      <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-[28px] blur-md opacity-20 dark:opacity-35" />
+      <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-[24px] sm:rounded-[28px] blur-md opacity-20 dark:opacity-35" />
 
       {isPickerOpen && (
-        <div className="absolute left-0 right-0 bottom-[calc(100%+0.75rem)] mx-auto max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/98 dark:bg-slate-900/98 shadow-2xl overflow-hidden">
+        <div className="absolute left-0 right-0 bottom-[calc(100%+0.6rem)] mx-auto max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/98 dark:bg-slate-900/98 shadow-2xl overflow-hidden">
           <div className="p-3 border-b border-slate-100 dark:border-slate-800">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -124,7 +124,7 @@ export default function ComparisonBar({ onOpenCompareModal }) {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Tìm sản phẩm để so sánh..."
-                className="h-11 w-full rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 pl-10 pr-10 text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-blue-400"
+                className="h-10 sm:h-11 w-full rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 pl-10 pr-10 text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none focus:border-blue-400"
                 autoFocus
               />
               <button
@@ -143,7 +143,7 @@ export default function ComparisonBar({ onOpenCompareModal }) {
             )}
           </div>
 
-          <div className="max-h-72 overflow-y-auto p-3">
+          <div className="max-h-64 sm:max-h-72 overflow-y-auto p-3">
             {loadingProducts ? (
               <div className="h-28 flex items-center justify-center">
                 <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
@@ -160,7 +160,7 @@ export default function ComparisonBar({ onOpenCompareModal }) {
                     <img
                       src={product.images?.[0] || ''}
                       alt={product.name}
-                      className="h-14 w-14 rounded-xl object-contain bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800"
+                      className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl object-contain bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800"
                       onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }}
                     />
                     <div className="min-w-0">
@@ -184,34 +184,37 @@ export default function ComparisonBar({ onOpenCompareModal }) {
         </div>
       )}
 
-      <div className="relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/60 dark:border-slate-800/70 shadow-2xl rounded-[28px] p-3 sm:p-4 transition-all duration-300">
-        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 sm:gap-4">
-          <div className="hidden sm:flex items-center gap-2 pr-3 border-r border-slate-100 dark:border-slate-800">
-          
+      <div className="relative bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/60 dark:border-slate-800/70 shadow-2xl rounded-[24px] sm:rounded-[28px] p-2.5 sm:p-4 transition-all duration-300">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 sm:gap-4">
+          <div className="hidden lg:flex items-center gap-2 pr-3 border-r border-slate-100 dark:border-slate-800">
+            <GitCompare className="h-5 w-5 text-blue-600 dark:text-blue-400 animate-glow-pulse" />
+            <span className="text-xs font-black text-slate-800 dark:text-white whitespace-nowrap">
+              So sánh ({comparisonItems.length}/4)
+            </span>
           </div>
 
-          <div className="grid grid-cols-4 gap-2 sm:gap-3 min-w-0">
+          <div className="grid grid-cols-4 gap-1.5 sm:gap-3 min-w-0">
             {slots.map((item, index) => (
               item ? (
                 <div
                   key={item.id}
-                  className="relative min-w-0 rounded-2xl border border-blue-200/70 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/20 p-2 text-center shadow-sm"
+                  className="relative min-w-0 rounded-2xl border border-blue-200/70 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/20 p-1.5 sm:p-2 text-center shadow-sm"
                 >
                   <button
                     type="button"
                     onClick={() => removeFromComparison(item.id)}
-                    className="absolute right-1.5 top-1.5 z-10 h-6 w-6 inline-flex items-center justify-center rounded-full bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-red-500 transition-colors"
+                    className="absolute right-1 top-1 z-10 h-5 w-5 sm:h-6 sm:w-6 inline-flex items-center justify-center rounded-full bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-red-500 transition-colors shadow-sm"
                     title="Xóa sản phẩm"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   </button>
                   <img
                     src={item.images?.[0] || ''}
                     alt={item.name}
-                    className="mx-auto h-11 w-14 sm:h-14 sm:w-16 rounded-xl object-contain bg-white dark:bg-slate-950 border border-blue-100 dark:border-blue-900/50"
+                    className="mx-auto h-9 w-11 sm:h-14 sm:w-16 rounded-xl object-contain bg-white dark:bg-slate-950 border border-blue-100 dark:border-blue-900/50"
                     onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE; }}
                   />
-                  <p className="mt-1.5 h-8 text-[9px] sm:text-[10px] font-black leading-tight text-slate-800 dark:text-slate-100 line-clamp-2">
+                  <p className="mt-1 h-7 sm:h-8 text-[8px] sm:text-[10px] font-black leading-tight text-slate-800 dark:text-slate-100 line-clamp-2">
                     {item.name}
                   </p>
                 </div>
@@ -220,12 +223,12 @@ export default function ComparisonBar({ onOpenCompareModal }) {
                   key={`empty-${index}`}
                   type="button"
                   onClick={() => setIsPickerOpen(true)}
-                  className="min-w-0 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/30 p-2 text-center text-slate-400 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all"
+                  className="min-w-0 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/30 p-1.5 sm:p-2 text-center text-slate-400 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all"
                 >
-                  <div className="mx-auto h-11 w-14 sm:h-14 sm:w-16 rounded-xl border border-dashed border-current flex items-center justify-center">
-                    <Plus className="h-5 w-5" />
+                  <div className="mx-auto h-9 w-11 sm:h-14 sm:w-16 rounded-xl border border-dashed border-current flex items-center justify-center">
+                    <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <p className="mt-1.5 h-8 text-[9px] sm:text-[10px] font-black leading-tight">
+                  <p className="mt-1 h-7 sm:h-8 text-[8px] sm:text-[10px] font-black leading-tight">
                     Chọn thêm
                   </p>
                 </button>
@@ -233,10 +236,10 @@ export default function ComparisonBar({ onOpenCompareModal }) {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 pl-3 border-l border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-1.5 sm:gap-2 pl-2 sm:pl-3 border-l border-slate-100 dark:border-slate-800">
             <button
               onClick={clearComparison}
-              className="h-10 w-10 rounded-2xl border border-rose-200/70 dark:border-rose-900/50 text-rose-500 hover:text-white hover:bg-rose-500 transition-all active:scale-95 cursor-pointer flex items-center justify-center"
+              className="h-9 w-9 sm:h-10 sm:w-10 rounded-2xl border border-rose-200/70 dark:border-rose-900/50 text-rose-500 hover:text-white hover:bg-rose-500 transition-all active:scale-95 cursor-pointer flex items-center justify-center"
               title="Xóa tất cả sản phẩm"
             >
               <Trash2 className="h-4 w-4" />
@@ -260,7 +263,7 @@ export default function ComparisonBar({ onOpenCompareModal }) {
         <button
           onClick={onOpenCompareModal}
           disabled={comparisonItems.length < 2}
-          className={`sm:hidden mt-3 w-full h-10 rounded-2xl font-black text-[10px] uppercase tracking-wider transition-all ${
+          className={`sm:hidden mt-2 w-full h-9 rounded-2xl font-black text-[10px] uppercase tracking-wider transition-all ${
             comparisonItems.length >= 2
               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20'
               : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'

@@ -193,17 +193,17 @@ export default function ComparisonModal({ isOpen, onClose }) {
     .slice(0, 12);
 
   const colCount = comparisonItems.length;
-  const gridTemplateColumns = `minmax(120px, 180px) repeat(${colCount}, minmax(120px, 1fr))`;
+  const gridTemplateColumns = `clamp(58px, 14vw, 112px) repeat(${colCount}, minmax(0, 1fr))`;
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-950/75 dark:bg-slate-950/90 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-7xl h-[90vh] bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-[28px] shadow-2xl flex flex-col overflow-hidden transition-all duration-300">
+      <div className="relative w-full max-w-7xl h-[92vh] sm:h-[90vh] bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 rounded-[24px] sm:rounded-[28px] shadow-2xl flex flex-col overflow-hidden transition-all duration-300">
         
         {/* Glow decorative borders */}
         <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 opacity-80" />
 
         {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-8 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950/20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 px-4 sm:px-8 py-3 sm:py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950/20">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
               <GitCompare className="h-5 w-5" />
@@ -258,7 +258,7 @@ export default function ComparisonModal({ isOpen, onClose }) {
         </div>
 
         {/* Scrollable Compare Grid */}
-        <div className="flex-1 overflow-x-auto overflow-y-auto scrollbar-thin">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto scrollbar-thin">
           {comparisonItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-8 animate-fade-in">
               <div className="h-16 w-16 rounded-3xl bg-slate-50 dark:bg-slate-950 flex items-center justify-center border border-slate-100 dark:border-slate-850 shadow-inner">
@@ -277,8 +277,24 @@ export default function ComparisonModal({ isOpen, onClose }) {
             </div>
           ) : (
             <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-              <div className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 border-b border-slate-200/50 dark:border-slate-800/80 p-4 sm:p-5 shadow-sm">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 border-b border-slate-200/50 dark:border-slate-800/80 shadow-sm">
+                <div className="grid items-stretch" style={{ gridTemplateColumns }}>
+                  <div className="px-1.5 sm:px-3 py-2 sm:py-3 border-r border-slate-100 dark:border-slate-800/70 flex flex-col justify-between gap-2">
+                    <div>
+                      <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-400">Sản phẩm</p>
+                      <p className="hidden sm:block mt-1 text-[10px] font-semibold leading-snug text-slate-400">Mỗi cột tương ứng một sản phẩm.</p>
+                    </div>
+                    {comparisonItems.length < 4 && (
+                      <button
+                        type="button"
+                        onClick={() => setIsProductPickerOpen(true)}
+                        className="h-8 sm:h-9 w-full inline-flex items-center justify-center gap-1 rounded-xl border border-dashed border-blue-300 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/20 text-[9px] sm:text-[10px] font-black text-blue-600 dark:text-blue-300 hover:bg-blue-100/80 dark:hover:bg-blue-950/40 transition-all"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Thêm</span>
+                      </button>
+                    )}
+                  </div>
                   {comparisonItems.map((product, idx) => {
                     const finalPrice = getProductFinalPrice(product);
                     const isLowestPrice = finalPrice === minPrice && comparisonItems.length > 1;
@@ -290,22 +306,22 @@ export default function ComparisonModal({ isOpen, onClose }) {
                         key={product.id}
                         onMouseEnter={() => setHoveredColIndex(idx)}
                         onMouseLeave={() => setHoveredColIndex(null)}
-                        className={`relative min-h-[190px] rounded-2xl border p-3 text-center transition-all ${
+                        className={`relative min-w-0 border-r border-slate-100 dark:border-slate-800/70 px-1.5 sm:px-3 py-2 sm:py-3 text-center transition-all ${
                           isHovered
-                            ? 'border-blue-300 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20 shadow-sm'
-                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/40'
+                            ? 'bg-blue-50/60 dark:bg-blue-950/20'
+                            : 'bg-white dark:bg-slate-950/20'
                         }`}
                       >
                         <button
                           type="button"
                           onClick={() => removeFromComparison(product.id)}
-                          className="absolute right-2 top-2 z-10 h-7 w-7 inline-flex items-center justify-center rounded-full bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-red-500 hover:border-red-200 transition-all"
+                          className="absolute right-1 top-1 sm:right-1.5 sm:top-1.5 z-10 h-5 w-5 sm:h-6 sm:w-6 inline-flex items-center justify-center rounded-full bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-red-500 hover:border-red-200 transition-all shadow-sm"
                           title="Loại bỏ"
                         >
-                          <X className="h-3.5 w-3.5" />
+                          <X className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                         </button>
                         <Link to={`/product/${product.id}`} onClick={onClose} className="block">
-                          <div className="mx-auto h-24 w-28 rounded-xl bg-slate-50 dark:bg-slate-900 overflow-hidden border border-slate-100 dark:border-slate-800">
+                          <div className="mx-auto h-10 w-12 sm:h-14 sm:w-16 rounded-xl bg-slate-50 dark:bg-slate-900 overflow-hidden border border-slate-100 dark:border-slate-800">
                             <img
                               src={product.images && product.images[0] ? product.images[0] : ""}
                               alt={product.name}
@@ -313,20 +329,20 @@ export default function ComparisonModal({ isOpen, onClose }) {
                               onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=160&auto=format&fit=crop"; }}
                             />
                           </div>
-                          <p className="mt-3 min-h-[38px] text-[12px] font-black leading-snug text-slate-850 dark:text-slate-100 line-clamp-2 hover:text-blue-600 dark:hover:text-blue-400">
+                          <p className="mt-1.5 sm:mt-2 min-h-[36px] sm:min-h-[42px] text-[9px] sm:text-[11px] font-black leading-tight text-slate-850 dark:text-slate-100 line-clamp-3 hover:text-blue-600 dark:hover:text-blue-400 break-words">
                             {product.name}
                           </p>
                         </Link>
-                        <div className="mt-2 flex min-h-[18px] items-center justify-center gap-1.5">
+                        <div className="mt-1 flex min-h-[14px] items-center justify-center gap-1 flex-wrap">
                           {isLowestPrice && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[8px] font-black uppercase text-emerald-600">Rẻ nhất</span>}
                           {isHighestRating && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[8px] font-black uppercase text-amber-600">Đánh giá cao</span>}
                         </div>
-                        <div className="mt-2 flex items-center justify-center gap-2">
-                          <span className="text-[11px] font-black text-blue-600 dark:text-blue-400">{formatVND(finalPrice)}</span>
+                        <div className="mt-1 flex items-center justify-center gap-1.5">
+                          <span className="text-[9px] sm:text-[10px] font-black text-blue-600 dark:text-blue-400">{formatVND(finalPrice)}</span>
                           <button
                             type="button"
                             onClick={() => handleAddToCartQuick(product)}
-                            className="h-7 w-7 inline-flex items-center justify-center rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-950 text-blue-600 dark:text-blue-400 transition-all"
+                            className="hidden sm:inline-flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-950 text-blue-600 dark:text-blue-400 transition-all"
                             title="Thêm nhanh vào giỏ hàng"
                           >
                             <ShoppingCart className="h-3.5 w-3.5" />
@@ -335,139 +351,25 @@ export default function ComparisonModal({ isOpen, onClose }) {
                       </div>
                     );
                   })}
-
-                  {comparisonItems.length < 4 && (
-                    <button
-                      type="button"
-                      onClick={() => setIsProductPickerOpen(true)}
-                      className="min-h-[190px] rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/30 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all flex flex-col items-center justify-center gap-3 text-slate-500 hover:text-blue-600"
-                    >
-                      <div className="h-14 w-14 rounded-2xl border border-dashed border-current flex items-center justify-center">
-                        <Plus className="h-7 w-7" />
-                      </div>
-                      <span className="text-xs font-black">Thêm sản phẩm</span>
-                    </button>
-                  )}
                 </div>
-              </div>
-              
-              {/* Product Cards Row (COMPACT STICKY HEADER) */}
-              <div 
-                className="hidden"
-                style={{ gridTemplateColumns }}
-              >
-                {/* Top left cell */}
-                <div className="flex flex-col justify-center px-7 border-r border-slate-100 dark:border-slate-800/40">
-                  <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-550 tracking-wider">Sản phẩm so sánh</span>
-                  <p className="text-[10px] text-slate-500 mt-1 leading-normal font-semibold">
-                    Rà chuột dọc cột để dò thông số.
-                  </p>
-                </div>
-
-                {/* Compare items cards (Compact Layout) */}
-                {comparisonItems.map((product, idx) => {
-                  const finalPrice = getProductFinalPrice(product);
-                  const isLowestPrice = finalPrice === minPrice && comparisonItems.length > 1;
-                  const isHighestRating = (product.rating || 0) === maxRating && maxRating > 0 && comparisonItems.length > 1;
-                  const isHovered = hoveredColIndex === idx;
-
-                  return (
-                    <div 
-                      key={product.id} 
-                      onMouseEnter={() => setHoveredColIndex(idx)}
-                      onMouseLeave={() => setHoveredColIndex(null)}
-                      className={`relative px-4 flex items-center gap-3 justify-between group transition-all duration-300 border-r border-slate-100 dark:border-slate-800/40 last:border-r-0 ${
-                        isHovered ? 'bg-blue-500/[0.02] dark:bg-blue-400/[0.01]' : ''
-                      }`}
-                    >
-                      {/* Column background hover highlight overlay */}
-                      {isHovered && (
-                        <div className="absolute inset-y-0 inset-x-0 border-x border-dashed border-blue-500/15 pointer-events-none z-0" />
-                      )}
-
-                      {/* Compact thumbnail image and title */}
-                      <div className="flex items-center gap-3 flex-1 min-w-0 relative z-10">
-                        {/* Compact Image */}
-                        <div className="h-14 w-14 rounded-xl bg-slate-50 dark:bg-slate-950 overflow-hidden border border-slate-200/50 dark:border-slate-800/80 relative flex-shrink-0">
-                          <img 
-                            src={product.images && product.images[0] ? product.images[0] : ""} 
-                            alt={product.name} 
-                            className="w-full h-full object-cover"
-                            onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=100&auto=format&fit=crop" }}
-                          />
-                          
-                          {/* Tiny Absolutes for Best Price/Rating */}
-                          <div className="absolute -top-0.5 -left-0.5 flex flex-col gap-0.5 z-10">
-                            {isLowestPrice && (
-                              <span className="bg-emerald-500 text-white p-0.5 rounded-br-md shadow" title="Rẻ nhất">
-                                <Zap className="h-2 w-2 fill-white" />
-                              </span>
-                            )}
-                            {isHighestRating && (
-                              <span className="bg-amber-500 text-white p-0.5 rounded-br-md shadow" title="Đánh giá cao">
-                                <Crown className="h-2 w-2 fill-white" />
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Title and price in small text */}
-                        <div className="min-w-0 space-y-0.5">
-                          <Link 
-                            to={`/product/${product.id}`}
-                            onClick={onClose}
-                            className="font-black text-slate-850 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors line-clamp-2 text-[11px] leading-tight flex items-center gap-0.5"
-                          >
-                            <span>{product.name}</span>
-                          </Link>
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-[10px] font-extrabold text-blue-600 dark:text-blue-400">{formatVND(finalPrice)}</span>
-                            {product.discount > 0 && (
-                              <span className="text-[8px] font-black text-red-500">-{product.discount}%</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Small Quick Buy and Close icons on right */}
-                      <div className="flex flex-col gap-1.5 relative z-10 flex-shrink-0">
-                        <button
-                          onClick={() => handleAddToCartQuick(product)}
-                          className="p-1.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-950 hover:scale-105 text-blue-600 dark:text-blue-400 rounded-lg transition-all cursor-pointer"
-                          title="Thêm nhanh vào giỏ hàng"
-                        >
-                          <ShoppingCart className="h-3 w-3" />
-                        </button>
-                        <button
-                          onClick={() => removeFromComparison(product.id)}
-                          className="p-1.5 bg-slate-50 hover:bg-rose-50 dark:bg-slate-800/80 dark:hover:bg-rose-950/40 text-slate-450 hover:text-red-500 rounded-lg transition-all cursor-pointer hover:scale-105"
-                          title="Loại bỏ"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-
-                    </div>
-                  );
-                })}
               </div>
 
               {/* SECTION: THÔNG TIN CƠ BẢN */}
-              <div className="bg-slate-50/70 dark:bg-slate-900/30 backdrop-blur-sm py-2 px-7 text-[10px] font-black uppercase tracking-widest text-slate-450 dark:text-slate-400 border-l-[3px] border-l-blue-600 flex items-center gap-2">
+              <div className="bg-slate-50/70 dark:bg-slate-900/30 backdrop-blur-sm py-2 px-3 text-[10px] font-black uppercase tracking-widest text-slate-450 dark:text-slate-400 border-l-[3px] border-l-blue-600 flex items-center gap-2">
                 <Info className="h-3.5 w-3.5 text-blue-500" />
                 <span>Thông tin cơ bản</span>
               </div>
 
               {/* Row: Thương hiệu */}
               <div 
-                className={`grid py-2.5 items-center transition-all ${
+                className={`grid py-2 items-center transition-all ${
                   highlightDifferences && checkBrandDiffers() 
                     ? 'bg-amber-500/[0.03] dark:bg-amber-500/[0.015] border-l-[3px] border-l-amber-500/70' 
                     : 'border-l-[3px] border-l-transparent'
                 }`}
                 style={{ gridTemplateColumns }}
               >
-                <div className="px-7 text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <div className="px-1.5 sm:px-3 text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                   <span>Thương hiệu</span>
                   {highlightDifferences && checkBrandDiffers() && (
                     <span className="h-1.5 w-1.5 rounded-full bg-amber-500" title="Khác biệt" />
@@ -476,7 +378,7 @@ export default function ComparisonModal({ isOpen, onClose }) {
                 {comparisonItems.map((p, idx) => (
                   <div 
                     key={p.id} 
-                    className={`px-6 text-xs font-extrabold text-slate-800 dark:text-slate-200 transition-colors ${
+                    className={`px-1.5 sm:px-3 border-l border-slate-100 dark:border-slate-800/60 text-[10px] sm:text-xs font-extrabold text-slate-800 dark:text-slate-200 transition-colors ${
                       hoveredColIndex === idx ? 'bg-blue-500/[0.02] dark:bg-blue-400/[0.01] text-blue-600 dark:text-blue-400' : ''
                     }`}
                   >
@@ -487,14 +389,14 @@ export default function ComparisonModal({ isOpen, onClose }) {
 
               {/* Row: Phân loại */}
               <div 
-                className={`grid py-2.5 items-center transition-all ${
+                className={`grid py-2 items-center transition-all ${
                   highlightDifferences && checkCategoryDiffers() 
                     ? 'bg-amber-500/[0.03] dark:bg-amber-500/[0.015] border-l-[3px] border-l-amber-500/70' 
                     : 'border-l-[3px] border-l-transparent'
                 }`}
                 style={{ gridTemplateColumns }}
               >
-                <div className="px-7 text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <div className="px-1.5 sm:px-3 text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                   <span>Phân loại</span>
                   {highlightDifferences && checkCategoryDiffers() && (
                     <span className="h-1.5 w-1.5 rounded-full bg-amber-500" title="Khác biệt" />
@@ -503,7 +405,7 @@ export default function ComparisonModal({ isOpen, onClose }) {
                 {comparisonItems.map((p, idx) => (
                   <div 
                     key={p.id} 
-                    className={`px-6 text-xs font-semibold text-slate-700 dark:text-slate-350 transition-colors ${
+                    className={`px-1.5 sm:px-3 border-l border-slate-100 dark:border-slate-800/60 text-[10px] sm:text-xs font-semibold text-slate-700 dark:text-slate-350 transition-colors ${
                       hoveredColIndex === idx ? 'bg-blue-500/[0.02] dark:bg-blue-400/[0.01]' : ''
                     }`}
                   >
@@ -514,14 +416,14 @@ export default function ComparisonModal({ isOpen, onClose }) {
 
               {/* Row: Tình trạng */}
               <div 
-                className={`grid py-2.5 items-center transition-all ${
+                className={`grid py-2 items-center transition-all ${
                   highlightDifferences && checkConditionDiffers() 
                     ? 'bg-amber-500/[0.03] dark:bg-amber-500/[0.015] border-l-[3px] border-l-amber-500/70' 
                     : 'border-l-[3px] border-l-transparent'
                 }`}
                 style={{ gridTemplateColumns }}
               >
-                <div className="px-7 text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <div className="px-1.5 sm:px-3 text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                   <span>Tình trạng</span>
                   {highlightDifferences && checkConditionDiffers() && (
                     <span className="h-1.5 w-1.5 rounded-full bg-amber-500" title="Khác biệt" />
@@ -530,7 +432,7 @@ export default function ComparisonModal({ isOpen, onClose }) {
                 {comparisonItems.map((p, idx) => (
                   <div 
                     key={p.id} 
-                    className={`px-6 transition-colors ${
+                    className={`px-1.5 sm:px-3 border-l border-slate-100 dark:border-slate-800/60 transition-colors ${
                       hoveredColIndex === idx ? 'bg-blue-500/[0.02] dark:bg-blue-400/[0.01]' : ''
                     }`}
                   >
@@ -543,14 +445,14 @@ export default function ComparisonModal({ isOpen, onClose }) {
 
               {/* Row: Giá bán */}
               <div 
-                className={`grid py-3 items-center transition-all ${
+                className={`grid py-2 items-center transition-all ${
                   highlightDifferences && checkPriceDiffers() 
                     ? 'bg-amber-500/[0.03] dark:bg-amber-500/[0.015] border-l-[3px] border-l-amber-500/70' 
                     : 'border-l-[3px] border-l-transparent'
                 }`}
                 style={{ gridTemplateColumns }}
               >
-                <div className="px-7 text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <div className="px-1.5 sm:px-3 text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                   <span>Giá bán</span>
                   {highlightDifferences && checkPriceDiffers() && (
                     <span className="h-1.5 w-1.5 rounded-full bg-amber-500" title="Khác biệt" />
@@ -562,7 +464,7 @@ export default function ComparisonModal({ isOpen, onClose }) {
                   return (
                     <div 
                       key={p.id} 
-                      className={`px-6 space-y-0.5 transition-colors ${
+                      className={`px-1.5 sm:px-3 border-l border-slate-100 dark:border-slate-800/60 space-y-0.5 transition-colors ${
                         hoveredColIndex === idx ? 'bg-blue-500/[0.02] dark:bg-blue-400/[0.01]' : ''
                       }`}
                     >
@@ -588,14 +490,14 @@ export default function ComparisonModal({ isOpen, onClose }) {
 
               {/* Row: Đánh giá */}
               <div 
-                className={`grid py-3 items-center transition-all ${
+                className={`grid py-2 items-center transition-all ${
                   highlightDifferences && checkRatingDiffers() 
                     ? 'bg-amber-500/[0.03] dark:bg-amber-500/[0.015] border-l-[3px] border-l-amber-500/70' 
                     : 'border-l-[3px] border-l-transparent'
                 }`}
                 style={{ gridTemplateColumns }}
               >
-                <div className="px-7 text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <div className="px-1.5 sm:px-3 text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                   <span>Xếp hạng đánh giá</span>
                   {highlightDifferences && checkRatingDiffers() && (
                     <span className="h-1.5 w-1.5 rounded-full bg-amber-500" title="Khác biệt" />
@@ -604,7 +506,7 @@ export default function ComparisonModal({ isOpen, onClose }) {
                 {comparisonItems.map((p, idx) => (
                   <div 
                     key={p.id} 
-                    className={`px-6 flex flex-col gap-1 transition-colors ${
+                    className={`px-1.5 sm:px-3 border-l border-slate-100 dark:border-slate-800/60 flex flex-col gap-1 transition-colors ${
                       hoveredColIndex === idx ? 'bg-blue-500/[0.02] dark:bg-blue-400/[0.01]' : ''
                     }`}
                   >
@@ -625,7 +527,7 @@ export default function ComparisonModal({ isOpen, onClose }) {
               </div>
 
               {/* SECTION: THÔNG SỐ KỸ THUẬT */}
-              <div className="bg-slate-50/70 dark:bg-slate-900/30 backdrop-blur-sm py-2 px-7 text-[10px] font-black uppercase tracking-widest text-slate-450 dark:text-slate-400 border-l-[3px] border-l-blue-600 flex items-center gap-2">
+              <div className="bg-slate-50/70 dark:bg-slate-900/30 backdrop-blur-sm py-2 px-3 text-[10px] font-black uppercase tracking-widest text-slate-450 dark:text-slate-400 border-l-[3px] border-l-blue-600 flex items-center gap-2">
                 <SlidersHorizontal className="h-3.5 w-3.5 text-blue-500" />
                 <span>Thông số kỹ thuật chi tiết</span>
               </div>
@@ -633,11 +535,11 @@ export default function ComparisonModal({ isOpen, onClose }) {
               {/* Dynamic specifications mapping */}
               {uniqueSpecLabels.length === 0 ? (
                 <div className="grid py-4" style={{ gridTemplateColumns }}>
-                  <div className="px-7 text-xs font-semibold text-slate-400">Không có thông số cụ thể nào được liệt kê.</div>
+                  <div className="px-1.5 sm:px-3 text-[10px] sm:text-xs font-semibold text-slate-400">Không có thông số cụ thể nào được liệt kê.</div>
                   {comparisonItems.map((p, idx) => (
                     <div 
                       key={p.id} 
-                      className={`px-6 text-xs text-slate-400 transition-colors ${
+                      className={`px-1.5 sm:px-3 border-l border-slate-100 dark:border-slate-800/60 text-xs text-slate-400 transition-colors ${
                         hoveredColIndex === idx ? 'bg-blue-500/[0.02] dark:bg-blue-400/[0.01]' : ''
                       }`}
                     >
@@ -651,14 +553,14 @@ export default function ComparisonModal({ isOpen, onClose }) {
                   return (
                     <div 
                       key={label} 
-                      className={`grid py-2.5 hover:bg-slate-50/[0.12] dark:hover:bg-slate-850/[0.03] transition-all duration-150 border-b border-slate-100/50 dark:border-slate-800/30 ${
+                      className={`grid py-2 hover:bg-slate-50/[0.12] dark:hover:bg-slate-850/[0.03] transition-all duration-150 border-b border-slate-100/50 dark:border-slate-800/30 ${
                         highlightDifferences && differs 
                           ? 'bg-amber-500/[0.03] dark:bg-amber-500/[0.015] border-l-[3px] border-l-amber-500/70' 
                           : 'border-l-[3px] border-l-transparent'
                       }`} 
                       style={{ gridTemplateColumns }}
                     >
-                      <div className="px-7 text-xs font-bold text-slate-500 self-start pt-0.5 flex items-center gap-1.5 leading-snug">
+                      <div className="px-1.5 sm:px-3 text-[10px] sm:text-xs font-bold text-slate-500 self-start pt-0.5 flex items-center gap-1.5 leading-snug">
                         <span>{label}</span>
                         {highlightDifferences && differs && (
                           <span className="h-1.5 w-1.5 rounded-full bg-amber-500 flex-shrink-0" title="Khác biệt" />
@@ -667,7 +569,7 @@ export default function ComparisonModal({ isOpen, onClose }) {
                       {comparisonItems.map((p, idx) => (
                         <div 
                           key={p.id} 
-                          className={`px-6 text-xs font-semibold text-slate-750 dark:text-slate-300 leading-relaxed break-words transition-colors ${
+                          className={`px-1.5 sm:px-3 border-l border-slate-100 dark:border-slate-800/60 text-[10px] sm:text-xs font-semibold text-slate-750 dark:text-slate-300 leading-relaxed break-words transition-colors ${
                             hoveredColIndex === idx ? 'bg-blue-500/[0.02] dark:bg-blue-400/[0.01] text-slate-900 dark:text-white font-extrabold' : ''
                           }`}
                         >
@@ -680,18 +582,18 @@ export default function ComparisonModal({ isOpen, onClose }) {
               )}
 
               {/* SECTION: MÔ TẢ TÓM TẮT */}
-              <div className="bg-slate-50/70 dark:bg-slate-900/30 backdrop-blur-sm py-2 px-7 text-[10px] font-black uppercase tracking-widest text-slate-450 dark:text-slate-400 border-l-[3px] border-l-blue-600 flex items-center gap-2">
+              <div className="bg-slate-50/70 dark:bg-slate-900/30 backdrop-blur-sm py-2 px-3 text-[10px] font-black uppercase tracking-widest text-slate-450 dark:text-slate-400 border-l-[3px] border-l-blue-600 flex items-center gap-2">
                 <Sparkles className="h-3.5 w-3.5 text-blue-500" />
                 <span>Giới thiệu ngắn & Khuyến mãi</span>
               </div>
 
               {/* Row: Mô tả tóm tắt */}
               <div className="grid py-4" style={{ gridTemplateColumns }}>
-                <div className="px-7 text-xs font-bold text-slate-500">Mô tả tóm tắt</div>
+                <div className="px-1.5 sm:px-3 text-[10px] sm:text-xs font-bold text-slate-500">Mô tả tóm tắt</div>
                 {comparisonItems.map((p, idx) => (
                   <div 
                     key={p.id} 
-                    className={`px-6 text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium transition-colors ${
+                    className={`px-1.5 sm:px-3 border-l border-slate-100 dark:border-slate-800/60 text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium transition-colors ${
                       hoveredColIndex === idx ? 'bg-blue-500/[0.02] dark:bg-blue-400/[0.01]' : ''
                     }`}
                   >
@@ -789,4 +691,8 @@ export default function ComparisonModal({ isOpen, onClose }) {
     </div>
   );
 }
+
+
+
+
 
