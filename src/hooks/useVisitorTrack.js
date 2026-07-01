@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { getVisitorId as getAnalyticsVisitorId, trackUserEvent } from '../utils/analytics';
 
 const API_BASE = String(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').trim().replace(/\/$/, '');
 const VISITOR_ID_KEY = '_shoptech_vid';
@@ -93,14 +94,11 @@ export function useVisitorTrack() {
   useEffect(() => {
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
-      let visitorId = localStorage.getItem(VISITOR_ID_KEY);
-      if (!visitorId) {
-        visitorId = generateVisitorId();
-        localStorage.setItem(VISITOR_ID_KEY, visitorId);
-      }
+      const visitorId = getAnalyticsVisitorId();
       const userId = getCurrentUserId();
       localStorage.setItem(LAST_SENT_USER_KEY, userId || '');
       await recordVisit(visitorId, userId);
+      trackUserEvent('page_view', { metadata: { path: location.pathname, search: location.search } });
     }, 500);
 
     return () => clearTimeout(timerRef.current);
@@ -116,8 +114,7 @@ export function useVisitorTrack() {
 
       if ((userId || '') === lastSentUid) return;
 
-      const visitorId = localStorage.getItem(VISITOR_ID_KEY) || generateVisitorId();
-      localStorage.setItem(VISITOR_ID_KEY, visitorId);
+      const visitorId = getAnalyticsVisitorId();
       localStorage.setItem(LAST_SENT_USER_KEY, userId || '');
 
       await recordVisit(visitorId, userId);

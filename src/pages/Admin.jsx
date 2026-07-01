@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Edit, Trash2, Users, ShoppingBag, X, Loader2, AlertCircle, ShieldAlert, Check, Upload, BarChart3, Boxes, UserCog, Wallet, Eye, EyeOff, Search, FileText, Printer, Truck, Calendar, Clock, CreditCard, Tag, ChevronLeft, ChevronRight, ChevronDown, Menu, RefreshCw, GripVertical, ClipboardPaste, WandSparkles, Activity, Globe, MapPin, Smartphone, Monitor, Tablet, BookOpen, MessageSquare, Star } from "lucide-react";
 import { useToast } from "../context/ToastContext";
@@ -492,6 +492,12 @@ export default function Admin() {
   const [insightReviews, setInsightReviews] = useState([]);
   const [loadingInsightReviews, setLoadingInsightReviews] = useState(false);
   const [savingInsightAnalysis, setSavingInsightAnalysis] = useState(false);
+  const [fakeReviewName, setFakeReviewName] = useState("Khách hàng ShopTech");
+  const [fakeReviewRating, setFakeReviewRating] = useState(5);
+  const [fakeReviewComment, setFakeReviewComment] = useState("");
+  const [savingFakeReview, setSavingFakeReview] = useState(false);
+  const [userEvents, setUserEvents] = useState([]);
+  const [loadingUserEvents, setLoadingUserEvents] = useState(false);
 
   const navigate = useNavigate();
 
@@ -1479,6 +1485,59 @@ export default function Admin() {
       }
     } catch (error) {
       showToast("Lỗi kết nối xóa đánh giá", "error");
+    }
+  };
+
+  const handleCreateFakeReview = async () => {
+    const prodId = editingId || (insightProduct && insightProduct.id);
+    if (!prodId) {
+      showToast("Không tìm thấy sản phẩm để thêm đánh giá!", "error");
+      return;
+    }
+    setSavingFakeReview(true);
+    try {
+      const response = await fetch(`${API_URL}/api/products/${prodId}/reviews/admin`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          name: fakeReviewName,
+          rating: Number(fakeReviewRating),
+          comment: fakeReviewComment,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || "Không thể thêm đánh giá");
+      showToast("Đã thêm đánh giá ảo cho sản phẩm!", "success");
+      setFakeReviewName("Khách hàng ShopTech");
+      setFakeReviewRating(5);
+      setFakeReviewComment("");
+      fetchInsightReviews(prodId);
+    } catch (error) {
+      showToast(error.message || "Lỗi thêm đánh giá ảo", "error");
+    } finally {
+      setSavingFakeReview(false);
+    }
+  };
+
+  const fetchUserEvents = async (filters = {}) => {
+    setLoadingUserEvents(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(filters.page || 1),
+        limit: String(filters.limit || 50),
+      });
+      if (filters.visitorId) params.set("visitorId", filters.visitorId);
+      if (filters.userId) params.set("userId", filters.userId);
+      if (filters.date) params.set("date", filters.date);
+      const response = await fetchWithRetry(`${API_URL}/api/analytics/events?${params.toString()}`, {
+        headers: authHeaders(),
+      });
+      const data = await response.json();
+      setUserEvents(data.events || []);
+    } catch (error) {
+      showToast("Không thể tải lịch sử hành vi khách hàng", "error");
+    } finally {
+      setLoadingUserEvents(false);
     }
   };
 
@@ -3401,6 +3460,7 @@ export default function Admin() {
                               />
                             </th>
                             <th className="px-6 py-4">Ảnh</th>
+                            <th className="px-6 py-4">ID</th>
                             <th className="px-6 py-4">Tên sản phẩm</th>
                             <th className="px-6 py-4">Danh mục</th>
                             <th className="px-6 py-4">Hãng</th>
@@ -3438,6 +3498,7 @@ export default function Admin() {
                                   />
                                 </div>
                               </td>
+                              <td className="px-6 py-4 font-black text-slate-500 dark:text-slate-400">#{prod.id}</td>
                               <td className="px-6 py-4 font-bold text-slate-900 dark:text-white max-w-[200px] truncate">
                                 <div className="flex flex-col gap-0.5">
                                   <span>{prod.name}</span>
@@ -5610,6 +5671,42 @@ export default function Admin() {
                       Tải lại
                     </button>
                   </div>
+                  <div className="rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/60 dark:bg-blue-950/20 p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-wider text-blue-700 dark:text-blue-300">Thêm đánh giá ảo</p>
+                        <p className="text-[10px] font-semibold text-blue-500/80 dark:text-blue-300/70">Dành cho admin tạo phản hồi mẫu khi sản phẩm chưa có nhiều đánh giá.</p>
+                      </div>
+                      <select
+                        value={fakeReviewRating}
+                        onChange={(e) => setFakeReviewRating(Number(e.target.value))}
+                        className="h-9 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-white dark:bg-slate-900 px-3 text-xs font-black text-slate-700 dark:text-white"
+                      >
+                        {[5, 4, 3, 2, 1].map((star) => <option key={star} value={star}>{star} sao</option>)}
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr_auto] gap-2">
+                      <input
+                        value={fakeReviewName}
+                        onChange={(e) => setFakeReviewName(e.target.value)}
+                        placeholder="Tên hiển thị"
+                        className="rounded-xl border border-blue-100 dark:border-blue-900/40 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-white outline-none"
+                      />
+                      <input
+                        value={fakeReviewComment}
+                        onChange={(e) => setFakeReviewComment(e.target.value)}
+                        placeholder="Nội dung đánh giá"
+                        className="rounded-xl border border-blue-100 dark:border-blue-900/40 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-white outline-none"
+                      />
+                      <RippleButton
+                        onClick={handleCreateFakeReview}
+                        disabled={savingFakeReview}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs rounded-xl shadow-sm"
+                      >
+                        {savingFakeReview ? "Đang thêm..." : "Thêm"}
+                      </RippleButton>
+                    </div>
+                  </div>
                   {loadingInsightReviews ? (
                     <div className="py-8 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-blue-500" /></div>
                   ) : insightReviews.length > 0 ? (
@@ -6657,6 +6754,7 @@ export default function Admin() {
                           <th className="px-4 py-3">Nguồn / Landing Page</th>
                           <th className="px-4 py-3">Lượt xem</th>
                           <th className="px-4 py-3 text-right">Lần cuối</th>
+                          <th className="px-4 py-3 text-right">Hành vi</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
@@ -6781,6 +6879,15 @@ export default function Admin() {
                                   Vào lúc: {new Date(dev.firstSeen).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                                 </p>
                               </td>
+                              <td className="px-4 py-3 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => fetchUserEvents({ visitorId: dev.visitorId, date: devicesDate })}
+                                  className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/30 dark:hover:bg-blue-950/50 text-blue-600 dark:text-blue-300 text-[10px] font-black transition-colors"
+                                >
+                                  Xem
+                                </button>
+                              </td>
                             </tr>
                           );
                         })}
@@ -6789,6 +6896,49 @@ export default function Admin() {
                   </div>
                 </div>
               )}
+            </div>
+
+            <div className="px-6 pb-6">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white">Lịch sử hành vi khách hàng</p>
+                    <p className="text-[10px] text-slate-400 font-semibold">Bấm “Xem” ở từng thiết bị để xem khách đã xem/bấm gì.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fetchUserEvents({ date: devicesDate })}
+                    className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 text-[10px] font-black transition-colors"
+                  >
+                    Tải tất cả
+                  </button>
+                </div>
+                <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                  {loadingUserEvents ? (
+                    <div className="p-6 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-blue-500" /></div>
+                  ) : userEvents.length > 0 ? (
+                    userEvents.map((event) => (
+                      <div key={event.id} className="p-3 flex items-start justify-between gap-3 text-xs">
+                        <div className="min-w-0">
+                          <p className="font-black text-slate-800 dark:text-white">{event.eventType}</p>
+                          <p className="text-[10px] text-slate-400 truncate">{event.page || "Không rõ trang"}</p>
+                          {event.metadata && Object.keys(event.metadata).length > 0 && (
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                              {event.metadata.name || event.metadata.query || JSON.stringify(event.metadata)}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-bold text-slate-600 dark:text-slate-300">{new Date(event.createdAt).toLocaleTimeString("vi-VN")}</p>
+                          <p className="text-[9px] text-slate-400">{event.userName || event.userEmail || "Guest"}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-6 text-center text-xs font-bold text-slate-400">Chưa tải lịch sử hành vi.</div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Modal Footer / Pagination */}

@@ -4,6 +4,7 @@ import { useCart } from "../context/CartContext";
 import { CheckCircle2, CreditCard, Truck, MapPin, Phone, Store, QrCode, Loader2, Mail, Tag, Package } from "lucide-react";
 import { sendBankTransferNotification, sendStorePickupNotification } from "../services/emailService";
 import { formatVND, toVndInt } from "../utils/money";
+import { trackUserEvent } from "../utils/analytics";
 
 export default function Checkout() {
   const { cart, clearCart } = useCart();
@@ -79,6 +80,9 @@ export default function Checkout() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    trackUserEvent("open_checkout", {
+      metadata: { itemsCount: cart.reduce((sum, item) => sum + item.quantity, 0) },
+    });
 
     const savedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
@@ -168,6 +172,13 @@ export default function Checkout() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload)
+      });
+      trackUserEvent("order_created", {
+        metadata: {
+          total,
+          paymentMethod: form.paymentMethod,
+          items: orderPayload.orderItems.map((item) => ({ productId: item.productId, name: item.name, quantity: item.quantity })),
+        },
       });
 
       if (form.paymentMethod === 'bank') {

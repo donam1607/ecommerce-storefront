@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { toVndInt } from '../utils/money';
+import { trackUserEvent } from '../utils/analytics';
 
 export const CartContext = createContext();
 
@@ -7,6 +8,10 @@ export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
 
   const addToCart = (product) => {
+    trackUserEvent('add_to_cart', {
+      productId: product.id,
+      metadata: { name: product.name, price: toVndInt(product.price), category: product.category },
+    });
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (existing) {
@@ -28,10 +33,12 @@ export const CartProvider = ({ children }) => {
   };
 
   const removeFromCart = (productId) => {
+    trackUserEvent('remove_from_cart', { productId });
     setCart((prev) => prev.filter((item) => item.id !== productId));
   };
 
   const updateQuantity = (productId, quantity) => {
+    trackUserEvent('update_cart_quantity', { productId, metadata: { quantity } });
     setCart((prev) =>
       prev.map((item) =>
         item.id === productId ? { ...item, quantity: Math.max(1, quantity) } : item
@@ -39,7 +46,10 @@ export const CartProvider = ({ children }) => {
     );
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = () => {
+    trackUserEvent('clear_cart');
+    setCart([]);
+  };
 
   return (
     <CartContext.Provider

@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { PRODUCTS } from "../data/products";
 import { formatVND, toVndInt } from "../utils/money";
+import { authHeaders } from "../utils/api";
+import { trackUserEvent } from "../utils/analytics";
 
 const API_URL = "https://shoptech-backend.onrender.com";
 
@@ -181,8 +183,10 @@ export default function ProductDetail() {
   const [isEditingAnalysis, setIsEditingAnalysis] = useState(false);
   const [editedAnalysisContent, setEditedAnalysisContent] = useState("");
   const [savingAnalysis, setSavingAnalysis] = useState(false);
-  const [isAnalysisOpen, setIsAnalysisOpen] = useState(true);
+  const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [isReviewsOpen, setIsReviewsOpen] = useState(true);
+  const [canReviewProduct, setCanReviewProduct] = useState(false);
+  const [checkingReviewEligibility, setCheckingReviewEligibility] = useState(false);
 
   // Similar Products States
   const [similarProducts, setSimilarProducts] = useState([]);
@@ -218,13 +222,22 @@ export default function ProductDetail() {
         // Fetch extra insights
         fetchReviews(id, 1);
         fetchAnalysis(id);
+        fetchReviewEligibility(id);
         fetchSimilarProducts(id, normProduct);
+        trackUserEvent('view_product', {
+          productId: normProduct.id,
+          metadata: { name: normProduct.name, category: normProduct.category, price: normProduct.price },
+        });
       } catch (error) {
         const localProduct = PRODUCTS.find(p => p.id === parseInt(id));
         if (localProduct) {
           const normProduct = { ...localProduct, price: toVndInt(localProduct.price) };
           setProduct(normProduct);
           fetchSimilarProducts(id, normProduct);
+          trackUserEvent('view_product', {
+            productId: normProduct.id,
+            metadata: { name: normProduct.name, category: normProduct.category, price: normProduct.price },
+          });
         } else {
           setProduct(null);
         }
@@ -269,6 +282,26 @@ export default function ProductDetail() {
     }
   };
 
+  const fetchReviewEligibility = async (productId) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setCanReviewProduct(false);
+      return;
+    }
+    setCheckingReviewEligibility(true);
+    try {
+      const response = await fetch(`${API_URL}/api/products/${productId}/reviews/eligibility`, {
+        headers: authHeaders(),
+      });
+      const data = response.ok ? await response.json() : {};
+      setCanReviewProduct(!!data.canReview);
+    } catch {
+      setCanReviewProduct(false);
+    } finally {
+      setCheckingReviewEligibility(false);
+    }
+  };
+
   // Fetch similar products
   const fetchSimilarProducts = async (productId, currentProduct) => {
     if (!currentProduct) return;
@@ -299,19 +332,20 @@ export default function ProductDetail() {
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!newRating) return;
+    if (!canReviewProduct) {
+      showToast("Bạn cần đăng nhập bằng tài khoản đã mua và nhận sản phẩm này để đánh giá.", "error");
+      return;
+    }
     setSubmittingReview(true);
     try {
       const payload = {
         rating: newRating,
-        name: currentUser ? currentUser.name : newName.trim(),
         comment: newComment.trim(),
-        userId: currentUser ? currentUser.id : null,
-        badge: currentUser ? "verified" : null
       };
 
       const response = await fetch(`${API_URL}/api/products/${id}/reviews`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify(payload)
       });
 
@@ -328,7 +362,7 @@ export default function ProductDetail() {
           setProduct(prev => ({ ...prev, rating: prodData.rating, reviews: prodData.reviews }));
         }
       } else {
-        const err = await response.json();
+        const err = await response.json().catch(() => ({}));
         showToast(err.message || "Gửi đánh giá thất bại", "error");
       }
     } catch (error) {
@@ -358,7 +392,8 @@ export default function ProductDetail() {
         setIsEditingAnalysis(false);
         showToast("Đã lưu bài viết phân tích thành công!", "success");
       } else {
-        showToast("Lưu thất bại. Vui lòng thử lại.", "error");
+        const err = await response.json().catch(() => ({}));
+        showToast(err.message || "Lưu thất bại. Vui lòng thử lại.", "error");
       }
     } catch (error) {
       showToast("Lỗi lưu dữ liệu phân tích", "error");
@@ -423,6 +458,10 @@ export default function ProductDetail() {
   };
 
   const handleBuyNow = () => {
+    trackUserEvent('buy_now', {
+      productId: product.id,
+      metadata: { name: product.name, price: salePrice, quantity: qty },
+    });
     for (let i = 0; i < qty; i++) addToCart(product);
     navigate("/checkout");
   };
@@ -861,6 +900,7 @@ export default function ProductDetail() {
               </div>
 
               {/* Submitting form (Shopee style rating entry) */}
+              {canReviewProduct ? (
               <form onSubmit={handleSubmitReview} className="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm space-y-4">
                 <div>
                   <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-0.5">Viết đánh giá của bạn</h4>
@@ -926,6 +966,20 @@ export default function ProductDetail() {
                   {submittingReview ? "Đang gửi..." : "Gửi đánh giá"}
                 </RippleButton>
               </form>
+              ) : (
+                <div className="bg-slate-50 dark:bg-slate-950/50 border border-slate-200/70 dark:border-slate-800 rounded-2xl p-5">
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-1">
+                    Đánh giá chỉ dành cho khách đã mua
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold leading-relaxed">
+                    {checkingReviewEligibility
+                      ? "Đang kiểm tra quyền đánh giá..."
+                      : currentUser
+                        ? "Tài khoản này chưa có đơn đã giao thành công chứa sản phẩm này. Bạn vẫn có thể xem đánh giá của khách hàng khác bên dưới."
+                        : "Vui lòng đăng nhập bằng tài khoản đã mua và nhận sản phẩm này để viết đánh giá. Bạn vẫn có thể xem đánh giá của khách hàng khác bên dưới."}
+                  </p>
+                </div>
+              )}
 
               {/* Reviews List */}
               <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800/80">
@@ -1016,7 +1070,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scroll-smooth scrollbar-none px-1">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 pt-2 pb-2">
               {similarProducts.map((simProd) => {
                 const simHasDiscount = simProd.discount > 0 || (simProd.discountedPrice !== null && simProd.discountedPrice !== undefined);
                 const simSalePrice = simHasDiscount
@@ -1025,7 +1079,7 @@ export default function ProductDetail() {
                       : Math.floor(simProd.price * (1 - simProd.discount / 100)))
                   : simProd.price;
                 return (
-                  <div key={simProd.id} className="snap-start flex-shrink-0 w-[160px] sm:w-[200px]">
+                  <div key={simProd.id} className="min-w-0">
                     <Link
                       to={`/product/${simProd.id}`}
                       className="group/card block bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-800/50 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col relative h-full"
@@ -1059,14 +1113,16 @@ export default function ProductDetail() {
                       </div>
 
                       {/* Info */}
-                      <div className="p-2.5 flex-grow flex flex-col gap-1.5">
-                        <div className="flex-grow space-y-1">
-                          <h4 className="font-extrabold text-slate-900 dark:text-slate-100 group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400 transition-colors line-clamp-2 text-[11px] sm:text-xs leading-snug">
+                      <div className="p-2 sm:p-3 flex-grow flex flex-col gap-1.5">
+                        <div className="flex-grow">
+                          <div className="min-h-[50px] sm:min-h-[58px]">
+                          <h4 className="font-extrabold text-slate-900 dark:text-slate-100 group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400 transition-colors line-clamp-2 text-[11px] sm:text-sm leading-snug">
                             {simProd.name}
                           </h4>
                           {simProd.description && (
-                            <p className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1 font-medium">{simProd.description}</p>
+                            <p className="mt-1 text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-1 font-medium">{simProd.description}</p>
                           )}
+                          </div>
                           <div className="flex items-center gap-1 pt-0.5">
                             <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
                             <span className="text-[9px] font-bold text-slate-700 dark:text-slate-300">{simProd.rating || 0}</span>
@@ -1075,16 +1131,19 @@ export default function ProductDetail() {
                         </div>
 
                         {/* Price */}
-                        <div>
+                        <div className="min-h-[34px] sm:min-h-[38px] flex flex-col justify-start">
                           {simHasDiscount ? (
-                            <div className="flex flex-wrap items-baseline gap-1">
-                              <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">{formatVND(simSalePrice)}</span>
-                              {simProd.discount > 0 && (
-                                <span className="text-[8px] text-slate-400 line-through">{formatVND(simProd.price)}</span>
-                              )}
-                            </div>
+                            <>
+                              <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white leading-tight">{formatVND(simSalePrice)}</span>
+                              <span className={`text-[9px] sm:text-[10px] text-slate-400 line-through leading-tight ${simProd.discount > 0 ? "" : "opacity-0 select-none"}`}>
+                                {formatVND(simProd.price)}
+                              </span>
+                            </>
                           ) : (
-                            <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">{formatVND(simProd.price)}</span>
+                            <>
+                              <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white leading-tight">{formatVND(simProd.price)}</span>
+                              <span className="text-[9px] sm:text-[10px] leading-tight opacity-0 select-none" aria-hidden="true">{formatVND(simProd.price)}</span>
+                            </>
                           )}
                         </div>
                       </div>

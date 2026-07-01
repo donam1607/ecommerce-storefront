@@ -1,15 +1,22 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { Trash2, ShoppingBag, ArrowRight, Package, Tag } from "lucide-react";
 import { formatVND, toVndInt } from "../utils/money";
 import QuantityControl from "../components/QuantityControl";
+import { trackUserEvent } from "../utils/analytics";
 
 export default function Cart() {
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
   const subtotal = cart.reduce((sum, item) => sum + toVndInt(item.price) * item.quantity, 0);
   const shipping = 0;
   const total = subtotal + shipping;
+
+  useEffect(() => {
+    trackUserEvent("open_cart", {
+      metadata: { itemsCount: cart.reduce((sum, item) => sum + item.quantity, 0), total },
+    });
+  }, []);
 
   if (cart.length === 0) {
     return (
@@ -145,6 +152,9 @@ export default function Cart() {
 
               <Link
                 to="/checkout"
+                onClick={() => trackUserEvent("checkout_start", {
+                  metadata: { itemsCount: cart.reduce((sum, item) => sum + item.quantity, 0), total },
+                })}
                 className="block w-full text-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-4 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/25 hover:shadow-blue-500/35"
               >
                 Tiến hành thanh toán →
