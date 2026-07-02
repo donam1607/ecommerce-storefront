@@ -6,7 +6,6 @@ import {
 import { Link } from 'react-router-dom';
 import { formatVND } from '../utils/money';
 import { useCart } from '../context/CartContext';
-import { useToast } from '../context/ToastContext';
 import { useComparison } from '../context/ComparisonContext';
 import { API_BASE, fetchWithRetry } from '../utils/api';
 
@@ -62,7 +61,6 @@ const formatSpecValue = (spec) => {
 export default function ComparisonModal({ isOpen, onClose }) {
   const { comparisonItems, addToComparison, removeFromComparison, clearComparison } = useComparison();
   const { addToCart } = useCart();
-  const { showToast } = useToast();
 
   const [hoveredColIndex, setHoveredColIndex] = useState(null);
   const [highlightDifferences, setHighlightDifferences] = useState(false);
@@ -100,14 +98,14 @@ export default function ComparisonModal({ isOpen, onClose }) {
         const data = await response.json();
         setAllProducts(Array.isArray(data) ? data : []);
       } catch (error) {
-        showToast('Không thể tải danh sách sản phẩm để so sánh.', 'error');
+        console.error('Không thể tải danh sách sản phẩm để so sánh:', error);
       } finally {
         setLoadingProducts(false);
       }
     };
 
     fetchProducts();
-  }, [isProductPickerOpen, allProducts.length, showToast]);
+  }, [isProductPickerOpen, allProducts.length]);
 
   if (!isOpen) return null;
 
@@ -146,7 +144,6 @@ export default function ComparisonModal({ isOpen, onClose }) {
 
   const handleAddToCartQuick = (product) => {
     addToCart(product);
-    showToast(`Đã thêm "${product.name}" vào giỏ hàng!`, 'success');
   };
 
   // Difference checkers for highlighting rows
@@ -608,7 +605,7 @@ export default function ComparisonModal({ isOpen, onClose }) {
 
         {isProductPickerOpen && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/45 backdrop-blur-sm p-4">
-            <div className="w-full max-w-2xl max-h-[78vh] rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden animate-scale-up">
+            <div className="comparison-picker-pop w-full max-w-2xl max-h-[78vh] rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-black text-slate-900 dark:text-white">Chọn thêm sản phẩm</p>
@@ -686,6 +683,18 @@ export default function ComparisonModal({ isOpen, onClose }) {
             </div>
           </div>
         )}
+
+        <style>{`
+          @keyframes comparisonPickerPop {
+            0% { opacity: 0; transform: translateY(34px) scale(0.94); }
+            64% { opacity: 1; transform: translateY(-7px) scale(1.015); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+          }
+          .comparison-picker-pop {
+            animation: comparisonPickerPop 0.42s cubic-bezier(0.2, 0.95, 0.2, 1.05) both;
+            transform-origin: bottom center;
+          }
+        `}</style>
 
       </div>
     </div>

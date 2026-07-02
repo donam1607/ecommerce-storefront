@@ -1502,7 +1502,10 @@ export default function Admin() {
     try {
       const response = await fetch(`${API_URL}/api/products/${prodId}/reviews/admin`, {
         method: "POST",
-        headers: authHeaders(),
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders(),
+        },
         body: JSON.stringify({
           name: fakeReviewName,
           rating: Number(fakeReviewRating),

@@ -111,12 +111,12 @@ export default function ComparisonBar({ onOpenCompareModal }) {
   return (
     <div
       ref={barRef}
-      className="fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-[9999] w-[calc(100%-0.75rem)] max-w-6xl animate-slide-up"
+      className="comparison-bar-pop fixed bottom-3 sm:bottom-6 left-0 right-0 mx-auto z-[9999] w-[calc(100%-0.75rem)] max-w-6xl"
     >
       <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-[24px] sm:rounded-[28px] blur-md opacity-20 dark:opacity-35" />
 
       {isPickerOpen && (
-        <div className="absolute left-0 right-0 bottom-[calc(100%+0.6rem)] mx-auto max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/98 dark:bg-slate-900/98 shadow-2xl overflow-hidden">
+        <div className="comparison-picker-pop absolute left-0 right-0 bottom-[calc(100%+0.6rem)] mx-auto max-w-2xl rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/98 dark:bg-slate-900/98 shadow-2xl overflow-hidden">
           <div className="p-3 border-b border-slate-100 dark:border-slate-800">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -198,7 +198,8 @@ export default function ComparisonBar({ onOpenCompareModal }) {
               item ? (
                 <div
                   key={item.id}
-                  className="relative min-w-0 rounded-2xl border border-blue-200/70 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/20 p-1.5 sm:p-2 text-center shadow-sm"
+                  className="comparison-slot-pop relative min-w-0 rounded-2xl border border-blue-200/70 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/20 p-1.5 sm:p-2 text-center shadow-sm"
+                  style={{ animationDelay: `${index * 70}ms` }}
                 >
                   <button
                     type="button"
@@ -223,7 +224,8 @@ export default function ComparisonBar({ onOpenCompareModal }) {
                   key={`empty-${index}`}
                   type="button"
                   onClick={() => setIsPickerOpen(true)}
-                  className="min-w-0 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/30 p-1.5 sm:p-2 text-center text-slate-400 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all"
+                  className="comparison-slot-pop min-w-0 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/30 p-1.5 sm:p-2 text-center text-slate-400 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-all"
+                  style={{ animationDelay: `${index * 70}ms` }}
                 >
                   <div className="mx-auto h-9 w-11 sm:h-14 sm:w-16 rounded-xl border border-dashed border-current flex items-center justify-center">
                     <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -272,6 +274,35 @@ export default function ComparisonBar({ onOpenCompareModal }) {
           {comparisonItems.length >= 2 ? 'So sánh ngay' : `So sánh cần thêm ${2 - comparisonItems.length}`}
         </button>
       </div>
+      <style>{`
+        @keyframes comparisonPickerPop {
+          0% { opacity: 0; transform: translateY(28px) scale(0.94); }
+          64% { opacity: 1; transform: translateY(-6px) scale(1.015); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes comparisonBarPop {
+          0% { opacity: 0; transform: translateY(42px) scale(0.96); }
+          68% { opacity: 1; transform: translateY(-6px) scale(1.01); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes comparisonSlotPop {
+          0% { opacity: 0; transform: translateY(18px) scale(0.92); }
+          70% { opacity: 1; transform: translateY(-3px) scale(1.02); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .comparison-bar-pop {
+          animation: comparisonBarPop 0.48s cubic-bezier(0.2, 0.95, 0.2, 1.05) both;
+          transform-origin: bottom center;
+        }
+        .comparison-picker-pop {
+          animation: comparisonPickerPop 0.42s cubic-bezier(0.2, 0.95, 0.2, 1.05) both;
+          transform-origin: bottom center;
+        }
+        .comparison-slot-pop {
+          animation: comparisonSlotPop 0.38s cubic-bezier(0.2, 0.9, 0.2, 1.12) both;
+          transform-origin: bottom center;
+        }
+      `}</style>
     </div>
   );
 }
