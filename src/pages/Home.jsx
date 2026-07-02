@@ -1016,7 +1016,7 @@ export default function Home() {
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <h4 className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">Bảo hành dài hạn 2 năm</h4>
+              <h4 className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">Bảo hành dài hạn</h4>
               <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold leading-relaxed">Bảo hành linh kiện & đổi mới linh hoạt</p>
             </div>
           </div>
@@ -1324,22 +1324,22 @@ export default function Home() {
 
         {/* Filter Selection Bar */}
         <ScrollReveal className="relative z-[1000]">
-          <div data-home-filter-dropdown className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-800/50 p-3 px-4 rounded-2xl shadow-sm transition-all duration-300">
+          <div data-home-filter-dropdown className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 mb-8 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border border-slate-200/60 dark:border-slate-800/60 p-3 sm:px-4 rounded-3xl md:rounded-2xl shadow-sm transition-all duration-300">
             
             {/* Dropdown Filters */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full md:w-auto">
               {/* Brand Trigger */}
-              <div className="relative">
+              <div className="relative min-w-0">
                 <button
                   type="button"
                   onClick={() => setOpenDropdown(openDropdown === "brand" ? null : "brand")}
-                  className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border rounded-full transition-all ${
+                  className={`w-full sm:w-auto min-w-0 justify-between flex items-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-2 text-[11px] sm:text-xs font-semibold border rounded-2xl sm:rounded-full transition-all ${
                     activeBrand !== "All"
                       ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-500 border-blue-200"
                       : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                   }`}
                 >
-                  <span>Hãng: {activeBrand === "All" ? "Tất cả" : activeBrand}</span>
+                  <span className="truncate">Hãng: {activeBrand === "All" ? "Tất cả" : activeBrand}</span>
                   <ChevronDown className={`h-3.5 w-3.5 transition-transform ${openDropdown === "brand" ? "rotate-180" : ""}`} />
                 </button>
                 {openDropdown === "brand" && (
@@ -1359,17 +1359,17 @@ export default function Home() {
               </div>
 
               {/* Sub-category Trigger */}
-              <div className="relative">
+              <div className="relative min-w-0">
                 <button
                   type="button"
                   onClick={() => setOpenDropdown(openDropdown === "subCategory" ? null : "subCategory")}
-                  className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border rounded-full transition-all ${
+                  className={`w-full sm:w-auto min-w-0 justify-between flex items-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-2 text-[11px] sm:text-xs font-semibold border rounded-2xl sm:rounded-full transition-all ${
                     activeSubCategory !== "All"
                       ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-500 border-blue-200"
                       : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                   }`}
                 >
-                  <span>Phân loại: {activeSubCategory === "All" ? "Tất cả" : activeSubCategory}</span>
+                  <span className="truncate">Phân loại: {activeSubCategory === "All" ? "Tất cả" : activeSubCategory}</span>
                   <ChevronDown className={`h-3.5 w-3.5 transition-transform ${openDropdown === "subCategory" ? "rotate-180" : ""}`} />
                 </button>
                 {openDropdown === "subCategory" && (
@@ -1389,17 +1389,17 @@ export default function Home() {
               </div>
 
               {/* Condition Trigger */}
-              <div className="relative">
+              <div className="relative min-w-0">
                 <button
                   type="button"
                   onClick={() => setOpenDropdown(openDropdown === "condition" ? null : "condition")}
-                  className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border rounded-full transition-all ${
+                  className={`w-full sm:w-auto min-w-0 justify-between flex items-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-2 text-[11px] sm:text-xs font-semibold border rounded-2xl sm:rounded-full transition-all ${
                     activeCondition !== "All"
                       ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-500 border-blue-200"
                       : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                   }`}
                 >
-                  <span>Tình trạng: {activeCondition === "All" ? "Tất cả" : activeCondition === "New" ? "Mới" : activeCondition === "Like New" ? "Like New" : "Cũ"}</span>
+                  <span className="truncate">Tình trạng: {activeCondition === "All" ? "Tất cả" : activeCondition === "New" ? "Mới" : activeCondition === "Like New" ? "Like New" : "Cũ"}</span>
                   <ChevronDown className={`h-3.5 w-3.5 transition-transform ${openDropdown === "condition" ? "rotate-180" : ""}`} />
                 </button>
                 {openDropdown === "condition" && (
@@ -1426,28 +1426,28 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setPromoOnly((prev) => !prev)}
-                className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border rounded-full transition-all ${
+                className={`w-full sm:w-auto min-w-0 justify-left md:justify-start flex items-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-2 text-[11px] sm:text-xs font-semibold border rounded-2xl sm:rounded-full transition-all ${
                   promoOnly
                     ? "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/60"
                     : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                 }`}
               >
                 <Flame className={`h-3.5 w-3.5 ${promoOnly ? "fill-red-500 text-red-500" : ""}`} />
-                <span>Đang ưu đãi</span>
+                <span className="truncate">Đang ưu đãi</span>
               </button>
 
               {/* Price Range Trigger */}
-              <div className="relative">
+              <div className="relative min-w-0">
                 <button
                   type="button"
                   onClick={() => setOpenDropdown(openDropdown === "price" ? null : "price")}
-                  className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border rounded-full transition-all ${
+                  className={`w-full sm:w-auto min-w-0 justify-between flex items-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-2 text-[11px] sm:text-xs font-semibold border rounded-2xl sm:rounded-full transition-all ${
                     priceFilterActive
                       ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-500 border-blue-200"
                       : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                   }`}
                 >
-                  <span>
+                  <span className="truncate">
                     Giá: {priceFilterActive ? `${formatVND(selectedMinPrice)} - ${formatVND(selectedMaxPrice)}` : "Mọi mức giá"}
                   </span>
                   <span className="hidden">
@@ -1577,13 +1577,13 @@ export default function Home() {
               </div>
 
               {/* Sort Trigger */}
-              <div className="relative">
+              <div className="relative min-w-0">
                 <button
                   type="button"
                   onClick={() => setOpenDropdown(openDropdown === "sort" ? null : "sort")}
-                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold border bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 rounded-full transition-all"
+                  className="w-full sm:w-auto min-w-0 justify-between flex items-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-2 text-[11px] sm:text-xs font-semibold border bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 rounded-2xl sm:rounded-full transition-all"
                 >
-                  <span>
+                  <span className="truncate">
                     Sắp xếp: {
                       sortBy === "newest" ? "Mới nhất" :
                       sortBy === "oldest" ? "Cũ nhất" :
@@ -1617,8 +1617,8 @@ export default function Home() {
             </div>
 
             {/* Results Count & Clean Filters Button */}
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-slate-400 dark:text-slate-500 font-bold whitespace-nowrap">
+            <div className="w-full md:w-auto flex items-center justify-between md:justify-end gap-3 border-t border-slate-100 dark:border-slate-800/70 pt-2 md:border-t-0 md:pt-0">
+              <span className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-bold whitespace-nowrap">
                 Tìm thấy {sorted.length} sản phẩm
               </span>
               {(activeCategory !== "All" || activeBrand !== "All" || activeSubCategory !== "All" || activeCondition !== "All" || promoOnly || sortBy !== "newest" || priceRange !== "all" || search !== "") && (
@@ -1638,7 +1638,7 @@ export default function Home() {
                     setSearchParams({});
                     setOpenDropdown(null);
                   }}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-500 rounded-full text-xs font-semibold transition-all active:scale-95"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-500 rounded-full text-[11px] sm:text-xs font-semibold transition-all active:scale-95"
                   title="Xóa tất cả bộ lọc"
                 >
                   <X className="h-3.5 w-3.5" />

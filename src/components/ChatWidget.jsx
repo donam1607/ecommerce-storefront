@@ -310,6 +310,7 @@ export default function ChatWidget() {
   const [showWelcomeBubble, setShowWelcomeBubble] = useState(false);
   const [activeActionIndex, setActiveActionIndex] = useState(0);
   const [contactHubOpen, setContactHubOpen] = useState(false);
+  const [isMobileContact, setIsMobileContact] = useState(false);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
   const contactCloseTimerRef = useRef(null);
@@ -363,6 +364,31 @@ export default function ChatWidget() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 640px), (pointer: coarse)');
+    const updateContactMode = () => setIsMobileContact(mediaQuery.matches);
+    updateContactMode();
+    mediaQuery.addEventListener?.('change', updateContactMode);
+    return () => mediaQuery.removeEventListener?.('change', updateContactMode);
+  }, []);
+
+  useEffect(() => {
+    if (!contactHubOpen || isOpen) return;
+
+    const handleOutsideTap = (event) => {
+      if (contactCloseTimerRef.current) {
+        clearTimeout(contactCloseTimerRef.current);
+        contactCloseTimerRef.current = null;
+      }
+      if (!event.target.closest('[data-contact-hub]')) {
+        setContactHubOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handleOutsideTap);
+    return () => document.removeEventListener('pointerdown', handleOutsideTap);
+  }, [contactHubOpen, isOpen]);
 
   const openContactHub = () => {
     if (isOpen) return;
@@ -487,7 +513,9 @@ export default function ChatWidget() {
     { label: '🔧 Tư vấn nâng cấp RAM', text: 'Muốn nâng cấp RAM laptop lên 16GB, em tư vấn giúp tôi với' },
   ];
   const activeAction = isOpen ? CONTACT_ACTIONS[0] : CONTACT_ACTIONS[activeActionIndex];
-  const secondaryContactActions = CONTACT_ACTIONS.filter((action) => action.id !== activeAction.id);
+  const visibleContactActions = isMobileContact
+    ? CONTACT_ACTIONS
+    : CONTACT_ACTIONS.filter((action) => action.id !== activeAction.id);
 
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] font-sans antialiased">
@@ -518,6 +546,7 @@ export default function ChatWidget() {
 
       {/* Contact hub */}
       <div
+        data-contact-hub
         className="relative w-12 h-12 sm:w-14 sm:h-14"
         onMouseEnter={openContactHub}
         onMouseLeave={closeContactHubSoon}
@@ -530,21 +559,21 @@ export default function ChatWidget() {
       >
         {!isOpen && (
           <div
-            className={'absolute bottom-[44px] sm:bottom-[52px] right-0 flex flex-col items-end gap-2 pb-5 transition-all duration-300 ' + (contactHubOpen ? 'pointer-events-auto opacity-100 translate-y-0' : 'pointer-events-none opacity-0 translate-y-3')}
+            className={'absolute bottom-[46px] sm:bottom-[52px] right-0 flex flex-col items-end gap-2.5 pb-5 transition-all duration-300 ' + (contactHubOpen ? 'pointer-events-auto opacity-100 translate-y-0' : 'pointer-events-none opacity-0 translate-y-3')}
             onMouseEnter={openContactHub}
           >
-            {secondaryContactActions.map((action, index) => (
+            {visibleContactActions.map((action, index) => (
               <button
                 key={action.id}
                 type="button"
                 onClick={() => handleContactAction(action)}
-                className={'group relative w-10 h-10 sm:w-11 sm:h-11 rounded-none ' + action.className + ' flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 ' + (contactHubOpen ? 'contact-menu-item-open' : 'contact-menu-item-closed')}
+                className={'group relative w-12 h-12 sm:w-11 sm:h-11 rounded-none ' + action.className + ' flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 ' + (contactHubOpen ? 'contact-menu-item-open' : 'contact-menu-item-closed')}
                 style={{ animationDelay: contactHubOpen ? String(index * 70) + 'ms' : '0ms' }}
                 aria-label={action.label}
                 title={action.label}
               >
                 <ContactActionIcon type={action.iconType} size={18} />
-                <span className="pointer-events-none absolute right-[calc(100%+10px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-slate-950/90 px-3 py-1.5 text-[10px] font-black text-white opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all shadow-lg hidden sm:block">
+                <span className="pointer-events-none absolute right-[calc(100%+10px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-slate-950/90 px-3 py-1.5 text-[10px] font-black text-white opacity-100 sm:opacity-0 sm:translate-x-1 sm:group-hover:opacity-100 sm:group-hover:translate-x-0 transition-all shadow-lg">
                   {action.label}
                 </span>
               </button>
@@ -556,16 +585,20 @@ export default function ChatWidget() {
           onClick={() => {
             if (isOpen) {
               handleToggleChat();
+            } else if (isMobileContact) {
+              setShowWelcomeBubble(false);
+              sessionStorage.setItem('dismiss_ai_welcome', 'true');
+              setContactHubOpen((prev) => !prev);
             } else {
               handleContactAction(activeAction);
             }
           }}
-          className={'relative w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ' + (isOpen ? 'rounded-full bg-gradient-to-br from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white shadow-lg' : 'rounded-none ' + activeAction.className) + ' hover:scale-105 active:scale-95 transition-all duration-300 z-50 cursor-pointer overflow-visible'}
-          aria-label={isOpen ? 'Đóng chat' : 'Mở lựa chọn liên hệ'}
+          className={'relative w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center ' + (isOpen || (isMobileContact && contactHubOpen) ? 'rounded-full bg-gradient-to-br from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white shadow-lg' : 'rounded-none ' + activeAction.className) + ' hover:scale-105 active:scale-95 transition-all duration-300 z-50 cursor-pointer overflow-visible'}
+          aria-label={isOpen || (isMobileContact && contactHubOpen) ? 'Đóng' : 'Mở lựa chọn liên hệ'}
           type="button"
         >
-          <span key={isOpen ? 'close' : activeAction.id} className="contact-main-icon flex items-center justify-center">
-            {isOpen ? <X size={24} /> : <ContactActionIcon type={activeAction.iconType} size={24} />}
+          <span key={isOpen || (isMobileContact && contactHubOpen) ? 'close' : activeAction.id} className="contact-main-icon flex items-center justify-center">
+            {isOpen || (isMobileContact && contactHubOpen) ? <X size={24} /> : <ContactActionIcon type={activeAction.iconType} size={24} />}
           </span>
         </button>
       </div>

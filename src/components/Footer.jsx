@@ -40,20 +40,20 @@ function Footer() {
             </span>
           </Link>
           <p className="text-xs leading-relaxed text-slate-500 mb-5 max-w-[220px]">
-            Chuyên cung cấp thiết bị công nghệ chính hãng, bảo hành dài hạn và dịch vụ hậu mãi tận tâm từ 2024.
+            Chuyên cung cấp thiết bị công nghệ chính hãng, bảo hành dài hạn và dịch vụ hậu mãi tận tâm.
           </p>
           <div className="space-y-2 text-xs text-slate-500">
             <div className="flex items-center gap-2 hover:text-slate-300 transition-colors">
               <Mail className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
-              <span>support@shoptech.vn</span>
+              <span>dodinhnam160703@gmail.com</span>
             </div>
             <div className="flex items-center gap-2 hover:text-slate-300 transition-colors">
               <Phone className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
-              <span>1800 6789</span>
+              <span>033 331 0964</span>
             </div>
             <div className="flex items-center gap-2 hover:text-slate-300 transition-colors">
               <MapPin className="h-3.5 w-3.5 text-rose-500 flex-shrink-0" />
-              <span>Hà Nội & TP. Hồ Chí Minh</span>
+              <span>NGUYỄN ĐẠT STORE, TP. Hồ Chí Minh</span>
             </div>
           </div>
         </div>
